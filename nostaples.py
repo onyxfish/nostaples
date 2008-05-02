@@ -18,13 +18,6 @@ import gobject
 import Image, ImageEnhance
 from pyPdf.pdf import *
 
-# Global definitions
-
-#~ PREVIEW_MODE_ONE_TO_ONE = 0
-#~ PREVIEW_MODE_FIT_BEST = 1
-#~ PREVIEW_MODE_FIT_WIDTH = 2
-#~ PREVIEW_MODE_FIT_HEIGHT = 3
-
 gtk.gdk.threads_init()
 
 # Classes
@@ -36,9 +29,14 @@ class NoStaplesApplication:
 		self.scannedPages = []	# List of Page objects
 		self.nextScanFileIndex = 0
 		self.previewIndex = 0
-		#self.previewMode = PREVIEW_MODE_FIT_WIDTH
 		self.previewPixbuf = None
+		self.previewWidth = 0
+		self.previewHeight = 0
 		self.previewZoom = 1.0
+		self.previewIsBestFit = True
+		self.baseStatusContextId = 0
+		self.previewStatusContextId = 1
+		self.scanStatusContextId = 2
 		
 		self.scanningThread = ScanningThread(self)
 		
@@ -81,13 +79,10 @@ class NoStaplesApplication:
 		self.authorEntry = self.gladeTree.get_widget('AuthorEntry')
 		self.keywordsEntry = self.gladeTree.get_widget('KeywordsEntry')
 		
-		#~ self.previewImageDisplay = self.gladeTree.get_widget('PreviewImageDisplay')
-		#~ self.previewImageDisplayLabel = self.gladeTree.get_widget('PreviewImageDisplayLabel')
-		#~ self.previewWidth, self.previewHeight  = self.previewImageDisplay.size_request()
-		
 		self.previewLayout = self.gladeTree.get_widget('PreviewLayout')
 		self.previewHScroll = self.gladeTree.get_widget('PreviewHScroll')
 		self.previewVScroll = self.gladeTree.get_widget('PreviewVScroll')
+		
 		self.previewHScroll.set_adjustment(self.previewLayout.get_hadjustment())
 		self.previewVScroll.set_adjustment(self.previewLayout.get_vadjustment())
 		
@@ -95,19 +90,36 @@ class NoStaplesApplication:
 		self.previewLayout.add(self.previewImageDisplay)
 		self.previewImageDisplay.show()
 		
-		self.previewImageDisplayLabel = self.gladeTree.get_widget('PreviewImageDisplayLabel')
-		self.previewWidth, self.previewHeight  = self.previewImageDisplay.size_request()
-		self.previewLayout.set_size(self.previewWidth, self.previewHeight)
+		#self.previewImageDisplayLabel = self.gladeTree.get_widget('PreviewImageDisplayLabel')
+		#self.previewWidth, self.previewHeight  = self.previewImageDisplay.size_request()
+		#self.previewLayout.set_size(self.previewWidth, self.previewHeight)
 
-		#self.scanWindow.show_all()
+		self.scanStatusBar = self.gladeTree.get_widget('ScanStatusBar')
+		self.scanStatusBar.push(self.baseStatusContextId, 'Ready')
 
-		signals = {'on_ScanWindow_destroy' : self.app_quit,
+		signals = {'on_ScanWindow_destroy' : self.quit,
+					'on_ScanMenuItem_activate' : self.scan_page,
+					'on_SaveAsMenuItem_activate' : self.save_as,
 					'on_PreferencesMenuItem_activate' : self.show_preferences,
 					'on_ZoomInMenuItem_activate' : self.zoom_in,
 					'on_ZoomOutMenuItem_activate' : self.zoom_out,
 					'on_ZoomOneToOneMenuItem_activate' : self.zoom_one_to_one,
 					'on_ZoomBestFitMenuItem_activate' : self.zoom_best_fit,
+					'on_GoFirstMenuItem_activate' : self.goto_first_page,
+					'on_GoPreviousMenuItem_activate' : self.goto_previous_page,
+					'on_GoNextMenuItem_activate' : self.goto_next_page,
+					'on_GoLastMenuItem_activate' : self.goto_last_page,
 					'on_AboutMenuItem_activate' : self.show_about,
+					'on_ScanButton_clicked' : self.scan_page,
+					'on_SaveAsButton_clicked' : self.save_as,
+					'on_ZoomInButton_clicked' : self.zoom_in,
+					'on_ZoomOutButton_clicked' : self.zoom_out,
+					'on_ZoomOneToOneButton_clicked' : self.zoom_one_to_one,
+					'on_ZoomBestFitButton_clicked' : self.zoom_best_fit,
+					'on_GoFirstButton_clicked' : self.goto_first_page,
+					'on_GoPreviousButton_clicked' : self.goto_previous_page,
+					'on_GoNextButton_clicked' : self.goto_next_page,
+					'on_GoLastButton_clicked' : self.goto_last_page,
 					'on_ScannerComboBox_changed' : self.update_scanner_options,
 					'on_RefreshScannerListButton_clicked' : self.update_scanner_list,
 					'on_RotateLeftButton_clicked' : self.rotate_left,
@@ -116,13 +128,7 @@ class NoStaplesApplication:
 					'on_ContrastScale_value_changed' : self.update_contrast,		
 					'on_SharpnessScale_value_changed' : self.update_sharpness,
 					'on_ColorAllPagesCheck_toggled' : self.color_all_pages_toggled,
-					'on_FirstPageButton_clicked' : self.goto_first_page,
-					'on_PreviousPageButton_clicked' : self.goto_previous_page,
-					'on_NextPageButton_clicked' : self.goto_next_page,
-					'on_LastPageButton_clicked' : self.goto_last_page,
-					'on_PreviewLayout_size_allocate' : self.preview_resized,
-					'on_ScanPageButton_clicked' : self.scan_page,
-					'on_SavePDFButton_clicked' : self.finish_scanning}
+					'on_PreviewLayout_size_allocate' : self.preview_resized}
 		self.gladeTree.signal_autoconnect(signals)
 		
 	# GUI utility functions
@@ -165,7 +171,7 @@ class NoStaplesApplication:
 		
 	# Signal handlers
 	
-	def app_quit(self, window=None):
+	def quit(self, window=None):
 		'''Called on ScanWindow is destroyed to cleanup threads and files.'''
 		if self.scanningThread.isAlive():
 			self.scanningThread.stop()
@@ -184,7 +190,7 @@ class NoStaplesApplication:
 		self.preferencesDialog.run()
 		self.preferencesDialog.hide()
 		
-	def zoom_in(self, menuitem=None):
+	def zoom_in(self, widget=None):
 		'''Zooms the preview image in by 50%.'''
 		if len(self.scannedPages) < 1:
 			return
@@ -194,9 +200,12 @@ class NoStaplesApplication:
 		if self.previewZoom > 5:
 			self.previewZoom = 5
 			
+		self.previewIsBestFit = False
+			
 		self.render_preview()
+		self.update_preview_status()
 		
-	def zoom_out(self, menuitem=None):
+	def zoom_out(self, widget=None):
 		'''Zooms the preview image out by 50%.'''
 		if len(self.scannedPages) < 1:
 			return
@@ -206,18 +215,24 @@ class NoStaplesApplication:
 		if self.previewZoom < 0.5:
 			self.previewZoom = 0.5
 			
+		self.previewIsBestFit = False
+			
 		self.render_preview()
+		self.update_preview_status()
 		
-	def zoom_one_to_one(self, menuitem=None):
+	def zoom_one_to_one(self, widget=None):
 		'''Zooms the preview image to exactly 100%.'''
 		if len(self.scannedPages) < 1:
 			return
 			
 		self.previewZoom =  1.0
 			
+		self.previewIsBestFit = False
+			
 		self.render_preview()
+		self.update_preview_status()
 		
-	def zoom_best_fit(self, menuitem=None):
+	def zoom_best_fit(self, widget=None):
 		'''Zooms the preview image so that the entire image is displayed.'''
 		if len(self.scannedPages) < 1:
 			return
@@ -233,7 +248,10 @@ class NoStaplesApplication:
 		else:
 			self.previewZoom =  1 / float(widthRatio)
 			
+		self.previewIsBestFit = True
+			
 		self.render_preview()
+		self.update_preview_status()
 		
 	def show_about(self, menuitem=None):
 		'''Show the about dialog.'''
@@ -302,7 +320,12 @@ class NoStaplesApplication:
 			self.scannedPages[self.previewIndex].rotation += 90
 			
 		self.previewPixbuf = self.scannedPages[self.previewIndex].get_pixbuf()
-		self.render_preview()
+		
+		if self.previewIsBestFit:
+			self.zoom_best_fit()
+		else:
+			self.render_preview()
+			self.update_preview_status()
 		
 	def rotate_right(self, button=None):
 		'''Rotates the current page ninety degrees clockwise, or all pages if the "RotateAllPagesCheck" is toggled on.'''
@@ -320,7 +343,12 @@ class NoStaplesApplication:
 			self.scannedPages[self.previewIndex].rotation -= 90
 			
 		self.previewPixbuf = self.scannedPages[self.previewIndex].get_pixbuf()
-		self.render_preview()
+		
+		if self.previewIsBestFit:
+			self.zoom_best_fit()
+		else:
+			self.render_preview()
+			self.update_preview_status()
 		
 	def update_brightness(self, scale=None):
 		'''Updates the brightness of the current page, or all pages if the "ColorAllPagesCheck" is toggled on.'''
@@ -388,14 +416,18 @@ class NoStaplesApplication:
 			return
 			
 		self.previewIndex = 0
-		self.previewImageDisplayLabel.set_markup('<b>Previewing Page %i of %i</b>' % (self.previewIndex + 1, len(self.scannedPages)))
 		
 		self.brightnessScale.set_value(self.scannedPages[self.previewIndex].brightness)
 		self.contrastScale.set_value(self.scannedPages[self.previewIndex].contrast)
 		self.sharpnessScale.set_value(self.scannedPages[self.previewIndex].sharpness)
 		
 		self.previewPixbuf = self.scannedPages[self.previewIndex].get_pixbuf()
-		self.render_preview()
+		
+		if self.previewIsBestFit:
+			self.zoom_best_fit()
+		else:
+			self.render_preview()
+			self.update_preview_status()
 		
 	def goto_previous_page(self, button=None):
 		'''Moves to the previous scanned page.'''
@@ -410,14 +442,18 @@ class NoStaplesApplication:
 			return
 		
 		self.previewIndex -= 1
-		self.previewImageDisplayLabel.set_markup('<b>Previewing Page %i of %i</b>' % (self.previewIndex + 1, len(self.scannedPages)))
 		
 		self.brightnessScale.set_value(self.scannedPages[self.previewIndex].brightness)
 		self.contrastScale.set_value(self.scannedPages[self.previewIndex].contrast)
 		self.sharpnessScale.set_value(self.scannedPages[self.previewIndex].sharpness)
 		
 		self.previewPixbuf = self.scannedPages[self.previewIndex].get_pixbuf()
-		self.render_preview()
+		
+		if self.previewIsBestFit:
+			self.zoom_best_fit()
+		else:
+			self.render_preview()
+			self.update_preview_status()
 		
 	def goto_next_page(self, button=None):
 		'''Moves to the next scanned page.'''
@@ -432,14 +468,18 @@ class NoStaplesApplication:
 			return
 		
 		self.previewIndex += 1
-		self.previewImageDisplayLabel.set_markup('<b>Previewing Page %i of %i</b>' % (self.previewIndex + 1, len(self.scannedPages)))
 		
 		self.brightnessScale.set_value(self.scannedPages[self.previewIndex].brightness)
 		self.contrastScale.set_value(self.scannedPages[self.previewIndex].contrast)
 		self.sharpnessScale.set_value(self.scannedPages[self.previewIndex].sharpness)
 		
 		self.previewPixbuf = self.scannedPages[self.previewIndex].get_pixbuf()
-		self.render_preview()
+		
+		if self.previewIsBestFit:
+			self.zoom_best_fit()
+		else:
+			self.render_preview()
+			self.update_preview_status()
 		
 	def goto_last_page(self, button=None):
 		'''Moves to the last scanned page.'''
@@ -451,14 +491,18 @@ class NoStaplesApplication:
 			return
 			
 		self.previewIndex = len(self.scannedPages) - 1
-		self.previewImageDisplayLabel.set_markup('<b>Previewing Page %i of %i</b>' % (self.previewIndex + 1, len(self.scannedPages)))
 		
 		self.brightnessScale.set_value(self.scannedPages[self.previewIndex].brightness)
 		self.contrastScale.set_value(self.scannedPages[self.previewIndex].contrast)
 		self.sharpnessScale.set_value(self.scannedPages[self.previewIndex].sharpness)
 		
 		self.previewPixbuf = self.scannedPages[self.previewIndex].get_pixbuf()
-		self.render_preview()
+		
+		if self.previewIsBestFit:
+			self.zoom_best_fit()
+		else:
+			self.render_preview()
+			self.update_preview_status()
 
 	def preview_resized(self, window, rect):
 		'''Catches preview display size allocations so that the preview image can be appropriately scaled to fit the display.'''
@@ -471,7 +515,11 @@ class NoStaplesApplication:
 		if len(self.scannedPages) < 1:
 			return
 		
-		self.render_preview()
+		if self.previewIsBestFit:
+			self.zoom_best_fit()
+		else:
+			self.render_preview()
+			self.update_preview_status()
 		
 	def scan_page(self, button=None):
 		'''Starts the scanning thread.'''
@@ -483,7 +531,7 @@ class NoStaplesApplication:
 		self.scanningThread = ScanningThread(self)
 		self.scanningThread.start()
 	
-	def finish_scanning(self, button=None):
+	def save_as(self, widget=None):
 		'''Gets PDF Metadata from the user, prompts for a filename, and saves the document to PDF.'''
 		if self.scanningThread.isAlive():
 			self.error_box(self.scanWindow, 'Scanning is in progress...')
@@ -557,23 +605,21 @@ class NoStaplesApplication:
 		self.scannedPages = []
 		self.nextScanFileIndex = 1
 		self.previewIndex = 0
-		self.previewImageDisplayLabel.set_markup('<b>Preview</b>')
-		#self.previewImageDisplay.set_from_stock(gtk.STOCK_MISSING_IMAGE, gtk.ICON_SIZE_DIALOG)
+		self.update_preview_status()
 		
 	# Functions not tied to a signal handler
-
-	#~ def load_preview(self):
-		#~ '''Loads a new image for preview.'''
-		#~ if len(self.scannedPages) < 1:
-			#~ return
-			
-		#~ self.previewImageDisplayLabel.set_markup('<b>Previewing Page %i of %i</b>' % (self.previewIndex + 1, len(self.scannedPages)))
-		#~ self.render_preview()
+	
+	def update_preview_status(self):
+		self.scanStatusBar.pop(self.previewStatusContextId)
+		
+		if len(self.scannedPages) > 0:
+			self.scanStatusBar.push(self.previewStatusContextId,'Page %i of %i\t%i%%' % (self.previewIndex + 1, len(self.scannedPages), int(self.previewZoom * 100)))
 		
 	def render_preview(self):
-		'''Render the current page to the preview display using the correct preview mode.'''
+		'''Render the current page to the preview display.'''
 		assert len(self.scannedPages) > 0, 'Render request made when no pages have been scanned.'
-			
+		
+		# Zoom if necessary
 		if self.previewZoom != 1.0:
 			targetWidth = int(self.previewPixbuf.get_width() * self.previewZoom)
 			targetHeight = int(self.previewPixbuf.get_height() * self.previewZoom)
@@ -623,9 +669,8 @@ class ScanningThread(threading.Thread):
 	def run(self):
 		'''Scans a page with "scanimage" and appends it to the end of the current document.'''
 		gtk.gdk.threads_enter()
-		# TODO - replace this with a proper progress dialog
-		#self.app.previewImageDisplay.set_from_file('loading.gif')
-		self.app.previewImageDisplayLabel.set_markup('<b>Scanning Page %i of %i</b>' % (len(self.app.scannedPages) + 1, len(self.app.scannedPages) + 1))
+		
+		self.app.scanStatusBar.push(self.app.scanStatusContextId,'Scanning...')
 		
 		if not self.app.colorAllPagesCheck.get_active():
 			self.app.brightnessScale.set_value(1.0)
@@ -668,10 +713,15 @@ class ScanningThread(threading.Thread):
 		self.app.previewPixbuf = self.app.scannedPages[self.app.previewIndex].get_pixbuf()
 		
 		self.app.render_preview()
+		
+		self.app.update_preview_status()
+		self.app.scanStatusBar.pop(self.app.scanStatusContextId)	
+		
 		gtk.gdk.threads_leave()
 		
 	def stop(self):
 		self.stopThreadEvent.set()
+		self.app.scanStatusBar.pop(self.scanStatusContextId)
 		
 class NoStaplesPdfFileWriter(PdfFileWriter):
 	'''A subclass of a PyPdf PdfFileWriter that adds support for custom meta-data.'''
@@ -711,6 +761,7 @@ class Page:
 		self.sharpness = 1.0
 		
 		self.rawPixbuf = gtk.gdk.pixbuf_new_from_file(self.filename)
+		# TODO
 		# self.thumbnail = ?
 
 	def convert_image_to_pixbuf(self, image):
