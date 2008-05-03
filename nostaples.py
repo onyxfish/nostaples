@@ -22,10 +22,14 @@ gtk.gdk.threads_init()
 
 # Classes
 
-class NoStaplesApplication:
+class NoStaples:
 	'''NoStaples' main application class.'''
 
 	def __init__(self):
+		self.scannerDict = {}	# Keys are human readable scanner descriptions, Values are sane-backend descriptors
+		self.activeScanner = None
+		self.scanMode = None
+		self.scanResolution = None
 		self.scannedPages = []	# List of Page objects
 		self.nextScanFileIndex = 0
 		self.previewIndex = 0
@@ -49,20 +53,17 @@ class NoStaplesApplication:
 		self.preferencesDialog = self.gladeTree.get_widget('PreferencesDialog')
 		self.aboutDialog = self.gladeTree.get_widget('AboutDialog')
 		self.saveDialog = self.gladeTree.get_widget('SaveDialog')
-		
 		self.metadataDialog = self.gladeTree.get_widget('MetadataDialog')
 		
 		self.errorDialog = self.gladeTree.get_widget('ErrorDialog')
 		self.errorLabel = self.gladeTree.get_widget('ErrorLabel')
 		
-		self.scannerMenu = self.gladeTree.get_widget('ScannerMenu')
-		self.scannerComboBox = self.gladeTree.get_widget('ScannerComboBox')
 		self.previewModeComboBox = self.gladeTree.get_widget('PreviewModeComboBox')
-		
 		self.setup_combobox(self.previewModeComboBox, ['Nearest (Fastest)','Bilinear', 'Bicubic', 'Antialias (Clearest)'], 'Antialias (Clearest)')
 		
-		self.modesComboBox = self.gladeTree.get_widget('ModesComboBox')
-		self.resolutionsComboBox = self.gladeTree.get_widget('ResolutionsComboBox')
+		self.scannerSubMenu = self.gladeTree.get_widget('ScannerSubMenu')
+		self.scanModeSubMenu = self.gladeTree.get_widget('ScanModeSubMenu')
+		self.scanResolutionSubMenu = self.gladeTree.get_widget('ScanResolutionSubMenu')
 		
 		self.update_scanner_list()
 		
@@ -89,10 +90,6 @@ class NoStaplesApplication:
 		self.previewImageDisplay = gtk.Image()
 		self.previewLayout.add(self.previewImageDisplay)
 		self.previewImageDisplay.show()
-		
-		#self.previewImageDisplayLabel = self.gladeTree.get_widget('PreviewImageDisplayLabel')
-		#self.previewWidth, self.previewHeight  = self.previewImageDisplay.size_request()
-		#self.previewLayout.set_size(self.previewWidth, self.previewHeight)
 
 		self.scanStatusBar = self.gladeTree.get_widget('ScanStatusBar')
 		self.scanStatusBar.push(self.baseStatusContextId, 'Ready')
@@ -100,6 +97,7 @@ class NoStaplesApplication:
 		signals = {'on_ScanWindow_destroy' : self.quit,
 					'on_ScanMenuItem_activate' : self.scan_page,
 					'on_SaveAsMenuItem_activate' : self.save_as,
+					'on_QuitMenuItem_activate' : self.quit,
 					'on_PreferencesMenuItem_activate' : self.show_preferences,
 					'on_ZoomInMenuItem_activate' : self.zoom_in,
 					'on_ZoomOutMenuItem_activate' : self.zoom_out,
@@ -120,8 +118,6 @@ class NoStaplesApplication:
 					'on_GoPreviousButton_clicked' : self.goto_previous_page,
 					'on_GoNextButton_clicked' : self.goto_next_page,
 					'on_GoLastButton_clicked' : self.goto_last_page,
-					'on_ScannerComboBox_changed' : self.update_scanner_options,
-					'on_RefreshScannerListButton_clicked' : self.update_scanner_list,
 					'on_RotateLeftButton_clicked' : self.rotate_left,
 					'on_RotateRightButton_clicked' : self.rotate_right,
 					'on_BrightnessScale_value_changed' : self.update_brightness,		
@@ -261,30 +257,8 @@ class NoStaplesApplication:
 			
 		self.aboutDialog.run()
 		self.aboutDialog.hide()
-
-	def update_scanner_options(self, combobox=None):
-		'''Extracts lists of valid scanner modes and resolutions from "scanimage".'''
-		assert not self.scanningThread.isAlive(), "Scanning thread should never be running when scanner options are updated."
-			
-		self.selectedScanner = self.scannerComboBox.get_active()		
-
-		updateCmd = ' '.join(['scanimage --help -d',  self.scannerDict[self.read_combobox(self.scannerComboBox)]])
-		updatePipe = Popen(updateCmd, shell=True, stderr=STDOUT, stdout=PIPE)
-		updatePipe.wait()
 		
-		output = updatePipe.stdout.read()		
-		
-		try:
-			self.modesList = re.findall('--mode (.*) ', output)[0].split('|')
-			self.resolutionsList = re.findall('--resolution (.*)dpi ', output)[0].split('|')
-		except:
-			print 'Failed to parse scanner options from command: "%s"' % updateCmd
-			raise
-		
-		self.setup_combobox(self.modesComboBox, self.modesList, self.read_combobox(self.modesComboBox))		
-		self.setup_combobox(self.resolutionsComboBox, self.resolutionsList, self.read_combobox(self.resolutionsComboBox))
-		
-	def update_scanner_list(self, button=None):
+	def update_scanner_list(self, widget=None):
 		'''Extracts a list of valid scanners from "scanimage".'''
 		assert not self.scanningThread.isAlive(), "Scanning thread should never be running when scanner list is updated."
 			
@@ -296,13 +270,136 @@ class NoStaplesApplication:
 		
 		self.scannerDict = {}
 		scannerList = re.findall('(.*)=(.*);', output)
-		
+			
 		for v, k in scannerList:
 			self.scannerDict[k] = v
 		
-		self.setup_combobox(self.scannerComboBox, self.scannerDict.keys(), self.read_combobox(self.scannerComboBox))
+		for child in self.scannerSubMenu.get_children():
+			self.scannerSubMenu.remove(child)
 		
-		self.update_scanner_options()
+		scanners = self.scannerDict.keys()
+		firstItem = None
+		selectedItem = None
+		for i in range(len(scanners)):
+			if i == 0:
+				menuItem = gtk.RadioMenuItem(None, scanners[i])
+				firstItem = menuItem
+			else:
+				menuItem = gtk.RadioMenuItem(firstItem, scanners[i])
+				
+			if i == 0 and self.activeScanner not in scanners:
+				menuItem.set_active(True)
+				selectedItem = menuItem
+			
+			if scanners[i] == self.activeScanner:
+				menuItem.set_active(True)
+				selectedItem = menuItem
+			
+			menuItem.connect('toggled', self.update_scanner_options)
+			self.scannerSubMenu.append(menuItem)
+		
+		menuItem = gtk.MenuItem('Refresh List')
+		menuItem.connect('activate', self.update_scanner_list)
+		self.scannerSubMenu.append(menuItem)
+		
+		self.scannerSubMenu.show_all()
+		
+		# Emulate the default scanner being toggled
+		self.update_scanner_options(selectedItem)
+
+	def update_scanner_options(self, widget=None):
+		'''Extracts lists of valid scanner modes and resolutions from "scanimage".'''
+		assert not self.scanningThread.isAlive(), "Scanning thread should never be running when scanner options are updated."
+		
+		# Get the selected scanner
+		toggledScanner = widget.get_children()[0].get_text()
+		
+		# Do not update if this scanner was already selected (e.g. the list was refreshed at it was reselected as default)
+		if toggledScanner == self.activeScanner:
+			return
+		
+		self.activeScanner = toggledScanner
+
+		updateCmd = ' '.join(['scanimage --help -d',  self.scannerDict[self.activeScanner]])
+		updatePipe = Popen(updateCmd, shell=True, stderr=STDOUT, stdout=PIPE)
+		updatePipe.wait()
+		
+		output = updatePipe.stdout.read()		
+		
+		try:
+			modeList = re.findall('--mode (.*) ', output)[0].split('|')
+			resolutionList = re.findall('--resolution (.*)dpi ', output)[0].split('|')
+		except:
+			print 'Failed to parse scanner options from command: "%s"' % updateCmd
+			raise
+		
+		for child in self.scanModeSubMenu.get_children():
+			self.scanModeSubMenu.remove(child)
+		
+		for i in range(len(modeList)):
+			if i == 0:
+				menuItem = gtk.RadioMenuItem(None, modeList[i])
+				firstItem = menuItem
+			else:
+				menuItem = gtk.RadioMenuItem(firstItem, modeList[i])
+				
+			if i == 0 and self.scanMode not in modeList:
+				menuItem.set_active(True)
+				selectedItem = menuItem
+			
+			if modeList[i] == self.scanMode:
+				menuItem.set_active(True)
+				selectedItem = menuItem
+			
+			menuItem.connect('toggled', self.update_scan_mode)
+			self.scanModeSubMenu.append(menuItem)
+			
+		self.scanModeSubMenu.show_all()
+		
+		# Emulate the default scan mode being toggled
+		self.update_scan_mode(selectedItem)		
+		
+		for child in self.scanResolutionSubMenu.get_children():
+			self.scanResolutionSubMenu.remove(child)
+		
+		for i in range(len(resolutionList)):
+			if i == 0:
+				menuItem = gtk.RadioMenuItem(None, resolutionList[i])
+				firstItem = menuItem
+			else:
+				menuItem = gtk.RadioMenuItem(firstItem, resolutionList[i])
+				
+			if i == 0 and self.scanResolution not in resolutionList:
+				menuItem.set_active(True)
+				selectedItem = menuItem
+			
+			if resolutionList[i] == self.scanMode:
+				menuItem.set_active(True)
+				selectedItem = menuItem
+			
+			menuItem.connect('toggled', self.update_scan_resolution)
+			self.scanResolutionSubMenu.append(menuItem)
+			
+		self.scanResolutionSubMenu.show_all()
+		
+		# Emulate the default scan resolution being toggled
+		self.update_scan_resolution(selectedItem)
+	
+	def update_scan_mode(self, widget):
+		'''Updates the internal scan mode state when a scan mode menu item is toggled.'''
+		try:
+			self.scanMode = widget.get_children()[0].get_text()
+		except:
+			print 'Unable to get label text for currently selected scan mode menu item.'
+			raise
+		
+	def update_scan_resolution(self, widget):
+		'''Updates the internal scan resolution state when a scan resolution menu item is toggled.'''
+		try:
+			self.scanResolution = widget.get_children()[0].get_text()
+		except:
+			print 'Unable to get label text for currently selected scan resolution menu item.'
+			raise
 		
 	def rotate_left(self, button=None):
 		'''Rotates the current page ninety degrees counter-clockwise, or all pages if the "RotateAllPagesCheck" is toggled on.'''
@@ -590,7 +687,7 @@ class NoStaplesApplication:
 			
 			sharpenedImage.save(pdfFilename)
 			
-			# check file exists?
+			assert os.exists(pdfFIlename), 'Temporary PDF file for "%s" was not created in a timely fashion.' % page.filename
 			
 			input = PdfFileReader(file(pdfFilename, 'rb'))
 			output.addPage(input.getPage(0))
@@ -678,10 +775,14 @@ class ScanningThread(threading.Thread):
 			self.app.sharpnessScale.set_value(1.0)
 		gtk.gdk.threads_leave()
 		
+		assert self.app.scanMode != None, 'Attempting to scan with no scan mode selected.'
+		assert self.app.scanResolution != None, 'Attempting to scan with no scan resolution selected.'
+		assert self.app.activeScanner != None, 'Attempting to scan with no scanner selected.'
+		
 		scanProgram = 'scanimage --format=pnm'
-		modeFlag = ' '.join(['--mode', self.app.read_combobox(self.app.modesComboBox)])
-		resolutionFlag = ' '.join(['--resolution', self.app.read_combobox(self.app.resolutionsComboBox)])
-		scannerFlag = ' '.join(['-d', self.app.scannerDict[self.app.read_combobox(self.app.scannerComboBox)]])
+		modeFlag = ' '.join(['--mode', self.app.scanMode])
+		resolutionFlag = ' '.join(['--resolution', self.app.scanResolution])
+		scannerFlag = ' '.join(['-d', self.app.scannerDict[self.app.activeScanner]])
 		outputFile = '>scan%i.pnm' % self.app.nextScanFileIndex
 		scanCmd = ' '.join([scanProgram, modeFlag, resolutionFlag, scannerFlag, outputFile])
 		
@@ -721,7 +822,7 @@ class ScanningThread(threading.Thread):
 		
 	def stop(self):
 		self.stopThreadEvent.set()
-		self.app.scanStatusBar.pop(self.scanStatusContextId)
+		self.app.scanStatusBar.pop(self.app.scanStatusContextId)
 		
 class NoStaplesPdfFileWriter(PdfFileWriter):
 	'''A subclass of a PyPdf PdfFileWriter that adds support for custom meta-data.'''
@@ -811,7 +912,7 @@ class Page:
 # Main loop
 
 if __name__ == '__main__':
-	app = NoStaplesApplication()
+	app = NoStaples()
 	gtk.gdk.threads_enter()
 	gtk.main()
 	gtk.gdk.threads_leave()
