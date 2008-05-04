@@ -50,6 +50,8 @@ class NoStaples:
 		self.scanWindow = self.gladeTree.get_widget('ScanWindow')
 		self.scanWindow.set_property('allow-shrink', True)
 		
+		self.adjustColorsWindow = self.gladeTree.get_widget('AdjustColorsWindow')
+		
 		self.preferencesDialog = self.gladeTree.get_widget('PreferencesDialog')
 		self.aboutDialog = self.gladeTree.get_widget('AboutDialog')
 		self.saveDialog = self.gladeTree.get_widget('SaveDialog')
@@ -67,9 +69,10 @@ class NoStaples:
 		
 		self.update_scanner_list()
 		
-		self.rotateLeftButton = self.gladeTree.get_widget('RotateLeftButton')
-		self.rotateRightButton = self.gladeTree.get_widget('RotateRightButton')
-		self.rotateAllPagesCheck = self.gladeTree.get_widget('RotateAllPagesCheck')
+		self.mainToolbar = self.gladeTree.get_widget('MainToolbar')
+		
+		self.rotateAllPagesMenuItem = self.gladeTree.get_widget('RotateAllPagesMenuItem')
+		self.adjustColorsMenuItem = self.gladeTree.get_widget('AdjustColorsMenuItem')
 		
 		self.brightnessScale = self.gladeTree.get_widget('BrightnessScale')
 		self.contrastScale = self.gladeTree.get_widget('ContrastScale')
@@ -89,20 +92,27 @@ class NoStaples:
 		
 		self.previewImageDisplay = gtk.Image()
 		self.previewLayout.add(self.previewImageDisplay)
+		self.previewLayout.modify_bg(gtk.STATE_NORMAL, gtk.gdk.colormap_get_system().alloc_color(gtk.gdk.Color(0, 0, 0), False, True))
 		self.previewImageDisplay.show()
 
-		self.scanStatusBar = self.gladeTree.get_widget('ScanStatusBar')
-		self.scanStatusBar.push(self.baseStatusContextId, 'Ready')
+		self.statusBar = self.gladeTree.get_widget('ScanStatusBar')
+		self.statusBar.push(self.baseStatusContextId, 'Ready')
 
 		signals = {'on_ScanWindow_destroy' : self.quit,
+					'on_AdjustColorsWindow_delete_event' : self.adjust_colors_close,
 					'on_ScanMenuItem_activate' : self.scan_page,
 					'on_SaveAsMenuItem_activate' : self.save_as,
 					'on_QuitMenuItem_activate' : self.quit,
 					'on_PreferencesMenuItem_activate' : self.show_preferences,
+					'on_ShowToolbarMenuItem_toggled' : self.toggle_toolbar,
+					'on_ShowStatusBarMenuItem_toggled' : self.toggle_statusbar,
 					'on_ZoomInMenuItem_activate' : self.zoom_in,
 					'on_ZoomOutMenuItem_activate' : self.zoom_out,
 					'on_ZoomOneToOneMenuItem_activate' : self.zoom_one_to_one,
 					'on_ZoomBestFitMenuItem_activate' : self.zoom_best_fit,
+					'on_RotateCounterClockMenuItem_activate' : self.rotate_counter_clockwise,
+					'on_RotateClockMenuItem_activate' : self.rotate_clockwise,
+					'on_AdjustColorsMenuItem_toggled' : self.adjust_colors_toggle,
 					'on_GoFirstMenuItem_activate' : self.goto_first_page,
 					'on_GoPreviousMenuItem_activate' : self.goto_previous_page,
 					'on_GoNextMenuItem_activate' : self.goto_next_page,
@@ -114,12 +124,12 @@ class NoStaples:
 					'on_ZoomOutButton_clicked' : self.zoom_out,
 					'on_ZoomOneToOneButton_clicked' : self.zoom_one_to_one,
 					'on_ZoomBestFitButton_clicked' : self.zoom_best_fit,
+					'on_RotateCounterClockButton_clicked' : self.rotate_counter_clockwise,
+					'on_RotateClockButton_clicked' : self.rotate_clockwise,
 					'on_GoFirstButton_clicked' : self.goto_first_page,
 					'on_GoPreviousButton_clicked' : self.goto_previous_page,
 					'on_GoNextButton_clicked' : self.goto_next_page,
 					'on_GoLastButton_clicked' : self.goto_last_page,
-					'on_RotateLeftButton_clicked' : self.rotate_left,
-					'on_RotateRightButton_clicked' : self.rotate_right,
 					'on_BrightnessScale_value_changed' : self.update_brightness,		
 					'on_ContrastScale_value_changed' : self.update_contrast,		
 					'on_SharpnessScale_value_changed' : self.update_sharpness,
@@ -186,6 +196,18 @@ class NoStaples:
 		self.preferencesDialog.run()
 		self.preferencesDialog.hide()
 		
+	def toggle_statusbar(self, menuitem):
+		if menuitem.get_active():
+			self.statusBar.show()
+		else:
+			self.statusBar.hide()
+		
+	def toggle_toolbar(self, menuitem):
+		if menuitem.get_active():
+			self.mainToolbar.show()
+		else:
+			self.mainToolbar.hide()
+		
 	def zoom_in(self, widget=None):
 		'''Zooms the preview image in by 50%.'''
 		if len(self.scannedPages) < 1:
@@ -199,7 +221,7 @@ class NoStaples:
 		self.previewIsBestFit = False
 			
 		self.render_preview()
-		self.update_preview_status()
+		self.update_status()
 		
 	def zoom_out(self, widget=None):
 		'''Zooms the preview image out by 50%.'''
@@ -214,7 +236,7 @@ class NoStaples:
 		self.previewIsBestFit = False
 			
 		self.render_preview()
-		self.update_preview_status()
+		self.update_status()
 		
 	def zoom_one_to_one(self, widget=None):
 		'''Zooms the preview image to exactly 100%.'''
@@ -226,7 +248,7 @@ class NoStaples:
 		self.previewIsBestFit = False
 			
 		self.render_preview()
-		self.update_preview_status()
+		self.update_status()
 		
 	def zoom_best_fit(self, widget=None):
 		'''Zooms the preview image so that the entire image is displayed.'''
@@ -247,7 +269,7 @@ class NoStaples:
 		self.previewIsBestFit = True
 			
 		self.render_preview()
-		self.update_preview_status()
+		self.update_status()
 		
 	def show_about(self, menuitem=None):
 		'''Show the about dialog.'''
@@ -401,8 +423,8 @@ class NoStaples:
 			print 'Unable to get label text for currently selected scan resolution menu item.'
 			raise
 		
-	def rotate_left(self, button=None):
-		'''Rotates the current page ninety degrees counter-clockwise, or all pages if the "RotateAllPagesCheck" is toggled on.'''
+	def rotate_counter_clockwise(self, button=None):
+		'''Rotates the current page ninety degrees counter-clockwise, or all pages if "rotate all pages" is toggled on.'''
 		if self.scanningThread.isAlive():
 			self.error_box(self.scanWindow, 'Scanning is in progress...')
 			return
@@ -410,7 +432,7 @@ class NoStaples:
 		if len(self.scannedPages) < 1:
 			return
 		
-		if self.rotateAllPagesCheck.get_active():
+		if self.rotateAllPagesMenuItem.get_active():
 			for page in self.scannedPages:
 				page.rotation += 90
 		else:
@@ -422,10 +444,10 @@ class NoStaples:
 			self.zoom_best_fit()
 		else:
 			self.render_preview()
-			self.update_preview_status()
+			self.update_status()
 		
-	def rotate_right(self, button=None):
-		'''Rotates the current page ninety degrees clockwise, or all pages if the "RotateAllPagesCheck" is toggled on.'''
+	def rotate_clockwise(self, button=None):
+		'''Rotates the current page ninety degrees clockwise, or all pages if "rotate all pages" is toggled on.'''
 		if self.scanningThread.isAlive():
 			self.error_box(self.scanWindow, 'Scanning is in progress...')
 			return
@@ -433,7 +455,7 @@ class NoStaples:
 		if len(self.scannedPages) < 1:
 			return
 		
-		if self.rotateAllPagesCheck.get_active():
+		if self.rotateAllPagesMenuItem.get_active():
 			for page in self.scannedPages:
 				page.rotation -= 90
 		else:
@@ -445,7 +467,18 @@ class NoStaples:
 			self.zoom_best_fit()
 		else:
 			self.render_preview()
-			self.update_preview_status()
+			self.update_status()
+			
+	def adjust_colors_close(self, window, event):
+		self.adjustColorsWindow.hide()
+		self.adjustColorsMenuItem.set_active(False)
+		return True
+			
+	def adjust_colors_toggle(self, menuitem):
+		if self.adjustColorsMenuItem.get_active():
+			self.adjustColorsWindow.show()
+		else:
+			self.adjustColorsWindow.hide()
 		
 	def update_brightness(self, scale=None):
 		'''Updates the brightness of the current page, or all pages if the "ColorAllPagesCheck" is toggled on.'''
@@ -524,7 +557,7 @@ class NoStaples:
 			self.zoom_best_fit()
 		else:
 			self.render_preview()
-			self.update_preview_status()
+			self.update_status()
 		
 	def goto_previous_page(self, button=None):
 		'''Moves to the previous scanned page.'''
@@ -550,7 +583,7 @@ class NoStaples:
 			self.zoom_best_fit()
 		else:
 			self.render_preview()
-			self.update_preview_status()
+			self.update_status()
 		
 	def goto_next_page(self, button=None):
 		'''Moves to the next scanned page.'''
@@ -576,7 +609,7 @@ class NoStaples:
 			self.zoom_best_fit()
 		else:
 			self.render_preview()
-			self.update_preview_status()
+			self.update_status()
 		
 	def goto_last_page(self, button=None):
 		'''Moves to the last scanned page.'''
@@ -599,7 +632,7 @@ class NoStaples:
 			self.zoom_best_fit()
 		else:
 			self.render_preview()
-			self.update_preview_status()
+			self.update_status()
 
 	def preview_resized(self, window, rect):
 		'''Catches preview display size allocations so that the preview image can be appropriately scaled to fit the display.'''
@@ -616,7 +649,7 @@ class NoStaples:
 			self.zoom_best_fit()
 		else:
 			self.render_preview()
-			self.update_preview_status()
+			self.update_status()
 		
 	def scan_page(self, button=None):
 		'''Starts the scanning thread.'''
@@ -702,15 +735,15 @@ class NoStaples:
 		self.scannedPages = []
 		self.nextScanFileIndex = 1
 		self.previewIndex = 0
-		self.update_preview_status()
+		self.update_status()
 		
 	# Functions not tied to a signal handler
 	
-	def update_preview_status(self):
-		self.scanStatusBar.pop(self.previewStatusContextId)
+	def update_status(self):
+		self.statusBar.pop(self.previewStatusContextId)
 		
 		if len(self.scannedPages) > 0:
-			self.scanStatusBar.push(self.previewStatusContextId,'Page %i of %i\t%i%%' % (self.previewIndex + 1, len(self.scannedPages), int(self.previewZoom * 100)))
+			self.statusBar.push(self.previewStatusContextId,'Page %i of %i\t%i%%' % (self.previewIndex + 1, len(self.scannedPages), int(self.previewZoom * 100)))
 		
 	def render_preview(self):
 		'''Render the current page to the preview display.'''
@@ -767,7 +800,7 @@ class ScanningThread(threading.Thread):
 		'''Scans a page with "scanimage" and appends it to the end of the current document.'''
 		gtk.gdk.threads_enter()
 		
-		self.app.scanStatusBar.push(self.app.scanStatusContextId,'Scanning...')
+		self.app.statusBar.push(self.app.scanStatusContextId,'Scanning...')
 		
 		if not self.app.colorAllPagesCheck.get_active():
 			self.app.brightnessScale.set_value(1.0)
@@ -815,14 +848,14 @@ class ScanningThread(threading.Thread):
 		
 		self.app.render_preview()
 		
-		self.app.update_preview_status()
-		self.app.scanStatusBar.pop(self.app.scanStatusContextId)	
+		self.app.update_status()
+		self.app.statusBar.pop(self.app.scanStatusContextId)	
 		
 		gtk.gdk.threads_leave()
 		
 	def stop(self):
 		self.stopThreadEvent.set()
-		self.app.scanStatusBar.pop(self.app.scanStatusContextId)
+		self.app.statusBar.pop(self.app.scanStatusContextId)
 		
 class NoStaplesPdfFileWriter(PdfFileWriter):
 	'''A subclass of a PyPdf PdfFileWriter that adds support for custom meta-data.'''
