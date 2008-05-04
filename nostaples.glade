@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.2 on Sun May  4 09:43:57 2008 -->
+<!--Generated with glade3 3.4.2 on Sun May  4 12:25:10 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="ScanWindow">
     <property name="visible">True</property>
@@ -29,63 +29,6 @@
                   <widget class="GtkMenu" id="menu1">
                     <property name="visible">True</property>
                     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                    <child>
-                      <widget class="GtkMenuItem" id="ScannerMenuItem">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Scanner</property>
-                        <property name="use_underline">True</property>
-                        <child>
-                          <widget class="GtkMenu" id="ScannerSubMenu">
-                            <property name="visible">True</property>
-                            <child>
-                              <widget class="GtkMenuItem" id="menuitem5">
-                                <property name="visible">True</property>
-                                <property name="label" translatable="yes">menuitem5</property>
-                                <property name="use_underline">True</property>
-                              </widget>
-                            </child>
-                          </widget>
-                        </child>
-                      </widget>
-                    </child>
-                    <child>
-                      <widget class="GtkMenuItem" id="ScanModeMenuItem">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Mode</property>
-                        <property name="use_underline">True</property>
-                        <child>
-                          <widget class="GtkMenu" id="ScanModeSubMenu">
-                            <property name="visible">True</property>
-                            <child>
-                              <widget class="GtkMenuItem" id="menuitem6">
-                                <property name="visible">True</property>
-                                <property name="label" translatable="yes">menuitem6</property>
-                                <property name="use_underline">True</property>
-                              </widget>
-                            </child>
-                          </widget>
-                        </child>
-                      </widget>
-                    </child>
-                    <child>
-                      <widget class="GtkMenuItem" id="ScanResolutionMenuItem">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Resolution</property>
-                        <property name="use_underline">True</property>
-                        <child>
-                          <widget class="GtkMenu" id="ScanResolutionSubMenu">
-                            <property name="visible">True</property>
-                            <child>
-                              <widget class="GtkMenuItem" id="menuitem7">
-                                <property name="visible">True</property>
-                                <property name="label" translatable="yes">menuitem7</property>
-                                <property name="use_underline">True</property>
-                              </widget>
-                            </child>
-                          </widget>
-                        </child>
-                      </widget>
-                    </child>
                     <child>
                       <widget class="GtkMenuItem" id="ScanMenuItem">
                         <property name="visible">True</property>
@@ -205,6 +148,15 @@
                       </widget>
                     </child>
                     <child>
+                      <widget class="GtkCheckMenuItem" id="ShowThumbnailsMenuItem">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Thumbnails</property>
+                        <property name="use_underline">True</property>
+                        <property name="active">True</property>
+                        <signal name="toggled" handler="on_ShowThumbnailsMenuItem_toggled"/>
+                      </widget>
+                    </child>
+                    <child>
                       <widget class="GtkSeparatorMenuItem" id="separatormenuitem5">
                         <property name="visible">True</property>
                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
@@ -294,6 +246,75 @@
                         <property name="use_underline">True</property>
                         <signal name="toggled" handler="on_AdjustColorsMenuItem_toggled"/>
                         <signal name="toggled" handler="on_AdjustColorsMenuItem_toggled"/>
+                      </widget>
+                    </child>
+                  </widget>
+                </child>
+              </widget>
+            </child>
+            <child>
+              <widget class="GtkMenuItem" id="OptionsMenu">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">_Options</property>
+                <property name="use_underline">True</property>
+                <child>
+                  <widget class="GtkMenu" id="menu7">
+                    <property name="visible">True</property>
+                    <child>
+                      <widget class="GtkMenuItem" id="ScannerMenuItem">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Scanner</property>
+                        <property name="use_underline">True</property>
+                        <child>
+                          <widget class="GtkMenu" id="ScannerSubMenu">
+                            <property name="visible">True</property>
+                            <child>
+                              <widget class="GtkMenuItem" id="menuitem5">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">menuitem5</property>
+                                <property name="use_underline">True</property>
+                              </widget>
+                            </child>
+                          </widget>
+                        </child>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="ScanModeMenuItem">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Mode</property>
+                        <property name="use_underline">True</property>
+                        <child>
+                          <widget class="GtkMenu" id="ScanModeSubMenu">
+                            <property name="visible">True</property>
+                            <child>
+                              <widget class="GtkMenuItem" id="menuitem6">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">menuitem6</property>
+                                <property name="use_underline">True</property>
+                              </widget>
+                            </child>
+                          </widget>
+                        </child>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="ScanResolutionMenuItem">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Resolution</property>
+                        <property name="use_underline">True</property>
+                        <child>
+                          <widget class="GtkMenu" id="ScanResolutionSubMenu">
+                            <property name="visible">True</property>
+                            <child>
+                              <widget class="GtkMenuItem" id="menuitem7">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">menuitem7</property>
+                                <property name="use_underline">True</property>
+                              </widget>
+                            </child>
+                          </widget>
+                        </child>
                       </widget>
                     </child>
                   </widget>
@@ -421,7 +442,7 @@
             <child>
               <widget class="GtkToolButton" id="SaveAsButton">
                 <property name="visible">True</property>
-                <property name="icon_name">filesaveas</property>
+                <property name="icon_name">document-save-as</property>
                 <signal name="clicked" handler="on_SaveAsButton_clicked"/>
               </widget>
               <packing>
@@ -561,41 +582,62 @@
           </packing>
         </child>
         <child>
-          <widget class="GtkTable" id="PreviewTable">
+          <widget class="GtkHBox" id="hbox1">
             <property name="visible">True</property>
-            <property name="n_rows">2</property>
-            <property name="n_columns">2</property>
             <child>
-              <placeholder/>
-            </child>
-            <child>
-              <widget class="GtkLayout" id="PreviewLayout">
+              <widget class="GtkScrolledWindow" id="ThumbnailsScrolledWindow">
                 <property name="visible">True</property>
-                <signal name="size_allocate" handler="on_PreviewLayout_size_allocate"/>
-              </widget>
-            </child>
-            <child>
-              <widget class="GtkHScrollbar" id="PreviewHScroll">
-                <property name="no_show_all">True</property>
-                <property name="adjustment">10 0 100 1 10 10</property>
+                <property name="can_focus">True</property>
+                <property name="hscrollbar_policy">GTK_POLICY_NEVER</property>
+                <child>
+                  <placeholder/>
+                </child>
               </widget>
               <packing>
-                <property name="top_attach">1</property>
-                <property name="bottom_attach">2</property>
-                <property name="x_options">GTK_SHRINK | GTK_FILL</property>
-                <property name="y_options">GTK_SHRINK | GTK_FILL</property>
+                <property name="expand">False</property>
               </packing>
             </child>
             <child>
-              <widget class="GtkVScrollbar" id="PreviewVScroll">
-                <property name="no_show_all">True</property>
-                <property name="adjustment">0 0 100 1 10 10</property>
+              <widget class="GtkTable" id="PreviewTable">
+                <property name="visible">True</property>
+                <property name="n_rows">2</property>
+                <property name="n_columns">2</property>
+                <child>
+                  <placeholder/>
+                </child>
+                <child>
+                  <widget class="GtkVScrollbar" id="PreviewVScroll">
+                    <property name="no_show_all">True</property>
+                    <property name="adjustment">0 0 100 1 10 10</property>
+                  </widget>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="right_attach">2</property>
+                    <property name="x_options">GTK_SHRINK | GTK_FILL</property>
+                    <property name="y_options">GTK_SHRINK | GTK_FILL</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkHScrollbar" id="PreviewHScroll">
+                    <property name="no_show_all">True</property>
+                    <property name="adjustment">10 0 100 1 10 10</property>
+                  </widget>
+                  <packing>
+                    <property name="top_attach">1</property>
+                    <property name="bottom_attach">2</property>
+                    <property name="x_options">GTK_SHRINK | GTK_FILL</property>
+                    <property name="y_options">GTK_SHRINK | GTK_FILL</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkLayout" id="PreviewLayout">
+                    <property name="visible">True</property>
+                    <signal name="size_allocate" handler="on_PreviewLayout_size_allocate"/>
+                  </widget>
+                </child>
               </widget>
               <packing>
-                <property name="left_attach">1</property>
-                <property name="right_attach">2</property>
-                <property name="x_options">GTK_SHRINK | GTK_FILL</property>
-                <property name="y_options">GTK_SHRINK | GTK_FILL</property>
+                <property name="position">1</property>
               </packing>
             </child>
           </widget>
