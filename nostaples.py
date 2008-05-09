@@ -45,6 +45,9 @@ class NoStaples:
 		self.previewStatusContextId = 1
 		self.scanStatusContextId = 2
 		
+		self.thumbnailSelection = None
+		self.insertIsNotDrag = False
+		
 		self.scanningThread = ScanningThread(self)
 		
 		self.gladefile = 'nostaples.glade'
@@ -99,9 +102,10 @@ class NoStaples:
 		self.thumbnailsTreeView.get_selection().set_mode(gtk.SELECTION_SINGLE)
 		self.thumbnailsTreeView.set_headers_visible(False)
 		self.thumbnailsTreeView.set_property('can-focus', False)
-		#self.thumbnailsTreeView.set_reorderable(True)
-		# TODO - see bookmarked note about the correct way to handle these events
-		#self.thumbnailsListStore.connect('rows-reordered', self.thumbnail_moved)
+		
+		self.thumbnailsTreeView.set_reorderable(True)
+		self.thumbnailsListStore.connect('row-inserted', self.thumbnail_inserted)
+		
 		self.thumbnailsTreeView.get_selection().connect('changed', self.thumbnail_selected)
 		self.thumbnailsScrolledWindow.add(self.thumbnailsTreeView)
 		self.thumbnailsScrolledWindow.show_all()
@@ -237,10 +241,6 @@ class NoStaples:
 			self.thumbnailsScrolledWindow.show()
 		else:
 			self.thumbnailsScrolledWindow.hide()
-			
-	#~ def thumbnail_moved(self, treemodel, path, iter, newOrder):
-		#~ print path, iter, newOrder
-		#~ return
 		
 	def zoom_in(self, widget=None):
 		'''Zooms the preview image in by 50%.'''
@@ -735,11 +735,28 @@ class NoStaples:
 		
 		for page in self.scannedPages:
 			os.remove(page.filename)
+			
+			# TODO - remove thumbnails from list
 		
 		self.scannedPages = []
 		self.nextScanFileIndex = 1
 		self.previewIndex = 0
 		self.update_status()
+		
+	def thumbnail_inserted(self, treemodel, path, iter):
+		if self.insertIsNotDrag:
+			self.insertIsNotDrag = False
+			return
+			
+		destPath = path[0]
+		
+		copy = self.scannedPages[self.thumbnailSelection]
+		del  self.scannedPages[self.thumbnailSelection]
+		
+		if destPath > self.thumbnailSelection:
+			self.scannedPages.insert(destPath - 1, copy)
+		else:
+			self.scannedPages.insert(destPath, copy)
 		
 	def thumbnail_selected(self, selection):
 		model, iter = selection.get_selected()
@@ -748,6 +765,7 @@ class NoStaples:
 			return
 		
 		index = model.get_path(iter)[0]
+		self.thumbnailSelection = index
 		self.jump_to_page(index)
 		
 	# Functions not tied to a signal
@@ -882,7 +900,8 @@ class ScanningThread(threading.Thread):
 			
 		self.app.scannedPages.append(newPage)
 		self.app.nextScanFileIndex += 1
-			
+		
+		self.app.insertIsNotDrag = True
 		self.app.thumbnailsListStore.append([newPage.get_thumbnail()])
 		self.app.thumbnailsTreeView.get_selection().select_path(len(self.app.scannedPages) - 1)
 		
