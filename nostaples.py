@@ -95,7 +95,7 @@ class NoStaples:
 		self.thumbnailsColumn = gtk.TreeViewColumn(None)
 		self.thumbnailsCell = gtk.CellRendererPixbuf()
 		self.thumbnailsColumn.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
-		self.thumbnailsColumn.set_fixed_width(128)
+		self.thumbnailsColumn.set_fixed_width(THUMBNAIL_SIZE)
 		self.thumbnailsTreeView.append_column(self.thumbnailsColumn)
 		self.thumbnailsColumn.pack_start(self.thumbnailsCell, True)
 		self.thumbnailsColumn.set_attributes(self.thumbnailsCell, pixbuf=0)
@@ -130,6 +130,8 @@ class NoStaples:
 					'on_ScanMenuItem_activate' : self.scan_page,
 					'on_SaveAsMenuItem_activate' : self.save_as,
 					'on_QuitMenuItem_activate' : self.quit,
+					'on_DeleteMenuItem_activate' : self.delete_selected_page,
+					'on_InsertScanMenuItem_activate' : self.insert_scan,
 					'on_PreferencesMenuItem_activate' : self.show_preferences,
 					'on_ShowToolbarMenuItem_toggled' : self.toggle_toolbar,
 					'on_ShowStatusBarMenuItem_toggled' : self.toggle_statusbar,
@@ -215,6 +217,26 @@ class NoStaples:
 		
 		gtk.main_quit()
 		
+	def delete_selected_page(self, menuitem=None):
+		'''Deletes the page currently selected in the thumbnail pager.'''
+		if len(self.scannedPages) < 1 or self.thumbnailSelection is None:
+			return
+		
+		del self.scannedPages[self.thumbnailSelection]
+		
+		deleteIter = self.thumbnailsListStore.get_iter(self.thumbnailSelection)
+		self.thumbnailsListStore.remove(deleteIter)
+		
+		self.previewImageDisplay.clear()
+		
+		if self.thumbnailSelection <= len(self.scannedPages) - 1:
+			self.thumbnailsTreeView.get_selection().select_path(self.thumbnailSelection)
+		elif len(self.scannedPages) > 0:
+			self.thumbnailsTreeView.get_selection().select_path(self.thumbnailSelection - 1)
+		
+	def insert_scan(self, menuitem=None):
+		pass
+		
 	def show_preferences(self, menuitem=None):
 		''''Show the preferences dialog.'''
 		if self.scanningThread.isAlive():
@@ -225,18 +247,21 @@ class NoStaples:
 		self.preferencesDialog.hide()
 		
 	def toggle_statusbar(self, menuitem):
+		'''Toggles the visibility of the statusbar.'''
 		if menuitem.get_active():
 			self.statusBar.show()
 		else:
 			self.statusBar.hide()
 		
 	def toggle_toolbar(self, menuitem):
+		'''Toggles the visibility of the toolbar.'''
 		if menuitem.get_active():
 			self.mainToolbar.show()
 		else:
 			self.mainToolbar.hide()
 		
 	def toggle_thumbnails(self, menuitem):
+		'''Toggles the visibility of the thumbnail pager.'''
 		if menuitem.get_active():
 			self.thumbnailsScrolledWindow.show()
 		else:
@@ -516,11 +541,13 @@ class NoStaples:
 			self.update_thumbnail(self.previewIndex)
 			
 	def adjust_colors_close(self, window, event):
+		'''Closes the adjust colors dialog.'''
 		self.adjustColorsWindow.hide()
 		self.adjustColorsMenuItem.set_active(False)
 		return True
 			
 	def adjust_colors_toggle(self, menuitem):
+		'''Toggles the visibility of the adjust colors dialog.'''
 		if self.adjustColorsMenuItem.get_active():
 			self.adjustColorsWindow.show()
 		else:
@@ -736,7 +763,7 @@ class NoStaples:
 		for page in self.scannedPages:
 			os.remove(page.filename)
 			
-			# TODO - remove thumbnails from list
+		self.thumbnailsListStore.clear()
 		
 		self.scannedPages = []
 		self.nextScanFileIndex = 1
@@ -744,33 +771,36 @@ class NoStaples:
 		self.update_status()
 		
 	def thumbnail_inserted(self, treemodel, path, iter):
+		'''Catches when a thumbnail is inserted in the list and, if it is the result of a drag-and-drop operation, reorders the list of scanned pages to match.'''
 		if self.insertIsNotDrag:
 			self.insertIsNotDrag = False
 			return
 			
 		destPath = path[0]
 		
-		copy = self.scannedPages[self.thumbnailSelection]
+		temp = self.scannedPages[self.thumbnailSelection]
 		del  self.scannedPages[self.thumbnailSelection]
 		
 		if destPath > self.thumbnailSelection:
-			self.scannedPages.insert(destPath - 1, copy)
+			self.scannedPages.insert(destPath - 1, temp)
 		else:
-			self.scannedPages.insert(destPath, copy)
+			self.scannedPages.insert(destPath, temp)
 		
 	def thumbnail_selected(self, selection):
-		model, iter = selection.get_selected()
+		'''Catches when a thumbnail is selected, stores its index, and displays the proper image.'''
+		selectionIter = selection.get_selected()[1]
 		
-		if not iter:
+		if not selectionIter:
 			return
 		
-		index = model.get_path(iter)[0]
-		self.thumbnailSelection = index
-		self.jump_to_page(index)
+		scanIndex = self.thumbnailsListStore.get_path(selectionIter)[0]
+		self.thumbnailSelection = scanIndex
+		self.jump_to_page(scanIndex)
 		
 	# Functions not tied to a signal
 	
 	def update_status(self):
+		'''Updates the status bar with the current page number and zoom percentage.'''
 		self.statusBar.pop(self.previewStatusContextId)
 		
 		if len(self.scannedPages) > 0:
@@ -819,7 +849,8 @@ class NoStaples:
 		self.previewImageDisplay.set_from_pixbuf(pixbuf)
 		
 	def update_thumbnail(self, index):
-		iter = self.thumbnailsTreeView.get_model().get_iter(index)
+		'''Updates a thumbnail image to match changes in the preview image.'''
+		iter = self.thumbnailsListStore.get_iter(index)
 		thumbnail = self.scannedPages[index].get_thumbnail()
 		self.thumbnailsListStore.set_value(iter, 0, thumbnail)
 		
@@ -910,6 +941,7 @@ class ScanningThread(threading.Thread):
 		gtk.gdk.threads_leave()
 		
 	def stop(self):
+		'''Stops a scan that is currently in progress.'''
 		self.stopThreadEvent.set()
 		self.app.statusBar.pop(self.app.scanStatusContextId)
 		
@@ -917,6 +949,7 @@ class NoStaplesPdfFileWriter(PdfFileWriter):
 	'''A subclass of a PyPdf PdfFileWriter that adds support for custom meta-data.'''
 	
 	def __init__(self, title, author, keywords):
+		'''Overrides the built in PdfFileWriter constructor to add support for custom metadata.'''
 		self._header = '%PDF-1.3'
 		self._objects = []
 		
@@ -942,6 +975,7 @@ class Page:
 	'''A simple utility class for holding per-page page properties.'''
 	
 	def __init__(self, filename):
+		'''Constructs a Page object and pulls a local copy of the image from the scan file.'''
 		assert os.path.exists(filename), 'Image file "%s" could not be found.' % filename
 		
 		self.filename = filename
@@ -973,6 +1007,7 @@ class Page:
 		return image
 		
 	def get_pixbuf(self):
+		'''Generates a GTK Pixbuf that has had rotation and color adjustments applied to it (i.e. a working copy).'''
 		if self.brightness != 1.0 or self.contrast != 1.0 or self.sharpness != 1.0:
 			image = self.convert_pixbuf_to_image(self.rawPixbuf)
 			
@@ -997,6 +1032,7 @@ class Page:
 		return pixbuf
 		
 	def get_thumbnail(self):
+		'''Generates a GTK Pixbuf that hashad rotation and color adjustments applied to it and has been scaled down to fit the thumbnail pager.'''
 		if self.brightness != 1.0 or self.contrast != 1.0 or self.sharpness != 1.0:
 			image = self.convert_pixbuf_to_image(self.rawPixbuf)
 			
