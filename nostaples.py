@@ -4,6 +4,7 @@
 
 # Import statements
 
+from types import IntType, StringType, FloatType, BooleanType
 import os
 import re
 from StringIO import StringIO
@@ -15,11 +16,12 @@ pygtk.require('2.0')
 import gtk
 import gtk.glade
 import gobject
+import gconf
 import Image, ImageEnhance
 from pyPdf.pdf import *
 
 # Globals
-THUMBNAIL_SIZE = 128
+DEFAULT_THUMBNAIL_SIZE = 128
 
 gtk.gdk.threads_init()
 
@@ -44,9 +46,15 @@ class NoStaples:
 		self.baseStatusContextId = 0
 		self.previewStatusContextId = 1
 		self.scanStatusContextId = 2
-		
 		self.thumbnailSelection = None
 		self.insertIsNotDrag = False
+		
+		self.gconfClient = gconf.client_get_default()
+		self.thumbnailSize = self.get_gconf_setting('/apps/nostaples/thumbnail_size', DEFAULT_THUMBNAIL_SIZE)
+		
+		self.activeScanner = self.get_gconf_setting('/apps/nostaples/active_scanner', '')
+		self.scanMode = self.get_gconf_setting('/apps/nostaples/scan_mode', 'Color')
+		self.scanResolution = self.get_gconf_setting('/apps/nostaples/scan_resolution', 75)
 		
 		self.scanningThread = ScanningThread(self)
 		
@@ -75,7 +83,7 @@ class NoStaples:
 		
 		self.update_scanner_list()
 		
-		self.mainToolbar = self.gladeTree.get_widget('MainToolbar')
+		self.toolbar = self.gladeTree.get_widget('MainToolbar')
 		
 		self.rotateAllPagesMenuItem = self.gladeTree.get_widget('RotateAllPagesMenuItem')
 		self.adjustColorsMenuItem = self.gladeTree.get_widget('AdjustColorsMenuItem')
@@ -95,7 +103,7 @@ class NoStaples:
 		self.thumbnailsColumn = gtk.TreeViewColumn(None)
 		self.thumbnailsCell = gtk.CellRendererPixbuf()
 		self.thumbnailsColumn.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
-		self.thumbnailsColumn.set_fixed_width(THUMBNAIL_SIZE)
+		self.thumbnailsColumn.set_fixed_width(self.thumbnailSize)
 		self.thumbnailsTreeView.append_column(self.thumbnailsColumn)
 		self.thumbnailsColumn.pack_start(self.thumbnailsCell, True)
 		self.thumbnailsColumn.set_attributes(self.thumbnailsCell, pixbuf=0)
@@ -122,8 +130,20 @@ class NoStaples:
 		self.previewLayout.modify_bg(gtk.STATE_NORMAL, gtk.gdk.colormap_get_system().alloc_color(gtk.gdk.Color(0, 0, 0), False, True))
 		self.previewImageDisplay.show()
 
-		self.statusBar = self.gladeTree.get_widget('ScanStatusBar')
-		self.statusBar.push(self.baseStatusContextId, 'Ready')
+		self.statusbar = self.gladeTree.get_widget('ScanStatusBar')
+		self.statusbar.push(self.baseStatusContextId, 'Ready')
+		
+		if self.get_gconf_setting('/apps/nostaples/show_toolbar', True) == False:
+			self.gladeTree.get_widget('ShowToolbarMenuItem').set_active(False)
+			self.toolbar.hide()
+		
+		if self.get_gconf_setting('/apps/nostaples/show_thumbnails', True) == False:
+			self.gladeTree.get_widget('ShowThumbnailsMenuItem').set_active(False)
+			self.thumbnailsScrolledWindow.hide()
+		
+		if self.get_gconf_setting('/apps/nostaples/show_statusbar', True) == False:
+			self.gladeTree.get_widget('ShowStatusbarMenuItem').set_active(False)
+			self.statusbar.hide()
 
 		signals = {'on_ScanWindow_destroy' : self.quit,
 					'on_AdjustColorsWindow_delete_event' : self.adjust_colors_close,
@@ -197,6 +217,40 @@ class NoStaples:
 			return None
 			
 		return liststore[active][0]
+		
+	def get_gconf_setting(self, path, default):
+		'''Gets a key from gconf or, if it is not found, sets a specified default.'''
+		value = self.gconfClient.get(path)
+		
+		if not value:
+			self.set_gconf_setting(path, default)
+			return default
+		else:
+			if value.type == gconf.VALUE_INT:
+				return value.get_int()
+			elif value.type == gconf.VALUE_STRING:
+				return value.get_string()
+			elif value.type == gconf.VALUE_FLOAT:
+				return value.get_float()
+			elif value.type == gconf.VALUE_BOOL:
+				return value.get_bool()
+			else:
+				raise TypeError, 'Variable type not supported by gconf.'		
+				return None				
+				
+	def set_gconf_setting(self, path, value):
+		'''Sets a key in gconf.'''
+		if type(value) is IntType:
+			self.gconfClient.set_int(path, value)
+		elif type(value) is StringType:
+			self.gconfClient.set_string(path, value)
+		elif type(value) is FloatType:
+			self.gconfClient.set_float(path, value)
+		elif type(value) is BooleanType:
+			self.gconfClient.set_bool(path, value)
+		else:
+			raise TypeError, 'Variable type not supported by gconf.'
+			return None
 
 	def error_box(self, parent, text):
 		'''Utility function to display simple error dialog.'''
@@ -249,23 +303,29 @@ class NoStaples:
 	def toggle_statusbar(self, menuitem):
 		'''Toggles the visibility of the statusbar.'''
 		if menuitem.get_active():
-			self.statusBar.show()
+			self.statusbar.show()
+			self.set_gconf_setting('/apps/nostaples/show_statusbar', True)
 		else:
-			self.statusBar.hide()
+			self.statusbar.hide()
+			self.set_gconf_setting('/apps/nostaples/show_statusbar', False)
 		
 	def toggle_toolbar(self, menuitem):
 		'''Toggles the visibility of the toolbar.'''
 		if menuitem.get_active():
-			self.mainToolbar.show()
+			self.toolbar.show()
+			self.set_gconf_setting('/apps/nostaples/show_toolbar', True)
 		else:
-			self.mainToolbar.hide()
+			self.toolbar.hide()
+			self.set_gconf_setting('/apps/nostaples/show_toolbar', False)
 		
 	def toggle_thumbnails(self, menuitem):
 		'''Toggles the visibility of the thumbnail pager.'''
 		if menuitem.get_active():
 			self.thumbnailsScrolledWindow.show()
+			self.set_gconf_setting('/apps/nostaples/show_thumbnails', True)
 		else:
 			self.thumbnailsScrolledWindow.hide()
+			self.set_gconf_setting('/apps/nostaples/show_thumbnails', False)
 		
 	def zoom_in(self, widget=None):
 		'''Zooms the preview image in by 50%.'''
@@ -395,10 +455,6 @@ class NoStaples:
 		# Get the selected scanner
 		toggledScanner = widget.get_children()[0].get_text()
 		
-		# Do not update if this scanner was already selected (e.g. the list was refreshed at it was reselected as default)
-		if toggledScanner == self.activeScanner:
-			return
-		
 		self.activeScanner = toggledScanner
 
 		updateCmd = ' '.join(['scanimage --help -d',  self.scannerDict[self.activeScanner]])
@@ -454,7 +510,7 @@ class NoStaples:
 				menuItem.set_active(True)
 				selectedItem = menuItem
 			
-			if resolutionList[i] == self.scanMode:
+			if resolutionList[i] == self.scanResolution:
 				menuItem.set_active(True)
 				selectedItem = menuItem
 			
@@ -463,13 +519,18 @@ class NoStaples:
 			
 		self.scanResolutionSubMenu.show_all()
 		
+		# NB: Only do this if everything else has succeeded, otherwise a crash could repeat everytime the app is started
+		self.set_gconf_setting('/apps/nostaples/active_scanner', self.activeScanner)
+		
 		# Emulate the default scan resolution being toggled
 		self.update_scan_resolution(selectedItem)
+		
 	
 	def update_scan_mode(self, widget):
 		'''Updates the internal scan mode state when a scan mode menu item is toggled.'''
 		try:
 			self.scanMode = widget.get_children()[0].get_text()
+			self.set_gconf_setting('/apps/nostaples/scan_mode', self.scanMode)
 		except:
 			print 'Unable to get label text for currently selected scan mode menu item.'
 			raise
@@ -478,6 +539,7 @@ class NoStaples:
 		'''Updates the internal scan resolution state when a scan resolution menu item is toggled.'''
 		try:
 			self.scanResolution = widget.get_children()[0].get_text()
+			self.set_gconf_setting('/apps/nostaples/scan_resolution', self.scanResolution)
 		except:
 			print 'Unable to get label text for currently selected scan resolution menu item.'
 			raise
@@ -801,10 +863,10 @@ class NoStaples:
 	
 	def update_status(self):
 		'''Updates the status bar with the current page number and zoom percentage.'''
-		self.statusBar.pop(self.previewStatusContextId)
+		self.statusbar.pop(self.previewStatusContextId)
 		
 		if len(self.scannedPages) > 0:
-			self.statusBar.push(self.previewStatusContextId,'Page %i of %i\t%i%%' % (self.previewIndex + 1, len(self.scannedPages), int(self.previewZoom * 100)))
+			self.statusbar.push(self.previewStatusContextId,'Page %i of %i\t%i%%' % (self.previewIndex + 1, len(self.scannedPages), int(self.previewZoom * 100)))
 		
 	def render_preview(self):
 		'''Render the current page to the preview display.'''
@@ -851,7 +913,7 @@ class NoStaples:
 	def update_thumbnail(self, index):
 		'''Updates a thumbnail image to match changes in the preview image.'''
 		iter = self.thumbnailsListStore.get_iter(index)
-		thumbnail = self.scannedPages[index].get_thumbnail()
+		thumbnail = self.scannedPages[index].get_thumbnail(self.thumbnailSize)
 		self.thumbnailsListStore.set_value(iter, 0, thumbnail)
 		
 	def jump_to_page(self, index):
@@ -885,7 +947,7 @@ class ScanningThread(threading.Thread):
 		'''Scans a page with "scanimage" and appends it to the end of the current document.'''
 		gtk.gdk.threads_enter()
 		
-		self.app.statusBar.push(self.app.scanStatusContextId,'Scanning...')
+		self.app.statusbar.push(self.app.scanStatusContextId,'Scanning...')
 		self.app.previewImageDisplay.clear()
 		
 		if not self.app.colorAllPagesCheck.get_active():
@@ -913,7 +975,7 @@ class ScanningThread(threading.Thread):
 				os.kill(scanPipe.pid, signal.SIGTERM)
 				print 'Scan terminated'
 				self.app.render_preview()
-				self.app.statusBar.pop(self.app.scanStatusContextId)
+				self.app.statusbar.pop(self.app.scanStatusContextId)
 				return
 				
 		print 'Scan complete'
@@ -933,17 +995,17 @@ class ScanningThread(threading.Thread):
 		self.app.nextScanFileIndex += 1
 		
 		self.app.insertIsNotDrag = True
-		self.app.thumbnailsListStore.append([newPage.get_thumbnail()])
+		self.app.thumbnailsListStore.append([newPage.get_thumbnail(self.app.thumbnailSize)])
 		self.app.thumbnailsTreeView.get_selection().select_path(len(self.app.scannedPages) - 1)
 		
-		self.app.statusBar.pop(self.app.scanStatusContextId)	
+		self.app.statusbar.pop(self.app.scanStatusContextId)	
 		
 		gtk.gdk.threads_leave()
 		
 	def stop(self):
 		'''Stops a scan that is currently in progress.'''
 		self.stopThreadEvent.set()
-		self.app.statusBar.pop(self.app.scanStatusContextId)
+		self.app.statusbar.pop(self.app.scanStatusContextId)
 		
 class NoStaplesPdfFileWriter(PdfFileWriter):
 	'''A subclass of a PyPdf PdfFileWriter that adds support for custom meta-data.'''
@@ -1031,7 +1093,7 @@ class Page:
 			
 		return pixbuf
 		
-	def get_thumbnail(self):
+	def get_thumbnail(self, size):
 		'''Generates a GTK Pixbuf that hashad rotation and color adjustments applied to it and has been scaled down to fit the thumbnail pager.'''
 		if self.brightness != 1.0 or self.contrast != 1.0 or self.sharpness != 1.0:
 			image = self.convert_pixbuf_to_image(self.rawPixbuf)
@@ -1057,8 +1119,8 @@ class Page:
 		width = pixbuf.get_width()
 		height = pixbuf.get_height()
 		
-		widthRatio = float(width) / THUMBNAIL_SIZE
-		heightRatio = float(height) / THUMBNAIL_SIZE
+		widthRatio = float(width) / size
+		heightRatio = float(height) / size
 		
 		if widthRatio < heightRatio:
 			zoom =  1 / float(heightRatio)
