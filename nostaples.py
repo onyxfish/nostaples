@@ -20,6 +20,8 @@ import gconf
 import Image, ImageEnhance
 from pyPdf.pdf import *
 
+from page import Page
+
 # Globals
 DEFAULT_THUMBNAIL_SIZE = 128
 
@@ -48,6 +50,7 @@ class NoStaples:
 		self.scanStatusContextId = 2
 		self.thumbnailSelection = None
 		self.insertIsNotDrag = False
+		self.scanningThread = ScanningThread(self, 0)
 		
 		self.gconfClient = gconf.client_get_default()
 		self.thumbnailSize = self.get_gconf_setting('/apps/nostaples/thumbnail_size', DEFAULT_THUMBNAIL_SIZE)
@@ -55,8 +58,6 @@ class NoStaples:
 		self.activeScanner = self.get_gconf_setting('/apps/nostaples/active_scanner', '')
 		self.scanMode = self.get_gconf_setting('/apps/nostaples/scan_mode', 'Color')
 		self.scanResolution = self.get_gconf_setting('/apps/nostaples/scan_resolution', 75)
-		
-		self.scanningThread = ScanningThread(self)
 		
 		self.gladefile = 'nostaples.glade'
 		self.gladeTree = gtk.glade.XML(self.gladefile)
@@ -289,7 +290,13 @@ class NoStaples:
 			self.thumbnailsTreeView.get_selection().select_path(self.thumbnailSelection - 1)
 		
 	def insert_scan(self, menuitem=None):
-		pass
+		if self.scanningThread.isAlive():
+			self.error_box(self.scanWindow, 'Scanning is in progress...')
+			return
+			
+		# Must always create a new thread, because they can only be started once
+		self.scanningThread = ScanningThread(self, self.thumbnailSelection)
+		self.scanningThread.start()
 		
 	def show_preferences(self, menuitem=None):
 		''''Show the preferences dialog.'''
@@ -559,7 +566,7 @@ class NoStaples:
 		else:
 			self.scannedPages[self.previewIndex].rotation += 90
 			
-		self.previewPixbuf = self.scannedPages[self.previewIndex].get_pixbuf()
+		self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
 		
 		if self.previewIsBestFit:
 			self.zoom_best_fit()
@@ -588,7 +595,7 @@ class NoStaples:
 		else:
 			self.scannedPages[self.previewIndex].rotation -= 90
 			
-		self.previewPixbuf = self.scannedPages[self.previewIndex].get_pixbuf()
+		self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
 		
 		if self.previewIsBestFit:
 			self.zoom_best_fit()
@@ -628,7 +635,7 @@ class NoStaples:
 				self.scannedPages[self.previewIndex].brightness = self.brightnessScale.get_value()
 		
 		if not self.scanningThread.isAlive():
-			self.previewPixbuf = self.scannedPages[self.previewIndex].get_pixbuf()
+			self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
 			self.render_preview()
 			self.update_thumbnail(self.previewIndex)
 		
@@ -645,7 +652,7 @@ class NoStaples:
 				self.scannedPages[self.previewIndex].contrast = self.contrastScale.get_value()
 		
 		if not self.scanningThread.isAlive():
-			self.previewPixbuf = self.scannedPages[self.previewIndex].get_pixbuf()
+			self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
 			self.render_preview()
 			self.update_thumbnail(self.previewIndex)
 		
@@ -662,7 +669,7 @@ class NoStaples:
 				self.scannedPages[self.previewIndex].sharpness = self.sharpnessScale.get_value()
 		
 		if not self.scanningThread.isAlive():
-			self.previewPixbuf = self.scannedPages[self.previewIndex].get_pixbuf()
+			self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
 			self.render_preview()
 			self.update_thumbnail(self.previewIndex)
 			
@@ -751,7 +758,7 @@ class NoStaples:
 			return
 			
 		# Must always create a new thread, because they can only be started once
-		self.scanningThread = ScanningThread(self)
+		self.scanningThread = ScanningThread(self, len(self.scannedPages))
 		self.scanningThread.start()
 	
 	def save_as(self, widget=None):
@@ -913,7 +920,7 @@ class NoStaples:
 	def update_thumbnail(self, index):
 		'''Updates a thumbnail image to match changes in the preview image.'''
 		iter = self.thumbnailsListStore.get_iter(index)
-		thumbnail = self.scannedPages[index].get_thumbnail(self.thumbnailSize)
+		thumbnail = self.scannedPages[index].get_thumbnail_pixbuf(self.thumbnailSize)
 		self.thumbnailsListStore.set_value(iter, 0, thumbnail)
 		
 	def jump_to_page(self, index):
@@ -926,19 +933,37 @@ class NoStaples:
 		self.contrastScale.set_value(self.scannedPages[self.previewIndex].contrast)
 		self.sharpnessScale.set_value(self.scannedPages[self.previewIndex].sharpness)
 		
-		self.previewPixbuf = self.scannedPages[self.previewIndex].get_pixbuf()
+		self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
 		
 		if self.previewIsBestFit:
 			self.zoom_best_fit()
 		else:
 			self.render_preview()
 			self.update_status()
+			
+	def add_page(self, index, page):
+		'''Appends or inserts a page into the list of scanned pages.'''
+		self.insertIsNotDrag = True
+		
+		if not index:
+			index = 0
+		
+		if index > len(self.scannedPages) - 1:
+			self.scannedPages.append(page)
+			self.thumbnailsListStore.append([page.get_thumbnail_pixbuf(self.thumbnailSize)])
+			self.thumbnailsTreeView.get_selection().select_path(len(self.scannedPages) - 1)
+		else:
+			self.scannedPages.insert(index, page)
+			self.thumbnailsListStore.insert(index, [page.get_thumbnail_pixbuf(self.thumbnailSize)])
+			self.thumbnailsTreeView.get_selection().select_path(index)
 		
 class ScanningThread(threading.Thread):
 	'''A Thread object for scanning documents without hanging the GUI.'''
 	
-	def __init__(self, app):
+	def __init__(self, app, index):
+		'''Initializes the scanning thread with a reference to the controlling application and the index to scan the page into.'''
 		self.app = app
+		self.index = index
 		self.stopThreadEvent = threading.Event()
 		
 		threading.Thread.__init__(self)
@@ -954,6 +979,7 @@ class ScanningThread(threading.Thread):
 			self.app.brightnessScale.set_value(1.0)
 			self.app.contrastScale.set_value(1.0)
 			self.app.sharpnessScale.set_value(1.0)
+			
 		gtk.gdk.threads_leave()
 		
 		assert self.app.scanMode != None, 'Attempting to scan with no scan mode selected.'
@@ -990,13 +1016,10 @@ class ScanningThread(threading.Thread):
 		newPage.brightness = self.app.brightnessScale.get_value()
 		newPage.contrast = self.app.contrastScale.get_value()
 		newPage.sharpness = self.app.sharpnessScale.get_value()
-			
-		self.app.scannedPages.append(newPage)
-		self.app.nextScanFileIndex += 1
 		
-		self.app.insertIsNotDrag = True
-		self.app.thumbnailsListStore.append([newPage.get_thumbnail(self.app.thumbnailSize)])
-		self.app.thumbnailsTreeView.get_selection().select_path(len(self.app.scannedPages) - 1)
+		self.app.add_page(self.index, newPage)
+		
+		self.app.nextScanFileIndex += 1
 		
 		self.app.statusbar.pop(self.app.scanStatusContextId)	
 		
@@ -1032,107 +1055,6 @@ class NoStaplesPdfFileWriter(PdfFileWriter):
 		root.update({NameObject('/Type'): NameObject('/Catalog'),
 					NameObject('/Pages'): self._pages})
 		self._root = self._addObject(root)
-
-class Page:
-	'''A simple utility class for holding per-page page properties.'''
-	
-	def __init__(self, filename):
-		'''Constructs a Page object and pulls a local copy of the image from the scan file.'''
-		assert os.path.exists(filename), 'Image file "%s" could not be found.' % filename
-		
-		self.filename = filename
-		self.rotation = 0
-		self.brightness = 1.0
-		self.contrast = 1.0
-		self.sharpness = 1.0
-		
-		self.rawPixbuf = gtk.gdk.pixbuf_new_from_file(self.filename)
-
-	def convert_image_to_pixbuf(self, image):
-		'''Utility function to quickly convert a PIL Image to a GTK Pixbuf.
-		Adapted from Comix.'''
-			
-		imageString = image.tostring()			
-		pixbuf = gtk.gdk.pixbuf_new_from_data(imageString, gtk.gdk.COLORSPACE_RGB, False, 8, image.size[0], image.size[1], 3 * image.size[0])
-		
-		return pixbuf
-
-	def convert_pixbuf_to_image(self, pixbuf):
-		'''Utility function to quickly convert a GTK Pixbuf to a PIL Image.
-		Adapted from Comix.'''
-
-		dimensions = pixbuf.get_width(), pixbuf.get_height()
-		stride = pixbuf.get_rowstride()
-		pixels = pixbuf.get_pixels()
-		image =  Image.frombuffer('RGB', dimensions, pixels, 'raw', 'RGB', stride, 1)
-		
-		return image
-		
-	def get_pixbuf(self):
-		'''Generates a GTK Pixbuf that has had rotation and color adjustments applied to it (i.e. a working copy).'''
-		if self.brightness != 1.0 or self.contrast != 1.0 or self.sharpness != 1.0:
-			image = self.convert_pixbuf_to_image(self.rawPixbuf)
-			
-			if self.brightness != 1.0:
-				image = ImageEnhance.Brightness(image).enhance(self.brightness)
-			if self.contrast != 1.0:
-				image = ImageEnhance.Contrast(image).enhance(self.contrast)
-			if self.sharpness != 1.0:
-				image = ImageEnhance.Sharpness(image).enhance(self.sharpness)
-				
-			pixbuf = self.convert_image_to_pixbuf(image)
-		else:
-			pixbuf = self.rawPixbuf
-		
-		if abs(self.rotation % 360) == 90:
-			pixbuf = pixbuf.rotate_simple(gtk.gdk.PIXBUF_ROTATE_COUNTERCLOCKWISE)
-		elif abs(self.rotation % 360) == 180:
-			pixbuf = pixbuf.rotate_simple(gtk.gdk.PIXBUF_ROTATE_UPSIDEDOWN)
-		elif abs(self.rotation % 360) == 270:
-			pixbuf = pixbuf.rotate_simple(gtk.gdk.PIXBUF_ROTATE_CLOCKWISE)
-			
-		return pixbuf
-		
-	def get_thumbnail(self, size):
-		'''Generates a GTK Pixbuf that hashad rotation and color adjustments applied to it and has been scaled down to fit the thumbnail pager.'''
-		if self.brightness != 1.0 or self.contrast != 1.0 or self.sharpness != 1.0:
-			image = self.convert_pixbuf_to_image(self.rawPixbuf)
-			
-			if self.brightness != 1.0:
-				image = ImageEnhance.Brightness(image).enhance(self.brightness)
-			if self.contrast != 1.0:
-				image = ImageEnhance.Contrast(image).enhance(self.contrast)
-			if self.sharpness != 1.0:
-				image = ImageEnhance.Sharpness(image).enhance(self.sharpness)
-				
-			pixbuf = self.convert_image_to_pixbuf(image)
-		else:
-			pixbuf = self.rawPixbuf
-		
-		if abs(self.rotation % 360) == 90:
-			pixbuf = pixbuf.rotate_simple(gtk.gdk.PIXBUF_ROTATE_COUNTERCLOCKWISE)
-		elif abs(self.rotation % 360) == 180:
-			pixbuf = pixbuf.rotate_simple(gtk.gdk.PIXBUF_ROTATE_UPSIDEDOWN)
-		elif abs(self.rotation % 360) == 270:
-			pixbuf = pixbuf.rotate_simple(gtk.gdk.PIXBUF_ROTATE_CLOCKWISE)
-			
-		width = pixbuf.get_width()
-		height = pixbuf.get_height()
-		
-		widthRatio = float(width) / size
-		heightRatio = float(height) / size
-		
-		if widthRatio < heightRatio:
-			zoom =  1 / float(heightRatio)
-		else:
-			zoom =  1 / float(widthRatio)
-			
-		targetWidth = int(pixbuf.get_width() * zoom)
-		targetHeight = int(pixbuf.get_height() * zoom)
-			
-		pixbuf = pixbuf.scale_simple(targetWidth, targetHeight, gtk.gdk.INTERP_BILINEAR)
-		
-		return pixbuf
 		
 # Main loop
 
