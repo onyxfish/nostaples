@@ -16,7 +16,7 @@ def get_available_scanners():
 	output = updatePipe.stdout.read()
 
 	scannerDict = {}
-	scannerList = re.findall('(.*)=(.*);', output)
+	scannerList = re.findall('(.*?)=(.*?)[;|$]', output)
 	
 	for v, k in scannerList:
 		scannerDict[k] = v
@@ -25,13 +25,23 @@ def get_available_scanners():
 	
 def get_scanner_options(scanner):
 	updateCmd = ' '.join(['scanimage --help -d',  scanner])
+	print updateCmd
 	updatePipe = Popen(updateCmd, shell=True, stderr=STDOUT, stdout=PIPE)
 	updatePipe.wait()
 	
 	output = updatePipe.stdout.read()		
 	
-	modeList = re.findall('--mode (.*) ', output)[0].split('|')
-	resolutionList = re.findall('--resolution (.*)dpi ', output)[0].split('|')
+	try:
+		modeList = re.findall('--mode (.*) ', output)[0].split('|')
+	except IndexError:
+		print 'Could not parse scan modes or no modes available for device "%s".' % scanner
+		modeList = None
+		
+	try:
+		resolutionList = re.findall('--resolution (.*)dpi ', output)[0].split('|')
+	except IndexError:
+		print 'Could not parse resolutions or no resolutions available for device "%s".' % scanner
+		resolutionList = None
 	
 	return (modeList, resolutionList)
 

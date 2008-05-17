@@ -405,23 +405,28 @@ class NoStaples:
 		for child in self.scanModeSubMenu.get_children():
 			self.scanModeSubMenu.remove(child)
 		
-		for i in range(len(modeList)):
-			if i == 0:
-				menuItem = gtk.RadioMenuItem(None, modeList[i])
-				firstItem = menuItem
-			else:
-				menuItem = gtk.RadioMenuItem(firstItem, modeList[i])
-				
-			if i == 0 and self.scanMode not in modeList:
-				menuItem.set_active(True)
-				selectedItem = menuItem
-			
-			if modeList[i] == self.scanMode:
-				menuItem.set_active(True)
-				selectedItem = menuItem
-			
-			menuItem.connect('toggled', self.update_scan_mode)
+		if not modeList:
+			menuItem = gtk.MenuItem("No Scan Modes")
+			menuItem.set_sensitive(False)
 			self.scanModeSubMenu.append(menuItem)
+		else:		
+			for i in range(len(modeList)):
+				if i == 0:
+					menuItem = gtk.RadioMenuItem(None, modeList[i])
+					firstItem = menuItem
+				else:
+					menuItem = gtk.RadioMenuItem(firstItem, modeList[i])
+					
+				if i == 0 and self.scanMode not in modeList:
+					menuItem.set_active(True)
+					selectedItem = menuItem
+				
+				if modeList[i] == self.scanMode:
+					menuItem.set_active(True)
+					selectedItem = menuItem
+				
+				menuItem.connect('toggled', self.update_scan_mode)
+				self.scanModeSubMenu.append(menuItem)
 			
 		self.scanModeSubMenu.show_all()
 		
@@ -431,23 +436,28 @@ class NoStaples:
 		for child in self.scanResolutionSubMenu.get_children():
 			self.scanResolutionSubMenu.remove(child)
 		
-		for i in range(len(resolutionList)):
-			if i == 0:
-				menuItem = gtk.RadioMenuItem(None, resolutionList[i])
-				firstItem = menuItem
-			else:
-				menuItem = gtk.RadioMenuItem(firstItem, resolutionList[i])
-				
-			if i == 0 and self.scanResolution not in resolutionList:
-				menuItem.set_active(True)
-				selectedItem = menuItem
-			
-			if resolutionList[i] == self.scanResolution:
-				menuItem.set_active(True)
-				selectedItem = menuItem
-			
-			menuItem.connect('toggled', self.update_scan_resolution)
+		if not resolutionList:
+			menuItem = gtk.MenuItem("No Resolutions")
 			self.scanResolutionSubMenu.append(menuItem)
+			menuItem.set_sensitive(False)
+		else:		
+			for i in range(len(resolutionList)):
+				if i == 0:
+					menuItem = gtk.RadioMenuItem(None, resolutionList[i])
+					firstItem = menuItem
+				else:
+					menuItem = gtk.RadioMenuItem(firstItem, resolutionList[i])
+					
+				if i == 0 and self.scanResolution not in resolutionList:
+					menuItem.set_active(True)
+					selectedItem = menuItem
+				
+				if resolutionList[i] == self.scanResolution:
+					menuItem.set_active(True)
+					selectedItem = menuItem
+				
+				menuItem.connect('toggled', self.update_scan_resolution)
+				self.scanResolutionSubMenu.append(menuItem)
 			
 		self.scanResolutionSubMenu.show_all()
 		
