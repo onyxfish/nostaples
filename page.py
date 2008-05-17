@@ -3,7 +3,7 @@ import Image, ImageEnhance
 import gtk
 
 class Page:
-	'''A simple utility class for holding per-scanned-page properties and abstracting away behind-the-scenes image manipulations.'''
+	'''A simple convience class for holding per-scanned-page properties and abstracting away image transformations.'''
 	
 	def __init__(self, filename):
 		'''Constructs a Page object and pulls a local copy of the image from the scan file.'''
