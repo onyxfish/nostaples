@@ -1,5 +1,20 @@
 #!/usr/env/python
 
+#~ This file is part of NoStaples.
+
+#~ NoStaples is free software: you can redistribute it and/or modify
+#~ it under the terms of the GNU General Public License as published by
+#~ the Free Software Foundation, either version 3 of the License, or
+#~ (at your option) any later version.
+
+#~ NoStaples is distributed in the hope that it will be useful,
+#~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+#~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#~ GNU General Public License for more details.
+
+#~ You should have received a copy of the GNU General Public License
+#~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
+
 import os
 import threading
 import signal
@@ -728,6 +743,7 @@ class NoStaples:
 		
 		filter = gtk.FileFilter()
 		filter.set_name('PDF Files')
+		filter.add_mime_type('application/pdf')
 		filter.add_pattern('*.pdf')
 		self.saveDialog.add_filter(filter)
 		
@@ -739,7 +755,7 @@ class NoStaples:
 		
 		if response != 1:
 			return
-			
+		
 		filename = self.saveDialog.get_filename()
 		
 		output = NoStaplesPdfFileWriter(title, author, keywords)
@@ -755,7 +771,7 @@ class NoStaples:
 			
 			sharpenedImage.save(pdfFilename)
 			
-			assert os.exists(pdfFIlename), 'Temporary PDF file for "%s" was not created in a timely fashion.' % page.filename
+			assert os.path.exists(pdfFilename), 'Temporary PDF file for "%s" was not created in a timely fashion.' % page.filename
 			
 			input = PdfFileReader(file(pdfFilename, 'rb'))
 			output.addPage(input.getPage(0))
@@ -766,7 +782,8 @@ class NoStaples:
 		
 		for page in self.scannedPages:
 			os.remove(page.filename)
-			
+		
+		self.previewImageDisplay.clear()
 		self.thumbnailsListStore.clear()
 		
 		self.scannedPages = []

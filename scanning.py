@@ -1,3 +1,20 @@
+#!/usr/env/python
+
+#~ This file is part of NoStaples.
+
+#~ NoStaples is free software: you can redistribute it and/or modify
+#~ it under the terms of the GNU General Public License as published by
+#~ the Free Software Foundation, either version 3 of the License, or
+#~ (at your option) any later version.
+
+#~ NoStaples is distributed in the hope that it will be useful,
+#~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+#~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#~ GNU General Public License for more details.
+
+#~ You should have received a copy of the GNU General Public License
+#~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
+
 import os
 from subprocess import Popen, PIPE, STDOUT
 import threading
@@ -10,6 +27,7 @@ SCAN_SUCCESS = 1
 
 def get_available_scanners():
 	updateCmd = 'scanimage -f "%d=%v %m;"'
+	print 'Updating available scanners with command: "%s"' % updateCmd
 	updatePipe = Popen(updateCmd, shell=True, stderr=STDOUT, stdout=PIPE)
 	updatePipe.wait()
 	
@@ -25,7 +43,7 @@ def get_available_scanners():
 	
 def get_scanner_options(scanner):
 	updateCmd = ' '.join(['scanimage --help -d',  scanner])
-	print updateCmd
+	print 'Updating scanner options with command: "%s"' % updateCmd
 	updatePipe = Popen(updateCmd, shell=True, stderr=STDOUT, stdout=PIPE)
 	updatePipe.wait()
 	
