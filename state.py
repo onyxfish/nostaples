@@ -18,14 +18,17 @@
 from types import IntType, StringType, FloatType, BooleanType
 import gconf
 
+GCONF_PATH = "/apps/nostaples/"
+
 gconfClient = gconf.client_get_default()
 
-def get_state(path, default):
+def get_state(setting, default):
 	'''Gets a key from gconf or, if it is not found, sets a specified default.'''
+	path = ''.join([GCONF_PATH, setting])
 	value = gconfClient.get(path)
 	
 	if not value:
-		set_gconf_setting(path, default)
+		set_state(setting, default)
 		return default
 	else:
 		if value.type == gconf.VALUE_INT:
@@ -37,11 +40,12 @@ def get_state(path, default):
 		elif value.type == gconf.VALUE_BOOL:
 			return value.get_bool()
 		else:
-			raise TypeError, 'Variable type not supported by gconf.'		
-			return None				
+			raise TypeError, 'Variable type not supported by gconf.'
 			
-def set_state(path, value):
+def set_state(setting, value):
 	'''Sets a key in gconf.'''
+	path = ''.join([GCONF_PATH, setting])
+	
 	if type(value) is IntType:
 		gconfClient.set_int(path, value)
 	elif type(value) is StringType:
@@ -52,4 +56,3 @@ def set_state(path, value):
 		gconfClient.set_bool(path, value)
 	else:
 		raise TypeError, 'Variable type not supported by gconf.'
-		return None

@@ -37,9 +37,9 @@ class NoStaples:
 	def __init__(self):
 		'''Sets up all application variables (including loading saved settings), loads the interface via glade, connects signals, and then shows the scanning window.'''
 		self.scannerDict = {}	# Keys are human readable scanner descriptions, Values are sane-backend descriptors
-		self.activeScanner = state.get_state('/apps/nostaples/active_scanner', constants.DEFAULT_ACTIVE_SCANNER)
-		self.scanMode = state.get_state('/apps/nostaples/scan_mode',  constants.DEFAULT_SCAN_MODE)
-		self.scanResolution = state.get_state('/apps/nostaples/scan_resolution', constants.DEFAULT_SCAN_RESOLUTION)
+		self.activeScanner = state.get_state('active_scanner', constants.DEFAULT_ACTIVE_SCANNER)
+		self.scanMode = state.get_state('scan_mode',  constants.DEFAULT_SCAN_MODE)
+		self.scanResolution = state.get_state('scan_resolution', constants.DEFAULT_SCAN_RESOLUTION)
 		self.scannedPages = []	# List of Page objects
 		self.scanningThread = ScanningThread(self, 0)
 		self.nextScanFileIndex = 0
@@ -49,7 +49,7 @@ class NoStaples:
 		self.previewHeight = 0
 		self.previewZoom = 1.0
 		self.previewIsBestFit = True
-		self.thumbnailSize = state.get_state('/apps/nostaples/thumbnail_size', constants.DEFAULT_THUMBNAIL_SIZE)
+		self.thumbnailSize = state.get_state('thumbnail_size', constants.DEFAULT_THUMBNAIL_SIZE)
 		self.thumbnailSelection = None
 		self.insertIsNotDrag = False
 		
@@ -170,15 +170,15 @@ class NoStaples:
 					'on_PreviewLayout_size_allocate' : self.preview_resized}
 		self.gladeTree.signal_autoconnect(signals)
 		
-		if state.get_state('/apps/nostaples/show_toolbar', True) == False:
+		if state.get_state('show_toolbar', True) == False:
 			self.gladeTree.get_widget('ShowToolbarMenuItem').set_active(False)
 			self.toolbar.hide()
 		
-		if state.get_state('/apps/nostaples/show_thumbnails', True) == False:
+		if state.get_state('show_thumbnails', True) == False:
 			self.gladeTree.get_widget('ShowThumbnailsMenuItem').set_active(False)
 			self.thumbnailsScrolledWindow.hide()
 		
-		if state.get_state('/apps/nostaples/show_statusbar', True) == False:
+		if state.get_state('show_statusbar', True) == False:
 			self.gladeTree.get_widget('ShowStatusbarMenuItem').set_active(False)
 			self.statusbar.hide()
 		
@@ -273,28 +273,28 @@ class NoStaples:
 		'''Toggles the visibility of the statusbar.'''
 		if menuitem.get_active():
 			self.statusbar.show()
-			state.set_state('/apps/nostaples/show_statusbar', True)
+			state.set_state('show_statusbar', True)
 		else:
 			self.statusbar.hide()
-			state.set_state('/apps/nostaples/show_statusbar', False)
+			state.set_state('show_statusbar', False)
 		
 	def toggle_toolbar(self, menuitem):
 		'''Toggles the visibility of the toolbar.'''
 		if menuitem.get_active():
 			self.toolbar.show()
-			state.set_state('/apps/nostaples/show_toolbar', True)
+			state.set_state('show_toolbar', True)
 		else:
 			self.toolbar.hide()
-			state.set_state('/apps/nostaples/show_toolbar', False)
+			state.set_state('show_toolbar', False)
 		
 	def toggle_thumbnails(self, menuitem):
 		'''Toggles the visibility of the thumbnail pager.'''
 		if menuitem.get_active():
 			self.thumbnailsScrolledWindow.show()
-			state.set_state('/apps/nostaples/show_thumbnails', True)
+			state.set_state('show_thumbnails', True)
 		else:
 			self.thumbnailsScrolledWindow.hide()
-			state.set_state('/apps/nostaples/show_thumbnails', False)
+			state.set_state('show_thumbnails', False)
 		
 	def zoom_in(self, widget=None):
 		'''Zooms the preview image in by 50%.'''
@@ -477,7 +477,7 @@ class NoStaples:
 		self.scanResolutionSubMenu.show_all()
 		
 		# NB: Only do this if everything else has succeeded, otherwise a crash could repeat everytime the app is started
-		state.set_state('/apps/nostaples/active_scanner', self.activeScanner)
+		state.set_state('active_scanner', self.activeScanner)
 		
 		# Emulate the default scan resolution being toggled
 		self.update_scan_resolution(selectedItem)
@@ -487,7 +487,7 @@ class NoStaples:
 		'''Updates the internal scan mode state when a scan mode menu item is toggled.'''
 		try:
 			self.scanMode = widget.get_children()[0].get_text()
-			state.set_state('/apps/nostaples/scan_mode', self.scanMode)
+			state.set_state('scan_mode', self.scanMode)
 		except:
 			print 'Unable to get label text for currently selected scan mode menu item.'
 			raise
@@ -496,7 +496,7 @@ class NoStaples:
 		'''Updates the internal scan resolution state when a scan resolution menu item is toggled.'''
 		try:
 			self.scanResolution = widget.get_children()[0].get_text()
-			state.set_state('/apps/nostaples/scan_resolution', self.scanResolution)
+			state.set_state('scan_resolution', self.scanResolution)
 		except:
 			print 'Unable to get label text for currently selected scan resolution menu item.'
 			raise
@@ -747,7 +747,11 @@ class NoStaples:
 		filter.add_pattern('*.pdf')
 		self.saveDialog.add_filter(filter)
 		
+		savePath = state.get_state('save_path', os.path.expanduser('~'))
+		if not os.path.exists(savePath):
+			savePath = os.path.expanduser('~')
 		filename = ''.join([title.replace(' ', '-').lower(), '.pdf'])
+		self.saveDialog.set_current_folder(savePath)
 		self.saveDialog.set_current_name(filename)
 		
 		response = self.saveDialog.run()
@@ -779,6 +783,7 @@ class NoStaples:
 			os.remove(pdfFilename)
 			
 		output.write(file(filename, 'w'))
+		state.set_state('save_path', self.saveDialog.get_current_folder())
 		
 		for page in self.scannedPages:
 			os.remove(page.filename)
