@@ -61,7 +61,7 @@ class Page:
 	def get_transformed_pixbuf(self):
 		'''Generates a GTK Pixbuf that has had rotation and color adjustments applied to it (i.e. a working copy).'''
 		if self.brightness != 1.0 or self.contrast != 1.0 or self.sharpness != 1.0:
-			image = self.__convert_pixbuf_to_image(self.rawPixbuf)
+			image = self.__convert_pixbuf_to_pil_image(self.rawPixbuf)
 			
 			if self.brightness != 1.0:
 				image = ImageEnhance.Brightness(image).enhance(self.brightness)
@@ -70,7 +70,7 @@ class Page:
 			if self.sharpness != 1.0:
 				image = ImageEnhance.Sharpness(image).enhance(self.sharpness)
 				
-			pixbuf =self.__convert_image_to_pixbuf(image)
+			pixbuf =self.__convert_pil_image_to_pixbuf(image)
 		else:
 			pixbuf = self.rawPixbuf
 		
@@ -86,7 +86,7 @@ class Page:
 	def get_thumbnail_pixbuf(self, size):
 		'''Generates a GTK Pixbuf that hashad rotation and color adjustments applied to it and has been scaled down to fit the thumbnail pager.'''
 		if self.brightness != 1.0 or self.contrast != 1.0 or self.sharpness != 1.0:
-			image =self.__convert_pixbuf_to_image(self.rawPixbuf)
+			image =self.__convert_pixbuf_to_pil_image(self.rawPixbuf)
 			
 			if self.brightness != 1.0:
 				image = ImageEnhance.Brightness(image).enhance(self.brightness)
@@ -95,7 +95,7 @@ class Page:
 			if self.sharpness != 1.0:
 				image = ImageEnhance.Sharpness(image).enhance(self.sharpness)
 				
-			pixbuf = self.__convert_image_to_pixbuf(image)
+			pixbuf = self.__convert_pil_image_to_pixbuf(image)
 		else:
 			pixbuf = self.rawPixbuf
 		

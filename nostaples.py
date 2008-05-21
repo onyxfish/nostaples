@@ -578,13 +578,13 @@ class NoStaples:
 			return
 		
 		if self.colorAllPagesCheck.get_active():
-			for page in self.scannedPages:
-				page.brightness = self.brightnessScale.get_value()		
+			for index in range(len(self.scannedPages)):
+				self.scannedPages[index].brightness = self.brightnessScale.get_value()
+				self.update_thumbnail(index)
+			self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
+			self.render_preview()
 		else:
-			if not self.scanningThread.isAlive():
-				self.scannedPages[self.previewIndex].brightness = self.brightnessScale.get_value()
-		
-		if not self.scanningThread.isAlive():
+			self.scannedPages[self.previewIndex].brightness = self.brightnessScale.get_value()
 			self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
 			self.render_preview()
 			self.update_thumbnail(self.previewIndex)
@@ -595,13 +595,13 @@ class NoStaples:
 			return
 		
 		if self.colorAllPagesCheck.get_active():
-			for page in self.scannedPages:
-				page.contrast = self.contrastScale.get_value()		
+			for index in range(len(self.scannedPages)):
+				self.scannedPages[index].contrast = self.contrastScale.get_value()
+				self.update_thumbnail(index)
+			self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
+			self.render_preview()
 		else:
-			if not self.scanningThread.isAlive():
-				self.scannedPages[self.previewIndex].contrast = self.contrastScale.get_value()
-		
-		if not self.scanningThread.isAlive():
+			self.scannedPages[self.previewIndex].contrast = self.contrastScale.get_value()
 			self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
 			self.render_preview()
 			self.update_thumbnail(self.previewIndex)
@@ -612,13 +612,13 @@ class NoStaples:
 			return
 		
 		if self.colorAllPagesCheck.get_active():
-			for page in self.scannedPages:
-				page.sharpness = self.sharpnessScale.get_value()		
+			for index in range(len(self.scannedPages)):
+				self.scannedPages[index].sharpness = self.sharpnessScale.get_value()
+				self.update_thumbnail(index)
+			self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
+			self.render_preview()
 		else:
-			if not self.scanningThread.isAlive():
-				self.scannedPages[self.previewIndex].sharpness = self.sharpnessScale.get_value()
-		
-		if not self.scanningThread.isAlive():
+			self.scannedPages[self.previewIndex].sharpness = self.sharpnessScale.get_value()
 			self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
 			self.render_preview()
 			self.update_thumbnail(self.previewIndex)
@@ -626,10 +626,11 @@ class NoStaples:
 	def color_all_pages_toggled(self, toggle=None):
 		'''Catches the ColorAllPagesCheck being toggled on so that all per-page settings can be immediately synchronized.'''
 		if self.colorAllPagesCheck.get_active():
-			for page in self.scannedPages:
-				page.brightness = self.brightnessScale.get_value()
-				page.contrast = self.contrastScale.get_value()
-				page.sharpness = self.sharpnessScale.get_value()
+			for index in range(len(self.scannedPages)):
+				self.scannedPages[index].brightness = self.brightnessScale.get_value()
+				self.scannedPages[index].contrast = self.contrastScale.get_value()
+				self.scannedPages[index].sharpness = self.sharpnessScale.get_value()
+				self.update_thumbnail(index)
 		
 	def goto_first_page(self, button=None):
 		'''Moves to the first scanned page.'''

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Sun May 18 18:23:54 2008 -->
+<!--Generated with glade3 3.4.5 on Tue May 20 21:07:11 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="ScanWindow">
     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
@@ -349,15 +349,6 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkImageMenuItem" id="GoJumpMenuItem">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">gtk-jump-to</property>
-                        <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_GoJumpMenuItem_activate"/>
-                      </widget>
-                    </child>
-                    <child>
                       <widget class="GtkSeparatorMenuItem" id="separatormenuitem6">
                         <property name="visible">True</property>
                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
@@ -427,11 +418,11 @@
           <widget class="GtkToolbar" id="MainToolbar">
             <property name="visible">True</property>
             <property name="toolbar_style">GTK_TOOLBAR_BOTH_HORIZ</property>
-            <property name="tooltips">False</property>
             <property name="icon_size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
             <child>
               <widget class="GtkToolButton" id="ScanButton">
                 <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">Scan</property>
                 <property name="label" translatable="yes">Scan</property>
                 <property name="icon_name">scanner</property>
                 <signal name="clicked" handler="on_ScanButton_clicked"/>
@@ -443,6 +434,7 @@
             <child>
               <widget class="GtkToolButton" id="SaveAsButton">
                 <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">Save As...</property>
                 <property name="icon_name">document-save-as</property>
                 <signal name="clicked" handler="on_SaveAsButton_clicked"/>
               </widget>
@@ -462,6 +454,7 @@
             <child>
               <widget class="GtkToolButton" id="ZoomInButton">
                 <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">Zoom In</property>
                 <property name="icon_name">zoom-in</property>
                 <signal name="clicked" handler="on_ZoomInButton_clicked"/>
               </widget>
@@ -472,6 +465,7 @@
             <child>
               <widget class="GtkToolButton" id="ZoomOutButton">
                 <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">Zoom Out</property>
                 <property name="icon_name">zoom-out</property>
                 <signal name="clicked" handler="on_ZoomOutButton_clicked"/>
               </widget>
@@ -482,6 +476,7 @@
             <child>
               <widget class="GtkToolButton" id="ZoomOneToOneButton">
                 <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">Normal Size</property>
                 <property name="icon_name">zoom-original</property>
                 <signal name="clicked" handler="on_ZoomOneToOneButton_clicked"/>
               </widget>
@@ -492,6 +487,7 @@
             <child>
               <widget class="GtkToolButton" id="ZoomBestFitButton">
                 <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">Best Fit</property>
                 <property name="icon_name">zoom-fit-best</property>
                 <signal name="clicked" handler="on_ZoomBestFitButton_clicked"/>
               </widget>
@@ -511,6 +507,7 @@
             <child>
               <widget class="GtkToolButton" id="RotateCounterClockButton">
                 <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">Rotate Counterclockwise</property>
                 <property name="icon_name">object-rotate-left</property>
                 <signal name="clicked" handler="on_RotateCounterClockButton_clicked"/>
               </widget>
@@ -521,6 +518,7 @@
             <child>
               <widget class="GtkToolButton" id="RotateClockButton">
                 <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">Rotate Clockwise</property>
                 <property name="icon_name">object-rotate-right</property>
                 <signal name="clicked" handler="on_RotateClockButton_clicked"/>
               </widget>
@@ -540,6 +538,7 @@
             <child>
               <widget class="GtkToolButton" id="GoFirstButton">
                 <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">First</property>
                 <property name="stock_id">gtk-goto-first</property>
                 <signal name="clicked" handler="on_GoFirstButton_clicked"/>
               </widget>
@@ -550,6 +549,7 @@
             <child>
               <widget class="GtkToolButton" id="GoPreviousButton">
                 <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">Back</property>
                 <property name="stock_id">gtk-go-back</property>
                 <signal name="clicked" handler="on_GoPreviousButton_clicked"/>
               </widget>
@@ -560,6 +560,7 @@
             <child>
               <widget class="GtkToolButton" id="GoNextButton">
                 <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">Forward</property>
                 <property name="stock_id">gtk-go-forward</property>
                 <signal name="clicked" handler="on_GoNextButton_clicked"/>
               </widget>
@@ -570,6 +571,7 @@
             <child>
               <widget class="GtkToolButton" id="GoLastButton">
                 <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">Last</property>
                 <property name="stock_id">gtk-goto-last</property>
                 <signal name="clicked" handler="on_GoLastButton_clicked"/>
               </widget>
@@ -608,16 +610,10 @@
                   <placeholder/>
                 </child>
                 <child>
-                  <widget class="GtkVScrollbar" id="PreviewVScroll">
-                    <property name="no_show_all">True</property>
-                    <property name="adjustment">0 0 100 1 10 10</property>
+                  <widget class="GtkLayout" id="PreviewLayout">
+                    <property name="visible">True</property>
+                    <signal name="size_allocate" handler="on_PreviewLayout_size_allocate"/>
                   </widget>
-                  <packing>
-                    <property name="left_attach">1</property>
-                    <property name="right_attach">2</property>
-                    <property name="x_options">GTK_SHRINK | GTK_FILL</property>
-                    <property name="y_options">GTK_SHRINK | GTK_FILL</property>
-                  </packing>
                 </child>
                 <child>
                   <widget class="GtkHScrollbar" id="PreviewHScroll">
@@ -632,10 +628,16 @@
                   </packing>
                 </child>
                 <child>
-                  <widget class="GtkLayout" id="PreviewLayout">
-                    <property name="visible">True</property>
-                    <signal name="size_allocate" handler="on_PreviewLayout_size_allocate"/>
+                  <widget class="GtkVScrollbar" id="PreviewVScroll">
+                    <property name="no_show_all">True</property>
+                    <property name="adjustment">0 0 100 1 10 10</property>
                   </widget>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="right_attach">2</property>
+                    <property name="x_options">GTK_SHRINK | GTK_FILL</property>
+                    <property name="y_options">GTK_SHRINK | GTK_FILL</property>
+                  </packing>
                 </child>
               </widget>
               <packing>
@@ -1054,10 +1056,10 @@ Subtext</property>
     <property name="skip_pager_hint">True</property>
     <property name="transient_for">ScanWindow</property>
     <property name="has_separator">False</property>
+    <property name="use_preview_label">False</property>
+    <property name="preview_widget_active">False</property>
     <property name="action">GTK_FILE_CHOOSER_ACTION_SAVE</property>
     <property name="do_overwrite_confirmation">True</property>
-    <property name="preview_widget_active">False</property>
-    <property name="use_preview_label">False</property>
     <child internal-child="vbox">
       <widget class="GtkVBox" id="dialog-vbox6">
         <property name="visible">True</property>
