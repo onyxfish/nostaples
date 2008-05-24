@@ -67,10 +67,10 @@ class NoStaples:
 		
 		self.update_scanner_list()
 		
-	# Signal handlers
+	# Functions called by gui signal handlers
 	
 	def quit(self):
-		'''Called on ScanWindow is destroyed to cleanup threads and files.'''
+		'''Called when ScanWindow is destroyed to cleanup threads and files.'''
 		self.stopScanEvent.set()
 			
 		for page in self.scannedPages:
@@ -174,9 +174,11 @@ class NoStaples:
 		
 	def delete_selected_page(self):
 		'''Deletes the page currently selected in the thumbnail pager.'''
+		#assert not self.scanEvent.isSet(), 'Scanning in progress.'
+		
 		if len(self.scannedPages) < 1 or self.thumbnailSelection is None:
 			return
-		
+	
 		del self.scannedPages[self.thumbnailSelection]
 		
 		deleteIter = self.gui.thumbnailsListStore.get_iter(self.thumbnailSelection)
@@ -190,6 +192,7 @@ class NoStaples:
 			self.gui.thumbnailsTreeView.get_selection().select_path(self.thumbnailSelection - 1)
 		
 	def insert_scan(self):
+		'''Scans a page and inserts it before the current selected thumbnail.'''
 		assert not self.scanEvent.isSet(), 'Scanning in progress.'
 		self.scan_thread(self.thumbnailSelection)
 		
@@ -292,7 +295,7 @@ class NoStaples:
 		
 	def rotate_counter_clockwise(self):
 		'''Rotates the current page ninety degrees counter-clockwise, or all pages if "rotate all pages" is toggled on.'''
-		assert not self.scanEvent.isSet(), 'Scanning in progress.'
+		#assert not self.scanEvent.isSet(), 'Scanning in progress.'
 			
 		if len(self.scannedPages) < 1:
 			return
@@ -319,7 +322,7 @@ class NoStaples:
 		
 	def rotate_clockwise(self):
 		'''Rotates the current page ninety degrees clockwise, or all pages if "rotate all pages" is toggled on.'''
-		assert not self.scanEvent.isSet(), 'Scanning in progress.'
+		#assert not self.scanEvent.isSet(), 'Scanning in progress.'
 			
 		if len(self.scannedPages) < 1:
 			return
@@ -371,7 +374,7 @@ class NoStaples:
 		
 	def goto_first_page(self):
 		'''Moves to the first scanned page.'''
-		assert not self.scanEvent.isSet(), 'Scanning in progress.'
+		#assert not self.scanEvent.isSet(), 'Scanning in progress.'
 			
 		if len(self.scannedPages) < 1:
 			return
@@ -380,7 +383,7 @@ class NoStaples:
 		
 	def goto_previous_page(self):
 		'''Moves to the previous scanned page.'''
-		assert not self.scanEvent.isSet(), 'Scanning in progress.'
+		#assert not self.scanEvent.isSet(), 'Scanning in progress.'
 			
 		if len(self.scannedPages) < 1:
 			return
@@ -392,7 +395,7 @@ class NoStaples:
 		
 	def goto_next_page(self):
 		'''Moves to the next scanned page.'''
-		assert not self.scanEvent.isSet(), 'Scanning in progress.'
+		#assert not self.scanEvent.isSet(), 'Scanning in progress.'
 			
 		if len(self.scannedPages) < 1:
 			return
@@ -404,7 +407,7 @@ class NoStaples:
 		
 	def goto_last_page(self):
 		'''Moves to the last scanned page.'''
-		assert not self.scanEvent.isSet(), 'Scanning in progress.'
+		#assert not self.scanEvent.isSet(), 'Scanning in progress.'
 			
 		if len(self.scannedPages) < 1:
 			return
@@ -412,9 +415,7 @@ class NoStaples:
 		self.gui.thumbnailsTreeView.get_selection().select_path(len(self.scannedPages) - 1)
 		
 	def show_about(self):
-		'''Show the about dialog.'''
-		assert not self.scanEvent.isSet(), 'Scanning in progress.'
-			
+		'''Show the about dialog.'''			
 		self.gui.aboutDialog.run()
 		self.gui.aboutDialog.hide()
 		
@@ -525,7 +526,41 @@ class NoStaples:
 		self.thumbnailSelection = scanIndex
 		self.jump_to_page(scanIndex)
 		
-	# Functions not tied to a signal
+	# Functions not called from gui signal handlers
+			
+	def add_page(self, index, page):
+		'''Appends or inserts a page into the list of scanned pages.'''
+		self.insertIsNotDrag = True
+		
+		if not index:
+			index = 0
+		
+		if index > len(self.scannedPages) - 1:
+			self.scannedPages.append(page)
+			self.gui.thumbnailsListStore.append([page.get_thumbnail_pixbuf(self.thumbnailSize)])
+			self.gui.thumbnailsTreeView.get_selection().select_path(len(self.scannedPages) - 1)
+		else:
+			self.scannedPages.insert(index, page)
+			self.gui.thumbnailsListStore.insert(index, [page.get_thumbnail_pixbuf(self.thumbnailSize)])
+			self.gui.thumbnailsTreeView.get_selection().select_path(index)
+		
+	def jump_to_page(self, index):
+		'''Moves to a specified scanned page.'''
+		assert index >= 0 and index < len(self.scannedPages), 'Page index out of bounds.'
+			
+		self.previewIndex = index
+		
+		self.gui.brightnessScale.set_value(self.scannedPages[self.previewIndex].brightness)
+		self.gui.contrastScale.set_value(self.scannedPages[self.previewIndex].contrast)
+		self.gui.sharpnessScale.set_value(self.scannedPages[self.previewIndex].sharpness)
+		
+		self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
+		
+		if self.previewIsBestFit:
+			self.zoom_best_fit()
+		else:
+			self.render_preview()
+			self.update_status()
 	
 	def update_status(self):
 		'''Updates the status bar with the current page number and zoom percentage.'''
@@ -533,6 +568,12 @@ class NoStaples:
 		
 		if len(self.scannedPages) > 0:
 			self.gui.statusbar.push(constants.STATUSBAR_PREVIEW_CONTEXT_ID,'Page %i of %i\t%i%%' % (self.previewIndex + 1, len(self.scannedPages), int(self.previewZoom * 100)))
+		
+	def update_thumbnail(self, index):
+		'''Updates a thumbnail image to match changes in the preview image.'''
+		iter = self.gui.thumbnailsListStore.get_iter(index)
+		thumbnail = self.scannedPages[index].get_thumbnail_pixbuf(self.thumbnailSize)
+		self.gui.thumbnailsListStore.set_value(iter, 0, thumbnail)
 		
 	def render_preview(self):
 		'''Render the current page to the preview display.'''
@@ -575,46 +616,6 @@ class NoStaples:
 		
 		# Render updated preview
 		self.gui.previewImageDisplay.set_from_pixbuf(pixbuf)
-		
-	def update_thumbnail(self, index):
-		'''Updates a thumbnail image to match changes in the preview image.'''
-		iter = self.gui.thumbnailsListStore.get_iter(index)
-		thumbnail = self.scannedPages[index].get_thumbnail_pixbuf(self.thumbnailSize)
-		self.gui.thumbnailsListStore.set_value(iter, 0, thumbnail)
-		
-	def jump_to_page(self, index):
-		'''Moves to a specified scanned page.'''
-		assert index >= 0 and index < len(self.scannedPages), 'Page index out of bounds.'
-			
-		self.previewIndex = index
-		
-		self.gui.brightnessScale.set_value(self.scannedPages[self.previewIndex].brightness)
-		self.gui.contrastScale.set_value(self.scannedPages[self.previewIndex].contrast)
-		self.gui.sharpnessScale.set_value(self.scannedPages[self.previewIndex].sharpness)
-		
-		self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
-		
-		if self.previewIsBestFit:
-			self.zoom_best_fit()
-		else:
-			self.render_preview()
-			self.update_status()
-			
-	def add_page(self, index, page):
-		'''Appends or inserts a page into the list of scanned pages.'''
-		self.insertIsNotDrag = True
-		
-		if not index:
-			index = 0
-		
-		if index > len(self.scannedPages) - 1:
-			self.scannedPages.append(page)
-			self.gui.thumbnailsListStore.append([page.get_thumbnail_pixbuf(self.thumbnailSize)])
-			self.gui.thumbnailsTreeView.get_selection().select_path(len(self.scannedPages) - 1)
-		else:
-			self.scannedPages.insert(index, page)
-			self.gui.thumbnailsListStore.insert(index, [page.get_thumbnail_pixbuf(self.thumbnailSize)])
-			self.gui.thumbnailsTreeView.get_selection().select_path(index)
 					
 	def update_scanner_list(self, widget=None):
 		'''Populates a menu with a list of available scanners.'''
@@ -737,13 +738,8 @@ class NoStaples:
 		
 		gtk.gdk.threads_enter()
 		
+		self.gui.set_file_and_scan_controls_sensitive(False)
 		self.gui.statusbar.push(constants.STATUSBAR_SCAN_CONTEXT_ID,'Scanning...')
-		self.gui.previewImageDisplay.clear()
-		
-		if not self.gui.colorAllPagesCheck.get_active():
-			self.gui.brightnessScale.set_value(1.0)
-			self.gui.contrastScale.set_value(1.0)
-			self.gui.sharpnessScale.set_value(1.0)
 			
 		gtk.gdk.threads_leave()
 		
@@ -755,11 +751,11 @@ class NoStaples:
 		result = scanning.scan_to_file(self.scannerDict[self.activeScanner], self.scanMode, self.scanResolution, scanFilename, self.stopScanEvent)
 		
 		if result == scanning.SCAN_CANCELLED:
-			# Scans are only cancelled when application is killed, so statusbar will not exist to be updated
+			self.gui.statusbar.pop(constants.STATUSBAR_SCAN_CONTEXT_ID)
 			return
 		
 		if result == scanning.SCAN_FAILURE:
-			self.render_preview()
+			#self.render_preview()
 			self.gui.statusbar.pop(constants.STATUSBAR_SCAN_CONTEXT_ID)
 			return
 		
@@ -768,6 +764,11 @@ class NoStaples:
 		scanPage = page.Page(scanFilename)
 		
 		gtk.gdk.threads_enter()
+		
+		if not self.gui.colorAllPagesCheck.get_active():
+			self.gui.brightnessScale.set_value(1.0)
+			self.gui.contrastScale.set_value(1.0)
+			self.gui.sharpnessScale.set_value(1.0)
 	
 		scanPage.brightness = self.gui.brightnessScale.get_value()
 		scanPage.contrast = self.gui.contrastScale.get_value()
@@ -776,6 +777,7 @@ class NoStaples:
 		self.add_page(index, scanPage)
 		
 		self.gui.statusbar.pop(constants.STATUSBAR_SCAN_CONTEXT_ID)	
+		self.gui.set_file_and_scan_controls_sensitive(True)
 		
 		gtk.gdk.threads_leave()
 		

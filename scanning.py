@@ -77,6 +77,7 @@ def scan_to_file(scanner, mode, resolution, filename, stopThreadEvent):
 	while scanPipe.poll() == None:
 		if stopThreadEvent.isSet():
 			os.kill(scanPipe.pid, signal.SIGTERM)
+			stopThreadEvent.clear()
 			print 'Scan terminated (scanimage command must finish)'
 			return SCAN_CANCELLED
 	

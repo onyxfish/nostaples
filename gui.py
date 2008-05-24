@@ -25,54 +25,64 @@ import state
 class GtkGUI():
 	
 	def __init__(self, app, gladeFile):
+		'''Initializes the gui from a glade xml file and sets up controls that could not be configured in the glade editor.'''
 		self.app = app
 		
 		self.gladeFile = gladeFile
 		self.gladeTree = gtk.glade.XML(self.gladeFile)
 		
+		# Main window
+		
 		self.scanWindow = self.gladeTree.get_widget('ScanWindow')
 		self.scanWindow.set_property('allow-shrink', True)
 		
-		self.adjustColorsWindow = self.gladeTree.get_widget('AdjustColorsWindow')
-		
-		self.preferencesDialog = self.gladeTree.get_widget('PreferencesDialog')
-		self.aboutDialog = self.gladeTree.get_widget('AboutDialog')
-		self.saveDialog = self.gladeTree.get_widget('SaveDialog')
-		self.metadataDialog = self.gladeTree.get_widget('MetadataDialog')
-		
-		self.errorDialog = self.gladeTree.get_widget('ErrorDialog')
-		self.errorLabel = self.gladeTree.get_widget('ErrorLabel')
-		
-		self.previewModeComboBox = self.gladeTree.get_widget('PreviewModeComboBox')
-		self.setup_combobox(self.previewModeComboBox, ['Nearest (Fastest)','Bilinear', 'Bicubic', 'Antialias (Clearest)'], 'Antialias (Clearest)')
-		
+		self.scanMenuItem = self.gladeTree.get_widget('ScanMenuItem')
+		self.saveAsMenuItem = self.gladeTree.get_widget('SaveAsMenuItem')
+		self.quitMenuItem = self.gladeTree.get_widget('QuitMenuItem')
+		self.deleteMenuItem = self.gladeTree.get_widget('DeleteMenuItem')
+		self.insertScanMenuItem = self.gladeTree.get_widget('InsertScanMenuItem')
+		self.preferencesMenuItem = self.gladeTree.get_widget('PreferencesMenuItem')
+		self.showToolbarMenuItem = self.gladeTree.get_widget('ShowToolbarMenuItem')
+		self.showStatusBarMenuItem = self.gladeTree.get_widget('ShowStatusBarMenuItem')
+		self.showThumbnailsMenuItem = self.gladeTree.get_widget('ShowThumbnailsMenuItem')
+		self.zoomInMenuItem = self.gladeTree.get_widget('ZoomInMenuItem')
+		self.zoomOutMenuItem = self.gladeTree.get_widget('ZoomOutMenuItem')
+		self.zoomOneToOneMenuItem = self.gladeTree.get_widget('ZoomOneToOneMenuItem')
+		self.zoomBestFitMenuItem = self.gladeTree.get_widget('ZoomBestFitMenuItem')
+		self.rotateCounterClockMenuItem = self.gladeTree.get_widget('RotateCounterClockMenuItem')
+		self.rotateClockMenuItem = self.gladeTree.get_widget('RotateClockMenuItem')
+		self.rotateAllPagesMenuItem = self.gladeTree.get_widget('RotateAllPagesMenuItem')
+		self.adjustColorsMenuItem = self.gladeTree.get_widget('AdjustColorsMenuItem')
 		self.scannerSubMenu = self.gladeTree.get_widget('ScannerSubMenu')
 		self.scanModeSubMenu = self.gladeTree.get_widget('ScanModeSubMenu')
 		self.scanResolutionSubMenu = self.gladeTree.get_widget('ScanResolutionSubMenu')
+		self.goFirstMenuItem = self.gladeTree.get_widget('GoFirstMenuItem')
+		self.goPreviousMenuItem = self.gladeTree.get_widget('GoPreviousMenuItem')
+		self.goNextMenuItem = self.gladeTree.get_widget('GoNextMenuItem')
+		self.goLastMenuItem = self.gladeTree.get_widget('GoLastMenuItem')
+		self.aboutMenuItem = self.gladeTree.get_widget('AboutMenuItem')
 		
-		self.toolbar = self.gladeTree.get_widget('MainToolbar')
-		
-		self.rotateAllPagesMenuItem = self.gladeTree.get_widget('RotateAllPagesMenuItem')
-		self.adjustColorsMenuItem = self.gladeTree.get_widget('AdjustColorsMenuItem')
-		
-		self.brightnessScale = self.gladeTree.get_widget('BrightnessScale')
-		self.contrastScale = self.gladeTree.get_widget('ContrastScale')
-		self.sharpnessScale = self.gladeTree.get_widget('SharpnessScale')
-		self.colorAllPagesCheck = self.gladeTree.get_widget('ColorAllPagesCheck')
-		
-		self.titleEntry = self.gladeTree.get_widget('TitleEntry')
-		self.authorEntry = self.gladeTree.get_widget('AuthorEntry')
-		self.keywordsEntry = self.gladeTree.get_widget('KeywordsEntry')
-		
+		self.toolbar = self.gladeTree.get_widget('MainToolbar')	
+		self.scanButton = self.gladeTree.get_widget('ScanButton')
+		self.saveAsButton = self.gladeTree.get_widget('SaveAsButton')
+		self.zoomInButton = self.gladeTree.get_widget('ZoomInButton')
+		self.zoomOutButton = self.gladeTree.get_widget('ZoomOutButton')
+		self.zoomOneToOneButton = self.gladeTree.get_widget('ZoomOneToOneButton')
+		self.zoomBestFitButton = self.gladeTree.get_widget('ZoomBestFitButton')
+		self.rotateCounterClockButton = self.gladeTree.get_widget('RotateCounterClockButton')
+		self.rotateClockButton = self.gladeTree.get_widget('RotateClockButton')
+		self.goFirstButton = self.gladeTree.get_widget('GoFirstButton')
+		self.goPreviousButton = self.gladeTree.get_widget('GoPreviousButton')
+		self.goNextButton = self.gladeTree.get_widget('GoNextButton')
+		self.goLastButton = self.gladeTree.get_widget('GoLastButton')
+
 		self.thumbnailsScrolledWindow = self.gladeTree.get_widget('ThumbnailsScrolledWindow')
-		
 		self.thumbnailsListStore = gtk.ListStore(gtk.gdk.Pixbuf)
 		self.thumbnailsTreeView = gtk.TreeView(self.thumbnailsListStore)
 		self.thumbnailsColumn = gtk.TreeViewColumn(None)
 		self.thumbnailsCell = gtk.CellRendererPixbuf()
 		self.thumbnailsColumn.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
-		#self.thumbnailsColumn.set_fixed_width(self.thumbnailSize)
-		self.thumbnailsColumn.set_fixed_width(128)
+		self.thumbnailsColumn.set_fixed_width(state.get_state('thumbnail_size', constants.DEFAULT_THUMBNAIL_SIZE))
 		self.thumbnailsTreeView.append_column(self.thumbnailsColumn)
 		self.thumbnailsColumn.pack_start(self.thumbnailsCell, True)
 		self.thumbnailsColumn.set_attributes(self.thumbnailsCell, pixbuf=0)
@@ -100,6 +110,56 @@ class GtkGUI():
 
 		self.statusbar = self.gladeTree.get_widget('ScanStatusBar')
 		self.statusbar.push(constants.STATUSBAR_BASE_CONTEXT_ID, 'Ready')
+		
+		if state.get_state('show_toolbar', True) == False:
+			self.gladeTree.get_widget('ShowToolbarMenuItem').set_active(False)
+			self.toolbar.hide()
+		
+		if state.get_state('show_thumbnails', True) == False:
+			self.gladeTree.get_widget('ShowThumbnailsMenuItem').set_active(False)
+			self.thumbnailsScrolledWindow.hide()
+		
+		if state.get_state('show_statusbar', True) == False:
+			self.gladeTree.get_widget('ShowStatusbarMenuItem').set_active(False)
+			self.statusbar.hide()
+		
+		# Adjust colors window
+		
+		self.adjustColorsWindow = self.gladeTree.get_widget('AdjustColorsWindow')
+		
+		self.brightnessScale = self.gladeTree.get_widget('BrightnessScale')
+		self.contrastScale = self.gladeTree.get_widget('ContrastScale')
+		self.sharpnessScale = self.gladeTree.get_widget('SharpnessScale')
+		self.colorAllPagesCheck = self.gladeTree.get_widget('ColorAllPagesCheck')
+
+		# Preferences dialog
+		
+		self.preferencesDialog = self.gladeTree.get_widget('PreferencesDialog')
+		self.previewModeComboBox = self.gladeTree.get_widget('PreviewModeComboBox')
+		self.setup_combobox(self.previewModeComboBox, ['Nearest (Fastest)','Bilinear', 'Bicubic', 'Antialias (Clearest)'], 'Antialias (Clearest)')
+		
+		# PDF Metadata dialog
+		
+		self.metadataDialog = self.gladeTree.get_widget('MetadataDialog')
+		
+		self.titleEntry = self.gladeTree.get_widget('TitleEntry')
+		self.authorEntry = self.gladeTree.get_widget('AuthorEntry')
+		self.keywordsEntry = self.gladeTree.get_widget('KeywordsEntry')
+		
+		# Save dialog
+		
+		self.saveDialog = self.gladeTree.get_widget('SaveDialog')
+		
+		# Error dialog
+		
+		self.errorDialog = self.gladeTree.get_widget('ErrorDialog')
+		self.errorLabel = self.gladeTree.get_widget('ErrorLabel')
+		
+		# About dialog
+		
+		self.aboutDialog = self.gladeTree.get_widget('AboutDialog')
+		
+		# Connect signals and show main window
 
 		signals = {'on_ScanWindow_destroy' : self.on_ScanWindow_destroy,
 					'on_AdjustColorsWindow_delete_event' : self.on_AdjustColorsWindow_delete_event,
@@ -143,18 +203,6 @@ class GtkGUI():
 					'on_PreviewLayout_size_allocate' : self.on_PreviewLayout_size_allocate}
 		self.gladeTree.signal_autoconnect(signals)
 		
-		if state.get_state('show_toolbar', True) == False:
-			self.gladeTree.get_widget('ShowToolbarMenuItem').set_active(False)
-			self.toolbar.hide()
-		
-		if state.get_state('show_thumbnails', True) == False:
-			self.gladeTree.get_widget('ShowThumbnailsMenuItem').set_active(False)
-			self.thumbnailsScrolledWindow.hide()
-		
-		if state.get_state('show_statusbar', True) == False:
-			self.gladeTree.get_widget('ShowStatusbarMenuItem').set_active(False)
-			self.statusbar.hide()
-		
 		self.scanWindow.show()
 		
 	# Utility functions
@@ -194,6 +242,62 @@ class GtkGUI():
 		self.errorLabel.set_markup(text)
 		self.errorDialog.run()
 		self.errorDialog.hide()
+		
+	# Sensitivity functions
+	
+	def set_file_and_scan_controls_sensitive(self, sensitive):
+		'''Enables or disables all gui widgets related to scanning, saving, or manipulation of pages.'''
+		self.scanMenuItem.set_sensitive(sensitive)
+		self.saveAsMenuItem.set_sensitive(sensitive)
+		#self.deleteMenuItem.set_sensitive(sensitive)
+		self.insertScanMenuItem.set_sensitive(sensitive)
+		self.preferencesMenuItem.set_sensitive(sensitive)
+		self.scanButton.set_sensitive(sensitive)
+		self.saveAsButton.set_sensitive(sensitive)
+		
+		for child in self.scannerSubMenu.get_children():
+			child.set_sensitive(sensitive)
+			
+		for child in self.scanModeSubMenu.get_children():
+			child.set_sensitive(sensitive)
+			
+		for child in self.scanResolutionSubMenu.get_children():
+			child.set_sensitive(sensitive)
+	
+	def set_zoom_controls_sensitive(self, sensitive):
+		'''Enables or disables all gui widgets related to zooming.'''
+		self.zoomInMenuItem.set_sensitive(sensitive)
+		self.zoomOutMenuItem.set_sensitive(sensitive)
+		self.zoomOneToOneMenuItem.set_sensitive(sensitive)
+		self.zoomBestFitMenuItem.set_sensitive(sensitive)
+		self.zoomInButton.set_sensitive(sensitive)
+		self.zoomOutButton.set_sensitive(sensitive)
+		self.zoomOneToOneButton.set_sensitive(sensitive)
+		self.zoomBestFitButton.set_sensitive(sensitive)
+		
+	def set_adjustment_controls_sensitive(self, sensitive):
+		'''Enables or disables all gui widgets related to making adjustments to the current page.'''
+		self.rotateCounterClockMenuItem.set_sensitive(sensitive)
+		self.rotateClockMenuItem.set_sensitive(sensitive)
+		self.rotateAllPagesMenuItem.set_sensitive(sensitive)
+		self.rotateCounterClockButton.set_sensitive(sensitive)
+		self.rotateClockButton.set_sensitive(sensitive)
+		
+		self.brightnessScale.set_sensitive(sensitive)
+		self.contrastScale.set_sensitive(sensitive)
+		self.sharpnessScale.set_sensitive(sensitive)
+		self.colorAllPagesCheck.set_sensitive(sensitive)
+
+	def set_navigation_controls_sensitive(self, sensitive):
+		'''Enables or disables all gui widgets related to navigation.'''
+		self.goFirstMenuItem.set_sensitive(sensitive)
+		self.goPreviousMenuItem.set_sensitive(sensitive)
+		self.goNextMenuItem.set_sensitive(sensitive)
+		self.goLastMenuItem.set_sensitive(sensitive)
+		self.goFirstButton.set_sensitive(sensitive)
+		self.goPreviousButton.set_sensitive(sensitive)
+		self.goNextButton.set_sensitive(sensitive)
+		self.goLastButton.set_sensitive(sensitive)
 		
 	# Window destruction signal handlers
 		
