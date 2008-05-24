@@ -17,6 +17,7 @@
 
 import os
 import threading
+import time
 import gtk
 import gtk.glade
 import gobject
@@ -59,11 +60,12 @@ class NoStaples:
 		self.previewHeight = 0
 		self.previewZoom = 1.0
 		self.previewIsBestFit = True
+		self.previewDragStart = (0,0)
 		self.thumbnailSize = self.stateEngine.get_state('thumbnail_size')
 		self.thumbnailSelection = None
 		self.insertIsNotDrag = False
 		self.scanEvent = threading.Event()
-		self.stopScanEvent = threading.Event()
+		self.cancelScanEvent = threading.Event()
 		self.quitEvent = threading.Event()
 		
 		self.gui = gui.GtkGUI(self, 'nostaples.glade')
@@ -85,19 +87,12 @@ class NoStaples:
 	
 	def quit(self):
 		'''Called when ScanWindow is destroyed to cleanup threads and files.'''
-		self.stopScanEvent.set()
 		self.quitEvent.set()
 			
 		for page in self.scannedPages:
 			os.remove(page.filename)
 		
 		gtk.main_quit()
-			
-	def adjust_colors_close(self):
-		'''Closes the adjust colors dialog.'''
-		self.gui.adjustColorsWindow.hide()
-		self.gui.adjustColorsMenuItem.set_active(False)
-		return True
 		
 	def scan_page(self):
 		'''Starts the scanning thread.'''
@@ -418,61 +413,63 @@ class NoStaples:
 		'''Updates the brightness of the current page, or all pages if the "ColorAllPagesCheck" is toggled on.'''
 		if len(self.scannedPages) < 1:
 			return
+			
+		self.gui.adjustColorsWindow.window.set_cursor(gtk.gdk.Cursor(gtk.gdk.WATCH))
+			
+		self.scannedPages[self.previewIndex].brightness = self.gui.brightnessScale.get_value()
+		self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
+		self.render_preview()
+		self.update_thumbnail(self.previewIndex)
 		
-		if self.gui.colorAllPagesCheck.get_active():
+		if self.gui.colorAllPagesCheck.get_active() and len(self.scannedPages) > 1:
 			for index in range(len(self.scannedPages)):
-				self.scannedPages[index].brightness = self.gui.brightnessScale.get_value()
-				self.update_thumbnail(index)
-			self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
-			self.render_preview()
-		else:
-			self.scannedPages[self.previewIndex].brightness = self.gui.brightnessScale.get_value()
-			self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
-			self.render_preview()
-			self.update_thumbnail(self.previewIndex)
+				if index != self.previewIndex:
+					self.scannedPages[index].brightness = self.gui.brightnessScale.get_value()
+					self.update_thumbnail(index)
+					
+		self.gui.adjustColorsWindow.window.set_cursor(None)
 		
 	def update_contrast(self):		
 		'''Updates the contrast of the current page, or all pages if the "ColorAllPagesCheck" is toggled on.'''	
 		if len(self.scannedPages) < 1:
 			return
+			
+		self.scannedPages[self.previewIndex].contrast = self.gui.contrastScale.get_value()
+		self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
+		self.render_preview()
+		self.update_thumbnail(self.previewIndex)
 		
-		if self.gui.colorAllPagesCheck.get_active():
+		if self.gui.colorAllPagesCheck.get_active() and len(self.scannedPages) > 1:
 			for index in range(len(self.scannedPages)):
-				self.scannedPages[index].contrast = self.gui.contrastScale.get_value()
-				self.update_thumbnail(index)
-			self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
-			self.render_preview()
-		else:
-			self.scannedPages[self.previewIndex].contrast = self.gui.contrastScale.get_value()
-			self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
-			self.render_preview()
-			self.update_thumbnail(self.previewIndex)
+				if index != self.previewIndex:
+					self.scannedPages[index].contrast = self.gui.contrastScale.get_value()
+					self.update_thumbnail(index)
 		
 	def update_sharpness(self):	
 		'''Updates the sharpness of the current page, or all pages if the "ColorAllPagesCheck" is toggled on.'''		
 		if len(self.scannedPages) < 1:
 			return
 		
-		if self.gui.colorAllPagesCheck.get_active():
+		self.scannedPages[self.previewIndex].sharpness = self.gui.sharpnessScale.get_value()
+		self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
+		self.render_preview()
+		self.update_thumbnail(self.previewIndex)
+		
+		if self.gui.colorAllPagesCheck.get_active() and len(self.scannedPages) > 1:
 			for index in range(len(self.scannedPages)):
-				self.scannedPages[index].sharpness = self.gui.sharpnessScale.get_value()
-				self.update_thumbnail(index)
-			self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
-			self.render_preview()
-		else:
-			self.scannedPages[self.previewIndex].sharpness = self.gui.sharpnessScale.get_value()
-			self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
-			self.render_preview()
-			self.update_thumbnail(self.previewIndex)
+				if index != self.previewIndex:
+					self.scannedPages[index].sharpness = self.gui.sharpnessScale.get_value()
+					self.update_thumbnail(index)
 			
 	def color_all_pages_toggled(self):
 		'''Catches the ColorAllPagesCheck being toggled on so that all per-page settings can be immediately synchronized.'''
 		if self.gui.colorAllPagesCheck.get_active():
 			for index in range(len(self.scannedPages)):
-				self.scannedPages[index].brightness = self.gui.brightnessScale.get_value()
-				self.scannedPages[index].contrast = self.gui.contrastScale.get_value()
-				self.scannedPages[index].sharpness = self.gui.sharpnessScale.get_value()
-				self.update_thumbnail(index)
+				if index != self.previewIndex:
+					self.scannedPages[index].brightness = self.gui.brightnessScale.get_value()
+					self.scannedPages[index].contrast = self.gui.contrastScale.get_value()
+					self.scannedPages[index].sharpness = self.gui.sharpnessScale.get_value()
+					self.update_thumbnail(index)
 
 	def preview_resized(self, rect):
 		'''Catches preview display size allocations so that the preview image can be appropriately scaled to fit the display.'''
@@ -569,6 +566,40 @@ class NoStaples:
 		iter = self.gui.thumbnailsListStore.get_iter(index)
 		thumbnail = self.scannedPages[index].get_thumbnail_pixbuf(self.thumbnailSize)
 		self.gui.thumbnailsListStore.set_value(iter, 0, thumbnail)
+		
+	def preview_button_pressed(self, event):
+		'''Catches button presses on the preview display and traps the coords for dragging.'''
+		if len(self.scannedPages) < 1:
+			return
+			
+		self.previewDragStart = (event.x_root, event.y_root)
+		
+	def preview_mouse_moved(self, event):
+		'''Handles click-and-drag behavior for the preview display.'''
+		if len(self.scannedPages) < 1:
+			return
+			
+		if event.is_hint:
+			x, y, state = event.window.get_pointer()
+		else:
+			state = event.state
+			
+		x, y = event.x_root, event.y_root
+		
+		if (state & gtk.gdk.BUTTON2_MASK) or (state & gtk.gdk.BUTTON1_MASK):
+			currentX = self.gui.previewLayout.get_hadjustment()
+			newX = currentX.value + (self.previewDragStart[0] - x)
+			if newX >= currentX.lower and newX <= currentX.upper - currentX.page_size:
+				currentX.set_value(newX)
+				self.gui.previewLayout.set_hadjustment(currentX)
+				
+			currentY = self.gui.previewLayout.get_vadjustment()
+			newY = currentY.value + (self.previewDragStart[1] - y)
+			if newY >= currentY.lower and newY <= currentY.upper - currentY.page_size:
+				currentY.set_value(newY)
+				self.gui.previewLayout.set_vadjustment(currentY)
+			
+		self.previewDragStart = (x, y)
 		
 	def render_preview(self):
 		'''Render the current page to the preview display.'''
@@ -743,14 +774,22 @@ class NoStaples:
 		assert self.activeScanner != None, 'Attempting to scan with no scanner selected.'
 		
 		scanFilename = 'scan%i.pnm' % self.nextScanFileIndex
-		result = scanning.scan_to_file(self.scannerDict[self.activeScanner], self.scanMode, self.scanResolution, scanFilename, self.stopScanEvent)
-		
-		if result == scanning.SCAN_CANCELLED:
-			self.gui.statusbar.pop(constants.STATUSBAR_SCAN_CONTEXT_ID)
-			return
+		result = scanning.scan_to_file(self.scannerDict[self.activeScanner], self.scanMode, self.scanResolution, scanFilename)
 		
 		if result == scanning.SCAN_FAILURE:
+			# TODO - better notification here
+			gtk.gdk.threads_enter()
 			self.gui.statusbar.pop(constants.STATUSBAR_SCAN_CONTEXT_ID)
+			gtk.gdk.threads_leave()
+			return
+			
+		if self.quitEvent.isSet():
+			return
+			
+		if self.cancelScanEvent.isSet():
+			gtk.gdk.threads_enter()
+			self.gui.statusbar.pop(constants.STATUSBAR_SCAN_CONTEXT_ID)
+			gtk.gdk.threads_leave()
 			return
 		
 		self.nextScanFileIndex += 1
@@ -763,7 +802,7 @@ class NoStaples:
 			self.gui.brightnessScale.set_value(1.0)
 			self.gui.contrastScale.set_value(1.0)
 			self.gui.sharpnessScale.set_value(1.0)
-	
+			
 		scanPage.brightness = self.gui.brightnessScale.get_value()
 		scanPage.contrast = self.gui.contrastScale.get_value()
 		scanPage.sharpness = self.gui.sharpnessScale.get_value()

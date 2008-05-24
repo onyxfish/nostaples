@@ -56,7 +56,7 @@ def get_scanner_options(scanner):
 	
 	return (modeList, resolutionList)
 
-def scan_to_file(scanner, mode, resolution, filename, stopThreadEvent):	
+def scan_to_file(scanner, mode, resolution, filename):	
 	scanProgram = 'scanimage --format=pnm'
 	modeFlag = ' '.join(['--mode', mode])
 	resolutionFlag = ' '.join(['--resolution', resolution])
