@@ -23,6 +23,7 @@ import constants
 import state
 
 class GtkGUI():
+	'''A wrapper class to keep the details of the gui (esp. signal handlers) away from the main application code.'''
 	
 	def __init__(self, app, gladeFile):
 		'''Initializes the gui from a glade xml file and sets up controls that could not be configured in the glade editor.'''
@@ -43,7 +44,7 @@ class GtkGUI():
 		self.insertScanMenuItem = self.gladeTree.get_widget('InsertScanMenuItem')
 		self.preferencesMenuItem = self.gladeTree.get_widget('PreferencesMenuItem')
 		self.showToolbarMenuItem = self.gladeTree.get_widget('ShowToolbarMenuItem')
-		self.showStatusBarMenuItem = self.gladeTree.get_widget('ShowStatusBarMenuItem')
+		self.showStatusBarMenuItem = self.gladeTree.get_widget('ShowStatusbarMenuItem')
 		self.showThumbnailsMenuItem = self.gladeTree.get_widget('ShowThumbnailsMenuItem')
 		self.zoomInMenuItem = self.gladeTree.get_widget('ZoomInMenuItem')
 		self.zoomOutMenuItem = self.gladeTree.get_widget('ZoomOutMenuItem')
@@ -82,7 +83,7 @@ class GtkGUI():
 		self.thumbnailsColumn = gtk.TreeViewColumn(None)
 		self.thumbnailsCell = gtk.CellRendererPixbuf()
 		self.thumbnailsColumn.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
-		self.thumbnailsColumn.set_fixed_width(state.get_state('thumbnail_size', constants.DEFAULT_THUMBNAIL_SIZE))
+		self.thumbnailsColumn.set_fixed_width(self.app.stateEngine.get_state('thumbnail_size'))
 		self.thumbnailsTreeView.append_column(self.thumbnailsColumn)
 		self.thumbnailsColumn.pack_start(self.thumbnailsCell, True)
 		self.thumbnailsColumn.set_attributes(self.thumbnailsCell, pixbuf=0)
@@ -111,15 +112,15 @@ class GtkGUI():
 		self.statusbar = self.gladeTree.get_widget('ScanStatusBar')
 		self.statusbar.push(constants.STATUSBAR_BASE_CONTEXT_ID, 'Ready')
 		
-		if state.get_state('show_toolbar', True) == False:
+		if self.app.stateEngine.get_state('show_toolbar') == False:
 			self.gladeTree.get_widget('ShowToolbarMenuItem').set_active(False)
 			self.toolbar.hide()
 		
-		if state.get_state('show_thumbnails', True) == False:
+		if self.app.stateEngine.get_state('show_thumbnails') == False:
 			self.gladeTree.get_widget('ShowThumbnailsMenuItem').set_active(False)
 			self.thumbnailsScrolledWindow.hide()
 		
-		if state.get_state('show_statusbar', True) == False:
+		if self.app.stateEngine.get_state('show_statusbar') == False:
 			self.gladeTree.get_widget('ShowStatusbarMenuItem').set_active(False)
 			self.statusbar.hide()
 		
@@ -249,7 +250,6 @@ class GtkGUI():
 		'''Enables or disables all gui widgets related to scanning, saving, or manipulation of pages.'''
 		self.scanMenuItem.set_sensitive(sensitive)
 		self.saveAsMenuItem.set_sensitive(sensitive)
-		#self.deleteMenuItem.set_sensitive(sensitive)
 		self.insertScanMenuItem.set_sensitive(sensitive)
 		self.preferencesMenuItem.set_sensitive(sensitive)
 		self.scanButton.set_sensitive(sensitive)
@@ -263,6 +263,10 @@ class GtkGUI():
 			
 		for child in self.scanResolutionSubMenu.get_children():
 			child.set_sensitive(sensitive)
+			
+	def set_delete_and_reorder_controls_sensitive(self, sensitive):
+		'''Enables or disables all gui widgets related to deleting or reordering pages.'''
+		self.deleteMenuItem.set_sensitive(sensitive)
 	
 	def set_zoom_controls_sensitive(self, sensitive):
 		'''Enables or disables all gui widgets related to zooming.'''
@@ -328,13 +332,13 @@ class GtkGUI():
 		self.app.show_preferences()
 		
 	def on_ShowToolbarMenuItem_toggled(self, checkMenuItem):
-		self.app.toggle_toolbar(checkMenuItem)
+		self.app.stateEngine.set_state('show_toolbar', checkMenuItem.get_active())
 		
 	def on_ShowStatusBarMenuItem_toggled(self, checkMenuItem):
-		self.app.toggle_statusbar(checkMenuItem)
+		self.app.stateEngine.set_state('show_statusbar', checkMenuItem.get_active())
 		
 	def on_ShowThumbnailsMenuItem_toggled(self, checkMenuItem):
-		self.app.toggle_thumbnails(checkMenuItem)
+		self.app.stateEngine.set_state('show_thumbnails', checkMenuItem.get_active())
 		
 	def on_ZoomInMenuItem_activate(self, menuItem):
 		self.app.zoom_in()
@@ -355,7 +359,7 @@ class GtkGUI():
 		self.app.rotate_clockwise()
 		
 	def on_AdjustColorsMenuItem_toggled(self, checkMenuItem):
-		self.app.adjust_colors_toggle(checkMenuItem)
+		self.app.adjust_colors_toggle()
 		pass
 		
 	def on_GoFirstMenuItem_activate(self, menuItem):

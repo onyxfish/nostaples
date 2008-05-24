@@ -17,7 +17,6 @@
 
 import os
 import threading
-import signal
 import gtk
 import gtk.glade
 import gobject
@@ -45,10 +44,13 @@ class NoStaples:
 
 	def __init__(self):
 		'''Sets up all application variables (including loading saved settings), loads the interface via glade, connects signals, and then shows the scanning window.'''
+		self.stateEngine = state.GConfStateEngine()
+		self.__init_states()
+		
 		self.scannerDict = {}	# Keys are human readable scanner descriptions, Values are sane-backend descriptors
-		self.activeScanner = state.get_state('active_scanner', constants.DEFAULT_ACTIVE_SCANNER)
-		self.scanMode = state.get_state('scan_mode',  constants.DEFAULT_SCAN_MODE)
-		self.scanResolution = state.get_state('scan_resolution', constants.DEFAULT_SCAN_RESOLUTION)
+		self.activeScanner = self.stateEngine.get_state('active_scanner')
+		self.scanMode = self.stateEngine.get_state('scan_mode')
+		self.scanResolution = self.stateEngine.get_state('scan_resolution')
 		self.scannedPages = []	# List of Page objects
 		self.nextScanFileIndex = 0
 		self.previewIndex = 0
@@ -57,21 +59,34 @@ class NoStaples:
 		self.previewHeight = 0
 		self.previewZoom = 1.0
 		self.previewIsBestFit = True
-		self.thumbnailSize = state.get_state('thumbnail_size', constants.DEFAULT_THUMBNAIL_SIZE)
+		self.thumbnailSize = self.stateEngine.get_state('thumbnail_size')
 		self.thumbnailSelection = None
 		self.insertIsNotDrag = False
 		self.scanEvent = threading.Event()
 		self.stopScanEvent = threading.Event()
+		self.quitEvent = threading.Event()
 		
 		self.gui = gui.GtkGUI(self, 'nostaples.glade')
 		
 		self.update_scanner_list()
+		
+	def __init_states(self):
+		'''Initializes each state that is tracked in the state engine, setting up default values and callbacks.'''
+		self.stateEngine.init_state('active_scanner', constants.DEFAULT_ACTIVE_SCANNER)
+		self.stateEngine.init_state('scan_mode', constants.DEFAULT_SCAN_MODE)
+		self.stateEngine.init_state('scan_resolution', constants.DEFAULT_SCAN_RESOLUTION)
+		self.stateEngine.init_state('thumbnail_size', constants.DEFAULT_THUMBNAIL_SIZE)
+		self.stateEngine.init_state('show_toolbar', True, self.toggle_toolbar)
+		self.stateEngine.init_state('show_thumbnails', True, self.toggle_thumbnails)
+		self.stateEngine.init_state('show_statusbar', True, self.toggle_statusbar)
+		self.stateEngine.init_state('save_path', os.path.expanduser('~'))		
 		
 	# Functions called by gui signal handlers
 	
 	def quit(self):
 		'''Called when ScanWindow is destroyed to cleanup threads and files.'''
 		self.stopScanEvent.set()
+		self.quitEvent.set()
 			
 		for page in self.scannedPages:
 			os.remove(page.filename)
@@ -123,7 +138,7 @@ class NoStaples:
 		filter.add_pattern('*.pdf')
 		self.saveDialog.add_filter(filter)
 		
-		savePath = state.get_state('save_path', os.path.expanduser('~'))
+		savePath = self.stateEngine.get_state('save_path')
 		if not os.path.exists(savePath):
 			savePath = os.path.expanduser('~')
 		filename = ''.join([title.replace(' ', '-').lower(), '.pdf'])
@@ -159,7 +174,7 @@ class NoStaples:
 			os.remove(pdfFilename)
 			
 		output.write(file(filename, 'w'))
-		state.set_state('save_path', self.saveDialog.get_current_folder())
+		self.stateEngine.set_state('save_path', self.saveDialog.get_current_folder())
 		
 		for page in self.scannedPages:
 			os.remove(page.filename)
@@ -174,8 +189,6 @@ class NoStaples:
 		
 	def delete_selected_page(self):
 		'''Deletes the page currently selected in the thumbnail pager.'''
-		#assert not self.scanEvent.isSet(), 'Scanning in progress.'
-		
 		if len(self.scannedPages) < 1 or self.thumbnailSelection is None:
 			return
 	
@@ -203,32 +216,26 @@ class NoStaples:
 		self.gui.preferencesDialog.run()
 		self.gui.preferencesDialog.hide()
 		
-	def toggle_toolbar(self, menuitem):
+	def toggle_toolbar(self):
 		'''Toggles the visibility of the toolbar.'''
-		if menuitem.get_active():
+		if self.stateEngine.get_state('show_toolbar'):
 			self.gui.toolbar.show()
-			state.set_state('show_toolbar', True)
 		else:
 			self.gui.toolbar.hide()
-			state.set_state('show_toolbar', False)
 		
-	def toggle_statusbar(self, menuitem):
-		'''Toggles the visibility of the statusbar.'''
-		if menuitem.get_active():
-			self.gui.statusbar.show()
-			state.set_state('show_statusbar', True)
-		else:
-			self.gui.statusbar.hide()
-			state.set_state('show_statusbar', False)
-		
-	def toggle_thumbnails(self, menuitem):
+	def toggle_thumbnails(self):
 		'''Toggles the visibility of the thumbnail pager.'''
-		if menuitem.get_active():
+		if self.stateEngine.get_state('show_thumbnails'):
 			self.gui.thumbnailsScrolledWindow.show()
-			state.set_state('show_thumbnails', True)
 		else:
 			self.gui.thumbnailsScrolledWindow.hide()
-			state.set_state('show_thumbnails', False)
+		
+	def toggle_statusbar(self):
+		'''Toggles the visibility of the statusbar.'''
+		if self.stateEngine.get_state('show_statusbar'):
+			self.gui.statusbar.show()
+		else:
+			self.gui.statusbar.hide()
 		
 	def zoom_in(self):
 		'''Zooms the preview image in by 50%.'''
@@ -295,8 +302,6 @@ class NoStaples:
 		
 	def rotate_counter_clockwise(self):
 		'''Rotates the current page ninety degrees counter-clockwise, or all pages if "rotate all pages" is toggled on.'''
-		#assert not self.scanEvent.isSet(), 'Scanning in progress.'
-			
 		if len(self.scannedPages) < 1:
 			return
 		
@@ -322,8 +327,6 @@ class NoStaples:
 		
 	def rotate_clockwise(self):
 		'''Rotates the current page ninety degrees clockwise, or all pages if "rotate all pages" is toggled on.'''
-		#assert not self.scanEvent.isSet(), 'Scanning in progress.'
-			
 		if len(self.scannedPages) < 1:
 			return
 		
@@ -347,7 +350,7 @@ class NoStaples:
 		else:
 			self.update_thumbnail(self.previewIndex)
 					
-	def adjust_colors_toggle(self, menuitem):
+	def adjust_colors_toggle(self):
 		'''Toggles the visibility of the adjust colors dialog.'''
 		if self.gui.adjustColorsMenuItem.get_active():
 			self.gui.adjustColorsWindow.show()
@@ -358,7 +361,7 @@ class NoStaples:
 		'''Updates the internal scan mode state when a scan mode menu item is toggled.'''
 		try:
 			self.scanMode = widget.get_children()[0].get_text()
-			state.set_state('scan_mode', self.scanMode)
+			self.stateEngine.set_state('scan_mode', self.scanMode)
 		except:
 			print 'Unable to get label text for currently selected scan mode menu item.'
 			raise
@@ -367,15 +370,13 @@ class NoStaples:
 		'''Updates the internal scan resolution state when a scan resolution menu item is toggled.'''
 		try:
 			self.scanResolution = widget.get_children()[0].get_text()
-			state.set_state('scan_resolution', self.scanResolution)
+			self.stateEngine.set_state('scan_resolution', self.scanResolution)
 		except:
 			print 'Unable to get label text for currently selected scan resolution menu item.'
 			raise
 		
 	def goto_first_page(self):
 		'''Moves to the first scanned page.'''
-		#assert not self.scanEvent.isSet(), 'Scanning in progress.'
-			
 		if len(self.scannedPages) < 1:
 			return
 			
@@ -383,8 +384,6 @@ class NoStaples:
 		
 	def goto_previous_page(self):
 		'''Moves to the previous scanned page.'''
-		#assert not self.scanEvent.isSet(), 'Scanning in progress.'
-			
 		if len(self.scannedPages) < 1:
 			return
 			
@@ -395,8 +394,6 @@ class NoStaples:
 		
 	def goto_next_page(self):
 		'''Moves to the next scanned page.'''
-		#assert not self.scanEvent.isSet(), 'Scanning in progress.'
-			
 		if len(self.scannedPages) < 1:
 			return
 			
@@ -407,8 +404,6 @@ class NoStaples:
 		
 	def goto_last_page(self):
 		'''Moves to the last scanned page.'''
-		#assert not self.scanEvent.isSet(), 'Scanning in progress.'
-			
 		if len(self.scannedPages) < 1:
 			return
 			
@@ -726,7 +721,7 @@ class NoStaples:
 		self.gui.scanResolutionSubMenu.show_all()
 		
 		# NB: Only do this if everything else has succeeded, otherwise a crash could repeat everytime the app is started
-		state.set_state('active_scanner', self.activeScanner)
+		self.stateEngine.set_state('active_scanner', self.activeScanner)
 		
 		# Emulate the default scan resolution being toggled
 		self.update_scan_resolution(selectedItem)
@@ -755,7 +750,6 @@ class NoStaples:
 			return
 		
 		if result == scanning.SCAN_FAILURE:
-			#self.render_preview()
 			self.gui.statusbar.pop(constants.STATUSBAR_SCAN_CONTEXT_ID)
 			return
 		

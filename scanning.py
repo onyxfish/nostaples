@@ -16,9 +16,8 @@
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-from subprocess import Popen, PIPE, STDOUT
+import commands
 import threading
-import signal
 import re
 
 SCAN_CANCELLED = -1
@@ -28,10 +27,7 @@ SCAN_SUCCESS = 1
 def get_available_scanners():
 	updateCmd = 'scanimage -f "%d=%v %m;"'
 	print 'Updating available scanners with command: "%s"' % updateCmd
-	updatePipe = Popen(updateCmd, shell=True, stderr=STDOUT, stdout=PIPE)
-	updatePipe.wait()
-	
-	output = updatePipe.stdout.read()
+	output = commands.getoutput(updateCmd)
 
 	scannerDict = {}
 	scannerList = re.findall('(.*?)=(.*?)[;|$]', output)
@@ -44,11 +40,8 @@ def get_available_scanners():
 def get_scanner_options(scanner):
 	updateCmd = ' '.join(['scanimage --help -d',  scanner])
 	print 'Updating scanner options with command: "%s"' % updateCmd
-	updatePipe = Popen(updateCmd, shell=True, stderr=STDOUT, stdout=PIPE)
-	updatePipe.wait()
-	
-	output = updatePipe.stdout.read()		
-	
+	output = commands.getoutput(updateCmd)
+
 	try:
 		modeList = re.findall('--mode (.*) ', output)[0].split('|')
 	except IndexError:
@@ -72,14 +65,7 @@ def scan_to_file(scanner, mode, resolution, filename, stopThreadEvent):
 	scanCmd = ' '.join([scanProgram, modeFlag, resolutionFlag, scannerFlag, outputFile])
 	
 	print 'Scanning with command: "%s"' % scanCmd
-	scanPipe = Popen(scanCmd, shell=True, stderr=STDOUT, stdout=PIPE)
-	
-	while scanPipe.poll() == None:
-		if stopThreadEvent.isSet():
-			os.kill(scanPipe.pid, signal.SIGTERM)
-			stopThreadEvent.clear()
-			print 'Scan terminated (scanimage command must finish)'
-			return SCAN_CANCELLED
+	output = commands.getoutput(scanCmd)
 	
 	if not os.path.exists(filename):
 		print 'Scan failed: file %s not created.' % filename
