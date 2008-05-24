@@ -63,7 +63,7 @@ def get_scanner_options(scanner):
 	
 	return (modeList, resolutionList)
 
-def scan_to_file(scanner, mode, resolution, filename, stopEvent):	
+def scan_to_file(scanner, mode, resolution, filename, stopThreadEvent):	
 	scanProgram = 'scanimage --format=pnm'
 	modeFlag = ' '.join(['--mode', mode])
 	resolutionFlag = ' '.join(['--resolution', resolution])
@@ -75,9 +75,9 @@ def scan_to_file(scanner, mode, resolution, filename, stopEvent):
 	scanPipe = Popen(scanCmd, shell=True, stderr=STDOUT, stdout=PIPE)
 	
 	while scanPipe.poll() == None:
-		if stopEvent.isSet():
+		if stopThreadEvent.isSet():
 			os.kill(scanPipe.pid, signal.SIGTERM)
-			print 'Scan terminated'
+			print 'Scan terminated (scanimage command must finish)'
 			return SCAN_CANCELLED
 	
 	if not os.path.exists(filename):

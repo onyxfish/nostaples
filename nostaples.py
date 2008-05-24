@@ -31,6 +31,14 @@ import scanning
 
 gtk.gdk.threads_init()
 
+def threaded(func):
+	'''Threading function decorator.'''
+	def proxy(*args, **kwargs):
+		t = threading.Thread(target=func, args=args, kwargs=kwargs)
+		t.start()
+		return t
+	return proxy
+    
 class NoStaples:
 	'''NoStaples' main application class.'''
 
@@ -41,7 +49,6 @@ class NoStaples:
 		self.scanMode = state.get_state('scan_mode',  constants.DEFAULT_SCAN_MODE)
 		self.scanResolution = state.get_state('scan_resolution', constants.DEFAULT_SCAN_RESOLUTION)
 		self.scannedPages = []	# List of Page objects
-		self.scanningThread = ScanningThread(self, 0)
 		self.nextScanFileIndex = 0
 		self.previewIndex = 0
 		self.previewPixbuf = None
@@ -52,6 +59,8 @@ class NoStaples:
 		self.thumbnailSize = state.get_state('thumbnail_size', constants.DEFAULT_THUMBNAIL_SIZE)
 		self.thumbnailSelection = None
 		self.insertIsNotDrag = False
+		self.scanEvent = threading.Event()
+		self.stopScanEvent = threading.Event()
 		
 		self.gladefile = 'nostaples.glade'
 		self.gladeTree = gtk.glade.XML(self.gladefile)
@@ -226,8 +235,9 @@ class NoStaples:
 	
 	def quit(self, window=None):
 		'''Called on ScanWindow is destroyed to cleanup threads and files.'''
-		if self.scanningThread.isAlive():
-			self.scanningThread.stop()
+		#~ if self.scanningThread.isAlive():
+			#~ self.scanningThread.stop()
+		self.stopScanEvent.set()
 			
 		for page in self.scannedPages:
 			os.remove(page.filename)
@@ -252,19 +262,12 @@ class NoStaples:
 			self.thumbnailsTreeView.get_selection().select_path(self.thumbnailSelection - 1)
 		
 	def insert_scan(self, menuitem=None):
-		if self.scanningThread.isAlive():
-			self.error_box(self.scanWindow, 'Scanning is in progress...')
-			return
-			
-		# Must always create a new thread, because they can only be started once
-		self.scanningThread =  ScanningThread(self, self.thumbnailSelection)
-		self.scanningThread.start()
+		assert not self.scanEvent.isSet(), 'Scanning in progress.'
+		self.scan_thread(self.thumbnailSelection)
 		
 	def show_preferences(self, menuitem=None):
-		''''Show the preferences dialog.'''
-		if self.scanningThread.isAlive():
-			self.error_box(self.scanWindow, 'Scanning is in progress...')
-			return
+		'''Show the preferences dialog.'''
+		assert not self.scanEvent.isSet(), 'Scanning in progress.'
 			
 		self.preferencesDialog.run()
 		self.preferencesDialog.hide()
@@ -361,16 +364,14 @@ class NoStaples:
 		
 	def show_about(self, menuitem=None):
 		'''Show the about dialog.'''
-		if self.scanningThread.isAlive():
-			self.error_box(self.scanWindow, 'Scanning is in progress...')
-			return
+		assert not self.scanEvent.isSet(), 'Scanning in progress.'
 			
 		self.aboutDialog.run()
 		self.aboutDialog.hide()
 		
 	def update_scanner_list(self, widget=None):
 		'''Populates a menu with a list of available scanners.'''
-		assert not self.scanningThread.isAlive(), "Scanning thread should never be running when scanner list is updated."
+		assert not self.scanEvent.isSet(), 'Scanning in progress.'
 		
 		self.scannerDict = scanning.get_available_scanners()
 		
@@ -409,7 +410,7 @@ class NoStaples:
 
 	def update_scanner_options(self, widget=None):
 		'''Populates a menu with a list of available options for the currently selected scanner.'''
-		assert not self.scanningThread.isAlive(), "Scanning thread should never be running when scanner options are updated."
+		assert not self.scanEvent.isSet(), 'Scanning in progress.'
 		
 		# Get the selected scanner
 		toggledScanner = widget.get_children()[0].get_text()
@@ -503,9 +504,7 @@ class NoStaples:
 		
 	def rotate_counter_clockwise(self, button=None):
 		'''Rotates the current page ninety degrees counter-clockwise, or all pages if "rotate all pages" is toggled on.'''
-		if self.scanningThread.isAlive():
-			self.error_box(self.scanWindow, 'Scanning is in progress...')
-			return
+		assert not self.scanEvent.isSet(), 'Scanning in progress.'
 			
 		if len(self.scannedPages) < 1:
 			return
@@ -532,9 +531,7 @@ class NoStaples:
 		
 	def rotate_clockwise(self, button=None):
 		'''Rotates the current page ninety degrees clockwise, or all pages if "rotate all pages" is toggled on.'''
-		if self.scanningThread.isAlive():
-			self.error_box(self.scanWindow, 'Scanning is in progress...')
-			return
+		assert not self.scanEvent.isSet(), 'Scanning in progress.'
 			
 		if len(self.scannedPages) < 1:
 			return
@@ -634,9 +631,7 @@ class NoStaples:
 		
 	def goto_first_page(self, button=None):
 		'''Moves to the first scanned page.'''
-		if self.scanningThread.isAlive():
-			self.error_box(self.scanWindow, 'Scanning is in progress...')
-			return
+		assert not self.scanEvent.isSet(), 'Scanning in progress.'
 			
 		if len(self.scannedPages) < 1:
 			return
@@ -645,9 +640,7 @@ class NoStaples:
 		
 	def goto_previous_page(self, button=None):
 		'''Moves to the previous scanned page.'''
-		if self.scanningThread.isAlive():
-			self.error_box(self.scanWindow, 'Scanning is in progress...')
-			return
+		assert not self.scanEvent.isSet(), 'Scanning in progress.'
 			
 		if len(self.scannedPages) < 1:
 			return
@@ -659,9 +652,7 @@ class NoStaples:
 		
 	def goto_next_page(self, button=None):
 		'''Moves to the next scanned page.'''
-		if self.scanningThread.isAlive():
-			self.error_box(self.scanWindow, 'Scanning is in progress...')
-			return
+		assert not self.scanEvent.isSet(), 'Scanning in progress.'
 			
 		if len(self.scannedPages) < 1:
 			return
@@ -673,9 +664,7 @@ class NoStaples:
 		
 	def goto_last_page(self, button=None):
 		'''Moves to the last scanned page.'''
-		if self.scanningThread.isAlive():
-			self.error_box(self.scanWindow, 'Scanning is in progress...')
-			return
+		assert not self.scanEvent.isSet(), 'Scanning in progress.'
 			
 		if len(self.scannedPages) < 1:
 			return
@@ -693,8 +682,8 @@ class NoStaples:
 		if len(self.scannedPages) < 1:
 			return
 			
-		if self.scanningThread.isAlive():
-			return
+		#~ if self.scanningThread.isAlive():
+			#~ return
 		
 		if self.previewIsBestFit:
 			self.zoom_best_fit()
@@ -704,19 +693,12 @@ class NoStaples:
 		
 	def scan_page(self, button=None):
 		'''Starts the scanning thread.'''
-		if self.scanningThread.isAlive():
-			self.error_box(self.scanWindow, 'Scanning is in progress...')
-			return
-			
-		# Must always create a new thread, because they can only be started once
-		self.scanningThread = ScanningThread(self, len(self.scannedPages))
-		self.scanningThread.start()
+		assert not self.scanEvent.isSet(), 'Scanning in progress.'
+		self.scan_thread(len(self.scannedPages))
 	
 	def save_as(self, widget=None):
 		'''Gets PDF Metadata from the user, prompts for a filename, and saves the document to PDF.'''
-		if self.scanningThread.isAlive():
-			self.error_box(self.scanWindow, 'Scanning is in progress...')
-			return
+		assert not self.scanEvent.isSet(), 'Scanning in progress.'
 			
 		if len(self.scannedPages) < 1:
 			self.error_box(self.scanWindow, 'No pages have been scanned.')
@@ -914,6 +896,57 @@ class NoStaples:
 			self.scannedPages.insert(index, page)
 			self.thumbnailsListStore.insert(index, [page.get_thumbnail_pixbuf(self.thumbnailSize)])
 			self.thumbnailsTreeView.get_selection().select_path(index)
+	
+	@threaded
+	def scan_thread(self, index):
+		'''Scans a page with "scanimage" and appends it to the end of the current document.'''
+		self.scanEvent.set()
+		
+		gtk.gdk.threads_enter()
+		
+		self.statusbar.push(constants.STATUSBAR_SCAN_CONTEXT_ID,'Scanning...')
+		self.previewImageDisplay.clear()
+		
+		if not self.colorAllPagesCheck.get_active():
+			self.brightnessScale.set_value(1.0)
+			self.contrastScale.set_value(1.0)
+			self.sharpnessScale.set_value(1.0)
+			
+		gtk.gdk.threads_leave()
+		
+		assert self.scanMode != None, 'Attempting to scan with no scan mode selected.'
+		assert self.scanResolution != None, 'Attempting to scan with no scan resolution selected.'
+		assert self.activeScanner != None, 'Attempting to scan with no scanner selected.'
+		
+		scanFilename = 'scan%i.pnm' % self.nextScanFileIndex
+		result = scanning.scan_to_file(self.scannerDict[self.activeScanner], self.scanMode, self.scanResolution, scanFilename, self.stopScanEvent)
+		
+		if result == scanning.SCAN_CANCELLED:
+			# Scans are only cancelled when application is killed, so statusbar will not exist to be updated
+			return
+		
+		if result == scanning.SCAN_FAILURE:
+			self.render_preview()
+			self.statusbar.pop(constants.STATUSBAR_SCAN_CONTEXT_ID)
+			return
+		
+		self.nextScanFileIndex += 1
+		
+		scanPage = page.Page(scanFilename)
+		
+		gtk.gdk.threads_enter()
+	
+		scanPage.brightness = self.brightnessScale.get_value()
+		scanPage.contrast = self.contrastScale.get_value()
+		scanPage.sharpness = self.sharpnessScale.get_value()
+		
+		self.add_page(index, scanPage)
+		
+		self.statusbar.pop(constants.STATUSBAR_SCAN_CONTEXT_ID)	
+		
+		gtk.gdk.threads_leave()
+		
+		self.scanEvent.clear()
 		
 class NoStaplesPdfFileWriter(PdfFileWriter):
 	'''A subclass of a PyPdf PdfFileWriter that adds support for custom meta-data.'''
@@ -940,68 +973,6 @@ class NoStaplesPdfFileWriter(PdfFileWriter):
 		root.update({NameObject('/Type'): NameObject('/Catalog'),
 					NameObject('/Pages'): self._pages})
 		self._root = self._addObject(root)
-
-class ScanningThread(threading.Thread):
-	'''A Thread object for scanning documents without hanging the GUI.'''
-	
-	def __init__(self, app, index):
-		'''Initializes the scanning thread with a reference to the controlling application and the index to scan the page into.'''
-		self.app = app
-		self.index = index
-		self.stopThreadEvent = threading.Event()
-		
-		threading.Thread.__init__(self)
-	
-	def run(self):
-		'''Scans a page with "scanimage" and appends it to the end of the current document.'''
-		gtk.gdk.threads_enter()
-		
-		self.app.statusbar.push(constants.STATUSBAR_SCAN_CONTEXT_ID,'Scanning...')
-		self.app.previewImageDisplay.clear()
-		
-		if not self.app.colorAllPagesCheck.get_active():
-			self.app.brightnessScale.set_value(1.0)
-			self.app.contrastScale.set_value(1.0)
-			self.app.sharpnessScale.set_value(1.0)
-			
-		gtk.gdk.threads_leave()
-		
-		assert self.app.scanMode != None, 'Attempting to scan with no scan mode selected.'
-		assert self.app.scanResolution != None, 'Attempting to scan with no scan resolution selected.'
-		assert self.app.activeScanner != None, 'Attempting to scan with no scanner selected.'
-		
-		scanFilename = 'scan%i.pnm' % self.app.nextScanFileIndex
-		result = scanning.scan_to_file(self.app.scannerDict[self.app.activeScanner], self.app.scanMode, self.app.scanResolution, scanFilename, self.stopThreadEvent)
-		
-		if result == scanning.SCAN_CANCELLED:
-			# Scans are only cancelled when application is killed, so statusbar will not exist to be updated
-			return
-		
-		if result == scanning.SCAN_FAILURE:
-			self.app.render_preview()
-			self.app.statusbar.pop(constants.STATUSBAR_SCAN_CONTEXT_ID)
-			return
-		
-		self.app.nextScanFileIndex += 1
-		
-		scanPage = page.Page(scanFilename)
-		
-		gtk.gdk.threads_enter()
-	
-		scanPage.brightness = self.app.brightnessScale.get_value()
-		scanPage.contrast = self.app.contrastScale.get_value()
-		scanPage.sharpness = self.app.sharpnessScale.get_value()
-		
-		self.app.add_page(self.index, scanPage)
-		
-		self.app.statusbar.pop(constants.STATUSBAR_SCAN_CONTEXT_ID)	
-		
-		gtk.gdk.threads_leave()
-		
-	def stop(self):
-		'''Stops a scan that is currently in progress.'''
-		self.stopThreadEvent.set()
-		self.app.statusbar.pop(constants.STATUSBAR_SCAN_CONTEXT_ID)
 		
 # Main loop
 
