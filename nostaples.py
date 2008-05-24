@@ -27,6 +27,7 @@ from pyPdf.pdf import *
 import constants
 import state
 import page
+import gui
 import scanning
 
 gtk.gdk.threads_init()
@@ -62,641 +63,33 @@ class NoStaples:
 		self.scanEvent = threading.Event()
 		self.stopScanEvent = threading.Event()
 		
-		self.gladefile = 'nostaples.glade'
-		self.gladeTree = gtk.glade.XML(self.gladefile)
-		
-		self.scanWindow = self.gladeTree.get_widget('ScanWindow')
-		self.scanWindow.set_property('allow-shrink', True)
-		
-		self.adjustColorsWindow = self.gladeTree.get_widget('AdjustColorsWindow')
-		
-		self.preferencesDialog = self.gladeTree.get_widget('PreferencesDialog')
-		self.aboutDialog = self.gladeTree.get_widget('AboutDialog')
-		self.saveDialog = self.gladeTree.get_widget('SaveDialog')
-		self.metadataDialog = self.gladeTree.get_widget('MetadataDialog')
-		
-		self.errorDialog = self.gladeTree.get_widget('ErrorDialog')
-		self.errorLabel = self.gladeTree.get_widget('ErrorLabel')
-		
-		self.previewModeComboBox = self.gladeTree.get_widget('PreviewModeComboBox')
-		self.setup_combobox(self.previewModeComboBox, ['Nearest (Fastest)','Bilinear', 'Bicubic', 'Antialias (Clearest)'], 'Antialias (Clearest)')
-		
-		self.scannerSubMenu = self.gladeTree.get_widget('ScannerSubMenu')
-		self.scanModeSubMenu = self.gladeTree.get_widget('ScanModeSubMenu')
-		self.scanResolutionSubMenu = self.gladeTree.get_widget('ScanResolutionSubMenu')
+		self.gui = gui.GtkGUI(self, 'nostaples.glade')
 		
 		self.update_scanner_list()
 		
-		self.toolbar = self.gladeTree.get_widget('MainToolbar')
-		
-		self.rotateAllPagesMenuItem = self.gladeTree.get_widget('RotateAllPagesMenuItem')
-		self.adjustColorsMenuItem = self.gladeTree.get_widget('AdjustColorsMenuItem')
-		
-		self.brightnessScale = self.gladeTree.get_widget('BrightnessScale')
-		self.contrastScale = self.gladeTree.get_widget('ContrastScale')
-		self.sharpnessScale = self.gladeTree.get_widget('SharpnessScale')
-		self.colorAllPagesCheck = self.gladeTree.get_widget('ColorAllPagesCheck')
-		
-		self.titleEntry = self.gladeTree.get_widget('TitleEntry')
-		self.authorEntry = self.gladeTree.get_widget('AuthorEntry')
-		self.keywordsEntry = self.gladeTree.get_widget('KeywordsEntry')
-		
-		self.thumbnailsScrolledWindow = self.gladeTree.get_widget('ThumbnailsScrolledWindow')
-		
-		self.thumbnailsListStore = gtk.ListStore(gtk.gdk.Pixbuf)
-		self.thumbnailsTreeView = gtk.TreeView(self.thumbnailsListStore)
-		self.thumbnailsColumn = gtk.TreeViewColumn(None)
-		self.thumbnailsCell = gtk.CellRendererPixbuf()
-		self.thumbnailsColumn.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
-		self.thumbnailsColumn.set_fixed_width(self.thumbnailSize)
-		self.thumbnailsTreeView.append_column(self.thumbnailsColumn)
-		self.thumbnailsColumn.pack_start(self.thumbnailsCell, True)
-		self.thumbnailsColumn.set_attributes(self.thumbnailsCell, pixbuf=0)
-		self.thumbnailsTreeView.get_selection().set_mode(gtk.SELECTION_SINGLE)
-		self.thumbnailsTreeView.set_headers_visible(False)
-		self.thumbnailsTreeView.set_property('can-focus', False)
-		
-		self.thumbnailsTreeView.set_reorderable(True)
-		self.thumbnailsListStore.connect('row-inserted', self.thumbnail_inserted)
-		self.thumbnailsTreeView.get_selection().connect('changed', self.thumbnail_selected)
-		
-		self.thumbnailsScrolledWindow.add(self.thumbnailsTreeView)
-		self.thumbnailsScrolledWindow.show_all()
-		
-		self.previewLayout = self.gladeTree.get_widget('PreviewLayout')
-		self.previewHScroll = self.gladeTree.get_widget('PreviewHScroll')
-		self.previewVScroll = self.gladeTree.get_widget('PreviewVScroll')
-		self.previewHScroll.set_adjustment(self.previewLayout.get_hadjustment())
-		self.previewVScroll.set_adjustment(self.previewLayout.get_vadjustment())
-		
-		self.previewImageDisplay = gtk.Image()
-		self.previewLayout.add(self.previewImageDisplay)
-		self.previewLayout.modify_bg(gtk.STATE_NORMAL, gtk.gdk.colormap_get_system().alloc_color(gtk.gdk.Color(0, 0, 0), False, True))
-		self.previewImageDisplay.show()
-
-		self.statusbar = self.gladeTree.get_widget('ScanStatusBar')
-		self.statusbar.push(constants.STATUSBAR_BASE_CONTEXT_ID, 'Ready')
-
-		signals = {'on_ScanWindow_destroy' : self.quit,
-					'on_AdjustColorsWindow_delete_event' : self.adjust_colors_close,
-					'on_ScanMenuItem_activate' : self.scan_page,
-					'on_SaveAsMenuItem_activate' : self.save_as,
-					'on_QuitMenuItem_activate' : self.quit,
-					'on_DeleteMenuItem_activate' : self.delete_selected_page,
-					'on_InsertScanMenuItem_activate' : self.insert_scan,
-					'on_PreferencesMenuItem_activate' : self.show_preferences,
-					'on_ShowToolbarMenuItem_toggled' : self.toggle_toolbar,
-					'on_ShowStatusBarMenuItem_toggled' : self.toggle_statusbar,
-					'on_ShowThumbnailsMenuItem_toggled' : self.toggle_thumbnails,
-					'on_ZoomInMenuItem_activate' : self.zoom_in,
-					'on_ZoomOutMenuItem_activate' : self.zoom_out,
-					'on_ZoomOneToOneMenuItem_activate' : self.zoom_one_to_one,
-					'on_ZoomBestFitMenuItem_activate' : self.zoom_best_fit,
-					'on_RotateCounterClockMenuItem_activate' : self.rotate_counter_clockwise,
-					'on_RotateClockMenuItem_activate' : self.rotate_clockwise,
-					'on_AdjustColorsMenuItem_toggled' : self.adjust_colors_toggle,
-					'on_GoFirstMenuItem_activate' : self.goto_first_page,
-					'on_GoPreviousMenuItem_activate' : self.goto_previous_page,
-					'on_GoNextMenuItem_activate' : self.goto_next_page,
-					'on_GoLastMenuItem_activate' : self.goto_last_page,
-					'on_AboutMenuItem_activate' : self.show_about,
-					'on_ScanButton_clicked' : self.scan_page,
-					'on_SaveAsButton_clicked' : self.save_as,
-					'on_ZoomInButton_clicked' : self.zoom_in,
-					'on_ZoomOutButton_clicked' : self.zoom_out,
-					'on_ZoomOneToOneButton_clicked' : self.zoom_one_to_one,
-					'on_ZoomBestFitButton_clicked' : self.zoom_best_fit,
-					'on_RotateCounterClockButton_clicked' : self.rotate_counter_clockwise,
-					'on_RotateClockButton_clicked' : self.rotate_clockwise,
-					'on_GoFirstButton_clicked' : self.goto_first_page,
-					'on_GoPreviousButton_clicked' : self.goto_previous_page,
-					'on_GoNextButton_clicked' : self.goto_next_page,
-					'on_GoLastButton_clicked' : self.goto_last_page,
-					'on_BrightnessScale_value_changed' : self.update_brightness,		
-					'on_ContrastScale_value_changed' : self.update_contrast,		
-					'on_SharpnessScale_value_changed' : self.update_sharpness,
-					'on_ColorAllPagesCheck_toggled' : self.color_all_pages_toggled,
-					'on_PreviewLayout_size_allocate' : self.preview_resized}
-		self.gladeTree.signal_autoconnect(signals)
-		
-		if state.get_state('show_toolbar', True) == False:
-			self.gladeTree.get_widget('ShowToolbarMenuItem').set_active(False)
-			self.toolbar.hide()
-		
-		if state.get_state('show_thumbnails', True) == False:
-			self.gladeTree.get_widget('ShowThumbnailsMenuItem').set_active(False)
-			self.thumbnailsScrolledWindow.hide()
-		
-		if state.get_state('show_statusbar', True) == False:
-			self.gladeTree.get_widget('ShowStatusbarMenuItem').set_active(False)
-			self.statusbar.hide()
-		
-		self.scanWindow.show()
-		
-	# GUI utility functions
-		
-	def setup_combobox(self, combobox, list, selection):
-		'''A short-cut for setting up simple comboboxes.'''
-		liststore = gtk.ListStore(gobject.TYPE_STRING)
-		combobox.clear()
-		combobox.set_model(liststore)
-		cell = gtk.CellRendererText()
-		combobox.pack_start(cell, True)
-		combobox.add_attribute(cell, 'text', 0)  
-
-		for item in list:
-			liststore.append([item])
-			
-		try:
-			index = list.index(selection)
-		except ValueError:
-			index = 0
-
-		combobox.set_active(index)
-		
-	def read_combobox(self, combobox):
-		'''A short-cut for reading from simple comboboxes.'''
-		liststore = combobox.get_model()
-		active = combobox.get_active()
-		
-		if active < 0:
-			return None
-			
-		return liststore[active][0]
-
-	def error_box(self, parent, text):
-		'''Utility function to display simple error dialog.'''
-		self.errorDialog.set_transient_for(parent)
-		self.errorLabel.set_markup(text)
-		self.errorDialog.run()
-		self.errorDialog.hide()
-		
 	# Signal handlers
 	
-	def quit(self, window=None):
+	def quit(self):
 		'''Called on ScanWindow is destroyed to cleanup threads and files.'''
-		#~ if self.scanningThread.isAlive():
-			#~ self.scanningThread.stop()
 		self.stopScanEvent.set()
 			
 		for page in self.scannedPages:
 			os.remove(page.filename)
 		
 		gtk.main_quit()
-		
-	def delete_selected_page(self, menuitem=None):
-		'''Deletes the page currently selected in the thumbnail pager.'''
-		if len(self.scannedPages) < 1 or self.thumbnailSelection is None:
-			return
-		
-		del self.scannedPages[self.thumbnailSelection]
-		
-		deleteIter = self.thumbnailsListStore.get_iter(self.thumbnailSelection)
-		self.thumbnailsListStore.remove(deleteIter)
-		
-		self.previewImageDisplay.clear()
-		
-		if self.thumbnailSelection <= len(self.scannedPages) - 1:
-			self.thumbnailsTreeView.get_selection().select_path(self.thumbnailSelection)
-		elif len(self.scannedPages) > 0:
-			self.thumbnailsTreeView.get_selection().select_path(self.thumbnailSelection - 1)
-		
-	def insert_scan(self, menuitem=None):
-		assert not self.scanEvent.isSet(), 'Scanning in progress.'
-		self.scan_thread(self.thumbnailSelection)
-		
-	def show_preferences(self, menuitem=None):
-		'''Show the preferences dialog.'''
-		assert not self.scanEvent.isSet(), 'Scanning in progress.'
 			
-		self.preferencesDialog.run()
-		self.preferencesDialog.hide()
-		
-	def toggle_statusbar(self, menuitem):
-		'''Toggles the visibility of the statusbar.'''
-		if menuitem.get_active():
-			self.statusbar.show()
-			state.set_state('show_statusbar', True)
-		else:
-			self.statusbar.hide()
-			state.set_state('show_statusbar', False)
-		
-	def toggle_toolbar(self, menuitem):
-		'''Toggles the visibility of the toolbar.'''
-		if menuitem.get_active():
-			self.toolbar.show()
-			state.set_state('show_toolbar', True)
-		else:
-			self.toolbar.hide()
-			state.set_state('show_toolbar', False)
-		
-	def toggle_thumbnails(self, menuitem):
-		'''Toggles the visibility of the thumbnail pager.'''
-		if menuitem.get_active():
-			self.thumbnailsScrolledWindow.show()
-			state.set_state('show_thumbnails', True)
-		else:
-			self.thumbnailsScrolledWindow.hide()
-			state.set_state('show_thumbnails', False)
-		
-	def zoom_in(self, widget=None):
-		'''Zooms the preview image in by 50%.'''
-		if len(self.scannedPages) < 1:
-			return
-			
-		self.previewZoom +=  0.5
-		
-		if self.previewZoom > 5:
-			self.previewZoom = 5
-			
-		self.previewIsBestFit = False
-			
-		self.render_preview()
-		self.update_status()
-		
-	def zoom_out(self, widget=None):
-		'''Zooms the preview image out by 50%.'''
-		if len(self.scannedPages) < 1:
-			return
-			
-		self.previewZoom -=  0.5
-		
-		if self.previewZoom < 0.5:
-			self.previewZoom = 0.5
-			
-		self.previewIsBestFit = False
-			
-		self.render_preview()
-		self.update_status()
-		
-	def zoom_one_to_one(self, widget=None):
-		'''Zooms the preview image to exactly 100%.'''
-		if len(self.scannedPages) < 1:
-			return
-			
-		self.previewZoom =  1.0
-			
-		self.previewIsBestFit = False
-			
-		self.render_preview()
-		self.update_status()
-		
-	def zoom_best_fit(self, widget=None):
-		'''Zooms the preview image so that the entire image is displayed.'''
-		if len(self.scannedPages) < 1:
-			return
-		
-		width = self.previewPixbuf.get_width()
-		height = self.previewPixbuf.get_height()
-		
-		widthRatio = float(width) / self.previewWidth
-		heightRatio = float(height) / self.previewHeight
-		
-		if widthRatio < heightRatio:
-			self.previewZoom =  1 / float(heightRatio)
-		else:
-			self.previewZoom =  1 / float(widthRatio)
-			
-		self.previewIsBestFit = True
-			
-		self.render_preview()
-		self.update_status()
-		
-	def show_about(self, menuitem=None):
-		'''Show the about dialog.'''
-		assert not self.scanEvent.isSet(), 'Scanning in progress.'
-			
-		self.aboutDialog.run()
-		self.aboutDialog.hide()
-		
-	def update_scanner_list(self, widget=None):
-		'''Populates a menu with a list of available scanners.'''
-		assert not self.scanEvent.isSet(), 'Scanning in progress.'
-		
-		self.scannerDict = scanning.get_available_scanners()
-		
-		for child in self.scannerSubMenu.get_children():
-			self.scannerSubMenu.remove(child)
-		
-		scanners = self.scannerDict.keys()
-		firstItem = None
-		selectedItem = None
-		for i in range(len(scanners)):
-			if i == 0:
-				menuItem = gtk.RadioMenuItem(None, scanners[i])
-				firstItem = menuItem
-			else:
-				menuItem = gtk.RadioMenuItem(firstItem, scanners[i])
-				
-			if i == 0 and self.activeScanner not in scanners:
-				menuItem.set_active(True)
-				selectedItem = menuItem
-			
-			if scanners[i] == self.activeScanner:
-				menuItem.set_active(True)
-				selectedItem = menuItem
-			
-			menuItem.connect('toggled', self.update_scanner_options)
-			self.scannerSubMenu.append(menuItem)
-		
-		menuItem = gtk.MenuItem('Refresh List')
-		menuItem.connect('activate', self.update_scanner_list)
-		self.scannerSubMenu.append(menuItem)
-		
-		self.scannerSubMenu.show_all()
-		
-		# Emulate the default scanner being toggled
-		self.update_scanner_options(selectedItem)
-
-	def update_scanner_options(self, widget=None):
-		'''Populates a menu with a list of available options for the currently selected scanner.'''
-		assert not self.scanEvent.isSet(), 'Scanning in progress.'
-		
-		# Get the selected scanner
-		toggledScanner = widget.get_children()[0].get_text()
-		
-		self.activeScanner = toggledScanner			
-		modeList, resolutionList = scanning.get_scanner_options(self.scannerDict[self.activeScanner])
-		
-		for child in self.scanModeSubMenu.get_children():
-			self.scanModeSubMenu.remove(child)
-		
-		if not modeList:
-			menuItem = gtk.MenuItem("No Scan Modes")
-			menuItem.set_sensitive(False)
-			self.scanModeSubMenu.append(menuItem)
-		else:		
-			for i in range(len(modeList)):
-				if i == 0:
-					menuItem = gtk.RadioMenuItem(None, modeList[i])
-					firstItem = menuItem
-				else:
-					menuItem = gtk.RadioMenuItem(firstItem, modeList[i])
-					
-				if i == 0 and self.scanMode not in modeList:
-					menuItem.set_active(True)
-					selectedItem = menuItem
-				
-				if modeList[i] == self.scanMode:
-					menuItem.set_active(True)
-					selectedItem = menuItem
-				
-				menuItem.connect('toggled', self.update_scan_mode)
-				self.scanModeSubMenu.append(menuItem)
-			
-		self.scanModeSubMenu.show_all()
-		
-		# Emulate the default scan mode being toggled
-		self.update_scan_mode(selectedItem)		
-		
-		for child in self.scanResolutionSubMenu.get_children():
-			self.scanResolutionSubMenu.remove(child)
-		
-		if not resolutionList:
-			menuItem = gtk.MenuItem("No Resolutions")
-			self.scanResolutionSubMenu.append(menuItem)
-			menuItem.set_sensitive(False)
-		else:		
-			for i in range(len(resolutionList)):
-				if i == 0:
-					menuItem = gtk.RadioMenuItem(None, resolutionList[i])
-					firstItem = menuItem
-				else:
-					menuItem = gtk.RadioMenuItem(firstItem, resolutionList[i])
-					
-				if i == 0 and self.scanResolution not in resolutionList:
-					menuItem.set_active(True)
-					selectedItem = menuItem
-				
-				if resolutionList[i] == self.scanResolution:
-					menuItem.set_active(True)
-					selectedItem = menuItem
-				
-				menuItem.connect('toggled', self.update_scan_resolution)
-				self.scanResolutionSubMenu.append(menuItem)
-			
-		self.scanResolutionSubMenu.show_all()
-		
-		# NB: Only do this if everything else has succeeded, otherwise a crash could repeat everytime the app is started
-		state.set_state('active_scanner', self.activeScanner)
-		
-		# Emulate the default scan resolution being toggled
-		self.update_scan_resolution(selectedItem)
-		
-	
-	def update_scan_mode(self, widget):
-		'''Updates the internal scan mode state when a scan mode menu item is toggled.'''
-		try:
-			self.scanMode = widget.get_children()[0].get_text()
-			state.set_state('scan_mode', self.scanMode)
-		except:
-			print 'Unable to get label text for currently selected scan mode menu item.'
-			raise
-		
-	def update_scan_resolution(self, widget):
-		'''Updates the internal scan resolution state when a scan resolution menu item is toggled.'''
-		try:
-			self.scanResolution = widget.get_children()[0].get_text()
-			state.set_state('scan_resolution', self.scanResolution)
-		except:
-			print 'Unable to get label text for currently selected scan resolution menu item.'
-			raise
-		
-	def rotate_counter_clockwise(self, button=None):
-		'''Rotates the current page ninety degrees counter-clockwise, or all pages if "rotate all pages" is toggled on.'''
-		assert not self.scanEvent.isSet(), 'Scanning in progress.'
-			
-		if len(self.scannedPages) < 1:
-			return
-		
-		if self.rotateAllPagesMenuItem.get_active():
-			for page in self.scannedPages:
-				page.rotation += 90
-		else:
-			self.scannedPages[self.previewIndex].rotation += 90
-			
-		self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
-		
-		if self.previewIsBestFit:
-			self.zoom_best_fit()
-		else:
-			self.render_preview()
-			self.update_status()
-		
-		if self.rotateAllPagesMenuItem.get_active():
-			for i in range(len(self.scannedPages)):			
-				self.update_thumbnail(i)
-		else:
-			self.update_thumbnail(self.previewIndex)
-		
-	def rotate_clockwise(self, button=None):
-		'''Rotates the current page ninety degrees clockwise, or all pages if "rotate all pages" is toggled on.'''
-		assert not self.scanEvent.isSet(), 'Scanning in progress.'
-			
-		if len(self.scannedPages) < 1:
-			return
-		
-		if self.rotateAllPagesMenuItem.get_active():
-			for page in self.scannedPages:
-				page.rotation -= 90
-		else:
-			self.scannedPages[self.previewIndex].rotation -= 90
-			
-		self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
-		
-		if self.previewIsBestFit:
-			self.zoom_best_fit()
-		else:
-			self.render_preview()
-			self.update_status()
-		
-		if self.rotateAllPagesMenuItem.get_active():
-			for i in range(len(self.scannedPages)):			
-				self.update_thumbnail(i)
-		else:
-			self.update_thumbnail(self.previewIndex)
-			
-	def adjust_colors_close(self, window, event):
+	def adjust_colors_close(self):
 		'''Closes the adjust colors dialog.'''
-		self.adjustColorsWindow.hide()
-		self.adjustColorsMenuItem.set_active(False)
+		self.gui.adjustColorsWindow.hide()
+		self.gui.adjustColorsMenuItem.set_active(False)
 		return True
-			
-	def adjust_colors_toggle(self, menuitem):
-		'''Toggles the visibility of the adjust colors dialog.'''
-		if self.adjustColorsMenuItem.get_active():
-			self.adjustColorsWindow.show()
-		else:
-			self.adjustColorsWindow.hide()
 		
-	def update_brightness(self, scale=None):
-		'''Updates the brightness of the current page, or all pages if the "ColorAllPagesCheck" is toggled on.'''
-		if len(self.scannedPages) < 1:
-			return
-		
-		if self.colorAllPagesCheck.get_active():
-			for index in range(len(self.scannedPages)):
-				self.scannedPages[index].brightness = self.brightnessScale.get_value()
-				self.update_thumbnail(index)
-			self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
-			self.render_preview()
-		else:
-			self.scannedPages[self.previewIndex].brightness = self.brightnessScale.get_value()
-			self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
-			self.render_preview()
-			self.update_thumbnail(self.previewIndex)
-		
-	def update_contrast(self, scale=None):		
-		'''Updates the contrast of the current page, or all pages if the "ColorAllPagesCheck" is toggled on.'''	
-		if len(self.scannedPages) < 1:
-			return
-		
-		if self.colorAllPagesCheck.get_active():
-			for index in range(len(self.scannedPages)):
-				self.scannedPages[index].contrast = self.contrastScale.get_value()
-				self.update_thumbnail(index)
-			self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
-			self.render_preview()
-		else:
-			self.scannedPages[self.previewIndex].contrast = self.contrastScale.get_value()
-			self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
-			self.render_preview()
-			self.update_thumbnail(self.previewIndex)
-		
-	def update_sharpness(self, scale=None):	
-		'''Updates the sharpness of the current page, or all pages if the "ColorAllPagesCheck" is toggled on.'''		
-		if len(self.scannedPages) < 1:
-			return
-		
-		if self.colorAllPagesCheck.get_active():
-			for index in range(len(self.scannedPages)):
-				self.scannedPages[index].sharpness = self.sharpnessScale.get_value()
-				self.update_thumbnail(index)
-			self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
-			self.render_preview()
-		else:
-			self.scannedPages[self.previewIndex].sharpness = self.sharpnessScale.get_value()
-			self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
-			self.render_preview()
-			self.update_thumbnail(self.previewIndex)
-			
-	def color_all_pages_toggled(self, toggle=None):
-		'''Catches the ColorAllPagesCheck being toggled on so that all per-page settings can be immediately synchronized.'''
-		if self.colorAllPagesCheck.get_active():
-			for index in range(len(self.scannedPages)):
-				self.scannedPages[index].brightness = self.brightnessScale.get_value()
-				self.scannedPages[index].contrast = self.contrastScale.get_value()
-				self.scannedPages[index].sharpness = self.sharpnessScale.get_value()
-				self.update_thumbnail(index)
-		
-	def goto_first_page(self, button=None):
-		'''Moves to the first scanned page.'''
-		assert not self.scanEvent.isSet(), 'Scanning in progress.'
-			
-		if len(self.scannedPages) < 1:
-			return
-			
-		self.thumbnailsTreeView.get_selection().select_path(0)
-		
-	def goto_previous_page(self, button=None):
-		'''Moves to the previous scanned page.'''
-		assert not self.scanEvent.isSet(), 'Scanning in progress.'
-			
-		if len(self.scannedPages) < 1:
-			return
-			
-		if self.previewIndex < 1:
-			return
-			
-		self.thumbnailsTreeView.get_selection().select_path(self.previewIndex - 1)
-		
-	def goto_next_page(self, button=None):
-		'''Moves to the next scanned page.'''
-		assert not self.scanEvent.isSet(), 'Scanning in progress.'
-			
-		if len(self.scannedPages) < 1:
-			return
-			
-		if self.previewIndex >= len(self.scannedPages) - 1:
-			return
-			
-		self.thumbnailsTreeView.get_selection().select_path(self.previewIndex + 1)
-		
-	def goto_last_page(self, button=None):
-		'''Moves to the last scanned page.'''
-		assert not self.scanEvent.isSet(), 'Scanning in progress.'
-			
-		if len(self.scannedPages) < 1:
-			return
-			
-		self.thumbnailsTreeView.get_selection().select_path(len(self.scannedPages) - 1)
-
-	def preview_resized(self, window, rect):
-		'''Catches preview display size allocations so that the preview image can be appropriately scaled to fit the display.'''
-		if rect.width == self.previewWidth and rect.height == self.previewHeight:
-			return
-			
-		self.previewWidth = rect.width
-		self.previewHeight = rect.height
-		
-		if len(self.scannedPages) < 1:
-			return
-			
-		#~ if self.scanningThread.isAlive():
-			#~ return
-		
-		if self.previewIsBestFit:
-			self.zoom_best_fit()
-		else:
-			self.render_preview()
-			self.update_status()
-		
-	def scan_page(self, button=None):
+	def scan_page(self):
 		'''Starts the scanning thread.'''
 		assert not self.scanEvent.isSet(), 'Scanning in progress.'
 		self.scan_thread(len(self.scannedPages))
-	
-	def save_as(self, widget=None):
+		
+	def save_as(self):
 		'''Gets PDF Metadata from the user, prompts for a filename, and saves the document to PDF.'''
 		assert not self.scanEvent.isSet(), 'Scanning in progress.'
 			
@@ -709,20 +102,20 @@ class NoStaples:
 		keywords =''
 		
 		while title == '':
-			response = self.metadataDialog.run()
+			response = self.gui.metadataDialog.run()
 		
 			if response != 1:
-				self.metadataDialog.hide()
+				self.gui.metadataDialog.hide()
 				return
 			
-			title = unicode(self.titleEntry.get_text())
-			author = unicode(self.authorEntry.get_text())
-			keywords = unicode(self.keywordsEntry.get_text())
+			title = unicode(self.gui.titleEntry.get_text())
+			author = unicode(self.gui.authorEntry.get_text())
+			keywords = unicode(self.gui.keywordsEntry.get_text())
 		
 			if title == '':
-				self.error_box(self.scanWindow, 'You must provide a title for this document.')
+				self.gui.error_box(self.scanWindow, 'You must provide a title for this document.')
 			
-		self.metadataDialog.hide()
+		self.gui.metadataDialog.hide()
 		
 		filter = gtk.FileFilter()
 		filter.set_name('PDF Files')
@@ -734,16 +127,16 @@ class NoStaples:
 		if not os.path.exists(savePath):
 			savePath = os.path.expanduser('~')
 		filename = ''.join([title.replace(' ', '-').lower(), '.pdf'])
-		self.saveDialog.set_current_folder(savePath)
-		self.saveDialog.set_current_name(filename)
+		self.gui.saveDialog.set_current_folder(savePath)
+		self.gui.saveDialog.set_current_name(filename)
 		
-		response = self.saveDialog.run()
-		self.saveDialog.hide()
+		response = self.gui.saveDialog.run()
+		self.gui.saveDialog.hide()
 		
 		if response != 1:
 			return
 		
-		filename = self.saveDialog.get_filename()
+		filename = self.gui.saveDialog.get_filename()
 		
 		output = NoStaplesPdfFileWriter(title, author, keywords)
 			
@@ -771,14 +164,340 @@ class NoStaples:
 		for page in self.scannedPages:
 			os.remove(page.filename)
 		
-		self.previewImageDisplay.clear()
-		self.thumbnailsListStore.clear()
+		self.gui.previewImageDisplay.clear()
+		self.gui.thumbnailsListStore.clear()
 		
 		self.scannedPages = []
 		self.nextScanFileIndex = 1
 		self.previewIndex = 0
 		self.update_status()
 		
+	def delete_selected_page(self):
+		'''Deletes the page currently selected in the thumbnail pager.'''
+		if len(self.scannedPages) < 1 or self.thumbnailSelection is None:
+			return
+		
+		del self.scannedPages[self.thumbnailSelection]
+		
+		deleteIter = self.gui.thumbnailsListStore.get_iter(self.thumbnailSelection)
+		self.gui.thumbnailsListStore.remove(deleteIter)
+		
+		self.gui.previewImageDisplay.clear()
+		
+		if self.thumbnailSelection <= len(self.scannedPages) - 1:
+			self.gui.thumbnailsTreeView.get_selection().select_path(self.thumbnailSelection)
+		elif len(self.scannedPages) > 0:
+			self.gui.thumbnailsTreeView.get_selection().select_path(self.thumbnailSelection - 1)
+		
+	def insert_scan(self):
+		assert not self.scanEvent.isSet(), 'Scanning in progress.'
+		self.scan_thread(self.thumbnailSelection)
+		
+	def show_preferences(self):
+		'''Show the preferences dialog.'''
+		assert not self.scanEvent.isSet(), 'Scanning in progress.'
+			
+		self.gui.preferencesDialog.run()
+		self.gui.preferencesDialog.hide()
+		
+	def toggle_toolbar(self, menuitem):
+		'''Toggles the visibility of the toolbar.'''
+		if menuitem.get_active():
+			self.gui.toolbar.show()
+			state.set_state('show_toolbar', True)
+		else:
+			self.gui.toolbar.hide()
+			state.set_state('show_toolbar', False)
+		
+	def toggle_statusbar(self, menuitem):
+		'''Toggles the visibility of the statusbar.'''
+		if menuitem.get_active():
+			self.gui.statusbar.show()
+			state.set_state('show_statusbar', True)
+		else:
+			self.gui.statusbar.hide()
+			state.set_state('show_statusbar', False)
+		
+	def toggle_thumbnails(self, menuitem):
+		'''Toggles the visibility of the thumbnail pager.'''
+		if menuitem.get_active():
+			self.gui.thumbnailsScrolledWindow.show()
+			state.set_state('show_thumbnails', True)
+		else:
+			self.gui.thumbnailsScrolledWindow.hide()
+			state.set_state('show_thumbnails', False)
+		
+	def zoom_in(self):
+		'''Zooms the preview image in by 50%.'''
+		if len(self.scannedPages) < 1:
+			return
+			
+		self.previewZoom +=  0.5
+		
+		if self.previewZoom > 5:
+			self.previewZoom = 5
+			
+		self.previewIsBestFit = False
+			
+		self.render_preview()
+		self.update_status()
+		
+	def zoom_out(self):
+		'''Zooms the preview image out by 50%.'''
+		if len(self.scannedPages) < 1:
+			return
+			
+		self.previewZoom -=  0.5
+		
+		if self.previewZoom < 0.5:
+			self.previewZoom = 0.5
+			
+		self.previewIsBestFit = False
+			
+		self.render_preview()
+		self.update_status()
+		
+	def zoom_one_to_one(self):
+		'''Zooms the preview image to exactly 100%.'''
+		if len(self.scannedPages) < 1:
+			return
+			
+		self.previewZoom =  1.0
+			
+		self.previewIsBestFit = False
+			
+		self.render_preview()
+		self.update_status()
+		
+	def zoom_best_fit(self):
+		'''Zooms the preview image so that the entire image is displayed.'''
+		if len(self.scannedPages) < 1:
+			return
+		
+		width = self.previewPixbuf.get_width()
+		height = self.previewPixbuf.get_height()
+		
+		widthRatio = float(width) / self.previewWidth
+		heightRatio = float(height) / self.previewHeight
+		
+		if widthRatio < heightRatio:
+			self.previewZoom =  1 / float(heightRatio)
+		else:
+			self.previewZoom =  1 / float(widthRatio)
+			
+		self.previewIsBestFit = True
+			
+		self.render_preview()
+		self.update_status()
+		
+	def rotate_counter_clockwise(self):
+		'''Rotates the current page ninety degrees counter-clockwise, or all pages if "rotate all pages" is toggled on.'''
+		assert not self.scanEvent.isSet(), 'Scanning in progress.'
+			
+		if len(self.scannedPages) < 1:
+			return
+		
+		if self.gui.rotateAllPagesMenuItem.get_active():
+			for page in self.scannedPages:
+				page.rotation += 90
+		else:
+			self.scannedPages[self.previewIndex].rotation += 90
+			
+		self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
+		
+		if self.previewIsBestFit:
+			self.zoom_best_fit()
+		else:
+			self.render_preview()
+			self.update_status()
+		
+		if self.gui.rotateAllPagesMenuItem.get_active():
+			for i in range(len(self.scannedPages)):			
+				self.update_thumbnail(i)
+		else:
+			self.update_thumbnail(self.previewIndex)
+		
+	def rotate_clockwise(self):
+		'''Rotates the current page ninety degrees clockwise, or all pages if "rotate all pages" is toggled on.'''
+		assert not self.scanEvent.isSet(), 'Scanning in progress.'
+			
+		if len(self.scannedPages) < 1:
+			return
+		
+		if self.gui.rotateAllPagesMenuItem.get_active():
+			for page in self.scannedPages:
+				page.rotation -= 90
+		else:
+			self.scannedPages[self.previewIndex].rotation -= 90
+			
+		self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
+		
+		if self.previewIsBestFit:
+			self.zoom_best_fit()
+		else:
+			self.render_preview()
+			self.update_status()
+		
+		if self.gui.rotateAllPagesMenuItem.get_active():
+			for i in range(len(self.scannedPages)):			
+				self.update_thumbnail(i)
+		else:
+			self.update_thumbnail(self.previewIndex)
+					
+	def adjust_colors_toggle(self, menuitem):
+		'''Toggles the visibility of the adjust colors dialog.'''
+		if self.gui.adjustColorsMenuItem.get_active():
+			self.gui.adjustColorsWindow.show()
+		else:
+			self.gui.adjustColorsWindow.hide()
+	
+	def update_scan_mode(self, widget):
+		'''Updates the internal scan mode state when a scan mode menu item is toggled.'''
+		try:
+			self.scanMode = widget.get_children()[0].get_text()
+			state.set_state('scan_mode', self.scanMode)
+		except:
+			print 'Unable to get label text for currently selected scan mode menu item.'
+			raise
+		
+	def update_scan_resolution(self, widget):
+		'''Updates the internal scan resolution state when a scan resolution menu item is toggled.'''
+		try:
+			self.scanResolution = widget.get_children()[0].get_text()
+			state.set_state('scan_resolution', self.scanResolution)
+		except:
+			print 'Unable to get label text for currently selected scan resolution menu item.'
+			raise
+		
+	def goto_first_page(self):
+		'''Moves to the first scanned page.'''
+		assert not self.scanEvent.isSet(), 'Scanning in progress.'
+			
+		if len(self.scannedPages) < 1:
+			return
+			
+		self.gui.thumbnailsTreeView.get_selection().select_path(0)
+		
+	def goto_previous_page(self):
+		'''Moves to the previous scanned page.'''
+		assert not self.scanEvent.isSet(), 'Scanning in progress.'
+			
+		if len(self.scannedPages) < 1:
+			return
+			
+		if self.previewIndex < 1:
+			return
+			
+		self.gui.thumbnailsTreeView.get_selection().select_path(self.previewIndex - 1)
+		
+	def goto_next_page(self):
+		'''Moves to the next scanned page.'''
+		assert not self.scanEvent.isSet(), 'Scanning in progress.'
+			
+		if len(self.scannedPages) < 1:
+			return
+			
+		if self.previewIndex >= len(self.scannedPages) - 1:
+			return
+			
+		self.gui.thumbnailsTreeView.get_selection().select_path(self.previewIndex + 1)
+		
+	def goto_last_page(self):
+		'''Moves to the last scanned page.'''
+		assert not self.scanEvent.isSet(), 'Scanning in progress.'
+			
+		if len(self.scannedPages) < 1:
+			return
+			
+		self.gui.thumbnailsTreeView.get_selection().select_path(len(self.scannedPages) - 1)
+		
+	def show_about(self):
+		'''Show the about dialog.'''
+		assert not self.scanEvent.isSet(), 'Scanning in progress.'
+			
+		self.gui.aboutDialog.run()
+		self.gui.aboutDialog.hide()
+		
+	def update_brightness(self):
+		'''Updates the brightness of the current page, or all pages if the "ColorAllPagesCheck" is toggled on.'''
+		if len(self.scannedPages) < 1:
+			return
+		
+		if self.gui.colorAllPagesCheck.get_active():
+			for index in range(len(self.scannedPages)):
+				self.scannedPages[index].brightness = self.gui.brightnessScale.get_value()
+				self.update_thumbnail(index)
+			self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
+			self.render_preview()
+		else:
+			self.scannedPages[self.previewIndex].brightness = self.gui.brightnessScale.get_value()
+			self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
+			self.render_preview()
+			self.update_thumbnail(self.previewIndex)
+		
+	def update_contrast(self):		
+		'''Updates the contrast of the current page, or all pages if the "ColorAllPagesCheck" is toggled on.'''	
+		if len(self.scannedPages) < 1:
+			return
+		
+		if self.gui.colorAllPagesCheck.get_active():
+			for index in range(len(self.scannedPages)):
+				self.scannedPages[index].contrast = self.gui.contrastScale.get_value()
+				self.update_thumbnail(index)
+			self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
+			self.render_preview()
+		else:
+			self.scannedPages[self.previewIndex].contrast = self.gui.contrastScale.get_value()
+			self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
+			self.render_preview()
+			self.update_thumbnail(self.previewIndex)
+		
+	def update_sharpness(self):	
+		'''Updates the sharpness of the current page, or all pages if the "ColorAllPagesCheck" is toggled on.'''		
+		if len(self.scannedPages) < 1:
+			return
+		
+		if self.gui.colorAllPagesCheck.get_active():
+			for index in range(len(self.scannedPages)):
+				self.scannedPages[index].sharpness = self.gui.sharpnessScale.get_value()
+				self.update_thumbnail(index)
+			self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
+			self.render_preview()
+		else:
+			self.scannedPages[self.previewIndex].sharpness = self.gui.sharpnessScale.get_value()
+			self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
+			self.render_preview()
+			self.update_thumbnail(self.previewIndex)
+			
+	def color_all_pages_toggled(self):
+		'''Catches the ColorAllPagesCheck being toggled on so that all per-page settings can be immediately synchronized.'''
+		if self.gui.colorAllPagesCheck.get_active():
+			for index in range(len(self.scannedPages)):
+				self.scannedPages[index].brightness = self.gui.brightnessScale.get_value()
+				self.scannedPages[index].contrast = self.gui.contrastScale.get_value()
+				self.scannedPages[index].sharpness = self.gui.sharpnessScale.get_value()
+				self.update_thumbnail(index)
+
+	def preview_resized(self, rect):
+		'''Catches preview display size allocations so that the preview image can be appropriately scaled to fit the display.'''
+		if rect.width == self.previewWidth and rect.height == self.previewHeight:
+			return
+			
+		self.previewWidth = rect.width
+		self.previewHeight = rect.height
+		
+		if len(self.scannedPages) < 1:
+			return
+			
+		if self.scanEvent.isSet():
+			return
+		
+		if self.previewIsBestFit:
+			self.zoom_best_fit()
+		else:
+			self.render_preview()
+			self.update_status()
+			
 	def thumbnail_inserted(self, treemodel, path, iter):
 		'''Catches when a thumbnail is inserted in the list and, if it is the result of a drag-and-drop operation, reorders the list of scanned pages to match.'''
 		if self.insertIsNotDrag:
@@ -802,7 +521,7 @@ class NoStaples:
 		if not selectionIter:
 			return
 		
-		scanIndex = self.thumbnailsListStore.get_path(selectionIter)[0]
+		scanIndex = self.gui.thumbnailsListStore.get_path(selectionIter)[0]
 		self.thumbnailSelection = scanIndex
 		self.jump_to_page(scanIndex)
 		
@@ -810,10 +529,10 @@ class NoStaples:
 	
 	def update_status(self):
 		'''Updates the status bar with the current page number and zoom percentage.'''
-		self.statusbar.pop(constants.STATUSBAR_PREVIEW_CONTEXT_ID)
+		self.gui.statusbar.pop(constants.STATUSBAR_PREVIEW_CONTEXT_ID)
 		
 		if len(self.scannedPages) > 0:
-			self.statusbar.push(constants.STATUSBAR_PREVIEW_CONTEXT_ID,'Page %i of %i\t%i%%' % (self.previewIndex + 1, len(self.scannedPages), int(self.previewZoom * 100)))
+			self.gui.statusbar.push(constants.STATUSBAR_PREVIEW_CONTEXT_ID,'Page %i of %i\t%i%%' % (self.previewIndex + 1, len(self.scannedPages), int(self.previewZoom * 100)))
 		
 	def render_preview(self):
 		'''Render the current page to the preview display.'''
@@ -832,7 +551,7 @@ class NoStaples:
 			pixbuf = self.previewPixbuf
 		
 		# Resize preview area
-		self.previewLayout.set_size(targetWidth, targetHeight)
+		self.gui.previewLayout.set_size(targetWidth, targetHeight)
 		
 		# Center preview
 		shiftX = int((self.previewWidth - targetWidth) / 2)
@@ -841,27 +560,27 @@ class NoStaples:
 		shiftY = int((self.previewHeight - targetHeight) / 2)
 		if shiftY < 0:
 			shiftY = 0
-		self.previewLayout.move(self.previewImageDisplay, shiftX, shiftY)
+		self.gui.previewLayout.move(self.gui.previewImageDisplay, shiftX, shiftY)
 		
 		# Show/hide scrollbars
 		if targetWidth > self.previewWidth:
-			self.previewHScroll.show()
+			self.gui.previewHScroll.show()
 		else:
-			self.previewHScroll.hide()
+			self.gui.previewHScroll.hide()
 			
 		if targetHeight > self.previewHeight:
-			self.previewVScroll.show()
+			self.gui.previewVScroll.show()
 		else:
-			self.previewVScroll.hide()
+			self.gui.previewVScroll.hide()
 		
 		# Render updated preview
-		self.previewImageDisplay.set_from_pixbuf(pixbuf)
+		self.gui.previewImageDisplay.set_from_pixbuf(pixbuf)
 		
 	def update_thumbnail(self, index):
 		'''Updates a thumbnail image to match changes in the preview image.'''
-		iter = self.thumbnailsListStore.get_iter(index)
+		iter = self.gui.thumbnailsListStore.get_iter(index)
 		thumbnail = self.scannedPages[index].get_thumbnail_pixbuf(self.thumbnailSize)
-		self.thumbnailsListStore.set_value(iter, 0, thumbnail)
+		self.gui.thumbnailsListStore.set_value(iter, 0, thumbnail)
 		
 	def jump_to_page(self, index):
 		'''Moves to a specified scanned page.'''
@@ -869,9 +588,9 @@ class NoStaples:
 			
 		self.previewIndex = index
 		
-		self.brightnessScale.set_value(self.scannedPages[self.previewIndex].brightness)
-		self.contrastScale.set_value(self.scannedPages[self.previewIndex].contrast)
-		self.sharpnessScale.set_value(self.scannedPages[self.previewIndex].sharpness)
+		self.gui.brightnessScale.set_value(self.scannedPages[self.previewIndex].brightness)
+		self.gui.contrastScale.set_value(self.scannedPages[self.previewIndex].contrast)
+		self.gui.sharpnessScale.set_value(self.scannedPages[self.previewIndex].sharpness)
 		
 		self.previewPixbuf = self.scannedPages[self.previewIndex].get_transformed_pixbuf()
 		
@@ -890,12 +609,126 @@ class NoStaples:
 		
 		if index > len(self.scannedPages) - 1:
 			self.scannedPages.append(page)
-			self.thumbnailsListStore.append([page.get_thumbnail_pixbuf(self.thumbnailSize)])
-			self.thumbnailsTreeView.get_selection().select_path(len(self.scannedPages) - 1)
+			self.gui.thumbnailsListStore.append([page.get_thumbnail_pixbuf(self.thumbnailSize)])
+			self.gui.thumbnailsTreeView.get_selection().select_path(len(self.scannedPages) - 1)
 		else:
 			self.scannedPages.insert(index, page)
-			self.thumbnailsListStore.insert(index, [page.get_thumbnail_pixbuf(self.thumbnailSize)])
-			self.thumbnailsTreeView.get_selection().select_path(index)
+			self.gui.thumbnailsListStore.insert(index, [page.get_thumbnail_pixbuf(self.thumbnailSize)])
+			self.gui.thumbnailsTreeView.get_selection().select_path(index)
+					
+	def update_scanner_list(self, widget=None):
+		'''Populates a menu with a list of available scanners.'''
+		assert not self.scanEvent.isSet(), 'Scanning in progress.'
+		
+		self.scannerDict = scanning.get_available_scanners()
+		
+		for child in self.gui.scannerSubMenu.get_children():
+			self.gui.scannerSubMenu.remove(child)
+		
+		scanners = self.scannerDict.keys()
+		firstItem = None
+		selectedItem = None
+		for i in range(len(scanners)):
+			if i == 0:
+				menuItem = gtk.RadioMenuItem(None, scanners[i])
+				firstItem = menuItem
+			else:
+				menuItem = gtk.RadioMenuItem(firstItem, scanners[i])
+				
+			if i == 0 and self.activeScanner not in scanners:
+				menuItem.set_active(True)
+				selectedItem = menuItem
+			
+			if scanners[i] == self.activeScanner:
+				menuItem.set_active(True)
+				selectedItem = menuItem
+			
+			menuItem.connect('toggled', self.update_scanner_options)
+			self.gui.scannerSubMenu.append(menuItem)
+		
+		menuItem = gtk.MenuItem('Refresh List')
+		menuItem.connect('activate', self.update_scanner_list)
+		self.gui.scannerSubMenu.append(menuItem)
+		
+		self.gui.scannerSubMenu.show_all()
+		
+		# Emulate the default scanner being toggled
+		self.update_scanner_options(selectedItem)
+
+	def update_scanner_options(self, widget=None):
+		'''Populates a menu with a list of available options for the currently selected scanner.'''
+		assert not self.scanEvent.isSet(), 'Scanning in progress.'
+		
+		# Get the selected scanner
+		toggledScanner = widget.get_children()[0].get_text()
+		
+		self.activeScanner = toggledScanner			
+		modeList, resolutionList = scanning.get_scanner_options(self.scannerDict[self.activeScanner])
+		
+		for child in self.gui.scanModeSubMenu.get_children():
+			self.gui.scanModeSubMenu.remove(child)
+		
+		if not modeList:
+			menuItem = gtk.MenuItem("No Scan Modes")
+			menuItem.set_sensitive(False)
+			self.gui.scanModeSubMenu.append(menuItem)
+		else:		
+			for i in range(len(modeList)):
+				if i == 0:
+					menuItem = gtk.RadioMenuItem(None, modeList[i])
+					firstItem = menuItem
+				else:
+					menuItem = gtk.RadioMenuItem(firstItem, modeList[i])
+					
+				if i == 0 and self.scanMode not in modeList:
+					menuItem.set_active(True)
+					selectedItem = menuItem
+				
+				if modeList[i] == self.scanMode:
+					menuItem.set_active(True)
+					selectedItem = menuItem
+				
+				menuItem.connect('toggled', self.update_scan_mode)
+				self.gui.scanModeSubMenu.append(menuItem)
+			
+		self.gui.scanModeSubMenu.show_all()
+		
+		# Emulate the default scan mode being toggled
+		self.update_scan_mode(selectedItem)		
+		
+		for child in self.gui.scanResolutionSubMenu.get_children():
+			self.gui.scanResolutionSubMenu.remove(child)
+		
+		if not resolutionList:
+			menuItem = gtk.MenuItem("No Resolutions")
+			self.gui.scanResolutionSubMenu.append(menuItem)
+			menuItem.set_sensitive(False)
+		else:		
+			for i in range(len(resolutionList)):
+				if i == 0:
+					menuItem = gtk.RadioMenuItem(None, resolutionList[i])
+					firstItem = menuItem
+				else:
+					menuItem = gtk.RadioMenuItem(firstItem, resolutionList[i])
+					
+				if i == 0 and self.scanResolution not in resolutionList:
+					menuItem.set_active(True)
+					selectedItem = menuItem
+				
+				if resolutionList[i] == self.scanResolution:
+					menuItem.set_active(True)
+					selectedItem = menuItem
+				
+				menuItem.connect('toggled', self.update_scan_resolution)
+				self.gui.scanResolutionSubMenu.append(menuItem)
+			
+		self.gui.scanResolutionSubMenu.show_all()
+		
+		# NB: Only do this if everything else has succeeded, otherwise a crash could repeat everytime the app is started
+		state.set_state('active_scanner', self.activeScanner)
+		
+		# Emulate the default scan resolution being toggled
+		self.update_scan_resolution(selectedItem)
 	
 	@threaded
 	def scan_thread(self, index):
@@ -904,13 +737,13 @@ class NoStaples:
 		
 		gtk.gdk.threads_enter()
 		
-		self.statusbar.push(constants.STATUSBAR_SCAN_CONTEXT_ID,'Scanning...')
-		self.previewImageDisplay.clear()
+		self.gui.statusbar.push(constants.STATUSBAR_SCAN_CONTEXT_ID,'Scanning...')
+		self.gui.previewImageDisplay.clear()
 		
-		if not self.colorAllPagesCheck.get_active():
-			self.brightnessScale.set_value(1.0)
-			self.contrastScale.set_value(1.0)
-			self.sharpnessScale.set_value(1.0)
+		if not self.gui.colorAllPagesCheck.get_active():
+			self.gui.brightnessScale.set_value(1.0)
+			self.gui.contrastScale.set_value(1.0)
+			self.gui.sharpnessScale.set_value(1.0)
 			
 		gtk.gdk.threads_leave()
 		
@@ -927,7 +760,7 @@ class NoStaples:
 		
 		if result == scanning.SCAN_FAILURE:
 			self.render_preview()
-			self.statusbar.pop(constants.STATUSBAR_SCAN_CONTEXT_ID)
+			self.gui.statusbar.pop(constants.STATUSBAR_SCAN_CONTEXT_ID)
 			return
 		
 		self.nextScanFileIndex += 1
@@ -936,13 +769,13 @@ class NoStaples:
 		
 		gtk.gdk.threads_enter()
 	
-		scanPage.brightness = self.brightnessScale.get_value()
-		scanPage.contrast = self.contrastScale.get_value()
-		scanPage.sharpness = self.sharpnessScale.get_value()
+		scanPage.brightness = self.gui.brightnessScale.get_value()
+		scanPage.contrast = self.gui.contrastScale.get_value()
+		scanPage.sharpness = self.gui.sharpnessScale.get_value()
 		
 		self.add_page(index, scanPage)
 		
-		self.statusbar.pop(constants.STATUSBAR_SCAN_CONTEXT_ID)	
+		self.gui.statusbar.pop(constants.STATUSBAR_SCAN_CONTEXT_ID)	
 		
 		gtk.gdk.threads_leave()
 		
