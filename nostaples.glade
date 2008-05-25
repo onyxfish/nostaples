@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Sat May 24 10:03:57 2008 -->
+<!--Generated with glade3 3.4.5 on Sat May 24 21:57:41 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="ScanWindow">
     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
@@ -638,7 +638,9 @@
                     <property name="visible">True</property>
                     <signal name="button_press_event" handler="on_PreviewLayout_button_press_event"/>
                     <signal name="motion_notify_event" handler="on_PreviewLayout_motion_notify_event"/>
+                    <signal name="button_release_event" handler="on_PreviewLayout_button_release_event"/>
                     <signal name="size_allocate" handler="on_PreviewLayout_size_allocate"/>
+                    <signal name="scroll_event" handler="on_PreviewLayout_scroll_event"/>
                   </widget>
                 </child>
               </widget>
@@ -1058,10 +1060,10 @@ Subtext</property>
     <property name="skip_pager_hint">True</property>
     <property name="transient_for">ScanWindow</property>
     <property name="has_separator">False</property>
-    <property name="action">GTK_FILE_CHOOSER_ACTION_SAVE</property>
     <property name="do_overwrite_confirmation">True</property>
-    <property name="use_preview_label">False</property>
+    <property name="action">GTK_FILE_CHOOSER_ACTION_SAVE</property>
     <property name="preview_widget_active">False</property>
+    <property name="use_preview_label">False</property>
     <child internal-child="vbox">
       <widget class="GtkVBox" id="dialog-vbox6">
         <property name="visible">True</property>

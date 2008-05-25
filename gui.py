@@ -106,7 +106,7 @@ class GtkGUI():
 		
 		self.previewImageDisplay = gtk.Image()
 		self.previewLayout.add(self.previewImageDisplay)
-		self.previewLayout.add_events(gtk.gdk.POINTER_MOTION_MASK | gtk.gdk.POINTER_MOTION_HINT_MASK | gtk.gdk.BUTTON_RELEASE_MASK)
+		self.previewLayout.add_events(gtk.gdk.POINTER_MOTION_MASK | gtk.gdk.POINTER_MOTION_HINT_MASK | gtk.gdk.BUTTON_RELEASE_MASK | gtk.gdk.SCROLL_MASK)
 		self.previewLayout.modify_bg(gtk.STATE_NORMAL, gtk.gdk.colormap_get_system().alloc_color(gtk.gdk.Color(0, 0, 0), False, True))
 		self.previewImageDisplay.show()
 
@@ -204,7 +204,9 @@ class GtkGUI():
 					'on_ColorAllPagesCheck_toggled' : self.on_ColorAllPagesCheck_toggled,
 					'on_PreviewLayout_size_allocate' : self.on_PreviewLayout_size_allocate,
 					'on_PreviewLayout_button_press_event' : self.on_PreviewLayout_button_press_event,
-					'on_PreviewLayout_motion_notify_event' : self.on_PreviewLayout_motion_notify_event}
+					'on_PreviewLayout_button_release_event' : self.on_PreviewLayout_button_release_event,
+					'on_PreviewLayout_motion_notify_event' : self.on_PreviewLayout_motion_notify_event,
+					'on_PreviewLayout_scroll_event' : self.on_PreviewLayout_scroll_event}
 		self.gladeTree.signal_autoconnect(signals)
 		
 		self.scanWindow.show()
@@ -440,8 +442,14 @@ class GtkGUI():
 	def on_PreviewLayout_button_press_event(self, widget, event):
 		self.app.preview_button_pressed(event)
 		
+	def on_PreviewLayout_button_release_event(self, widget, event):
+		self.app.preview_button_released(event)
+		
 	def on_PreviewLayout_motion_notify_event(self, widget, event):
 		self.app.preview_mouse_moved(event)
+		
+	def on_PreviewLayout_scroll_event(self, widget, event):
+		self.app.preview_scrolled(event)
 		
 	def on_ThumbnailsListStore_row_inserted(self, treeModel, path, iter):
 		self.app.thumbnail_inserted(treeModel, path, iter)

@@ -237,6 +237,9 @@ class NoStaples:
 		if len(self.scannedPages) < 1:
 			return
 			
+		if self.previewZoom == 5:
+			return
+			
 		self.previewZoom +=  0.5
 		
 		if self.previewZoom > 5:
@@ -250,6 +253,9 @@ class NoStaples:
 	def zoom_out(self):
 		'''Zooms the preview image out by 50%.'''
 		if len(self.scannedPages) < 1:
+			return
+			
+		if self.previewZoom == 0.5:
 			return
 			
 		self.previewZoom -=  0.5
@@ -490,6 +496,133 @@ class NoStaples:
 		else:
 			self.render_preview()
 			self.update_status()
+		
+	def preview_button_pressed(self, event):
+		'''Catches button presses on the preview display and traps the coords for dragging.'''
+		if len(self.scannedPages) < 1:
+			return
+		
+		if event.button == 3:
+			self.zoomDragStartX, self.zoomDragStartY = event.x, event.y
+			
+	def preview_button_released(self, event):
+		if len(self.scannedPages) < 1:
+			return
+		
+		if event.button == 3:				
+			# Transform to absolute coords
+			x1 = self.zoomDragStartX / self.previewZoom
+			y1 = self.zoomDragStartY / self.previewZoom
+			x2 = event.x / self.previewZoom
+			y2 = event.y / self.previewZoom
+			
+			# Swizzle values if coords are reversed
+			if x2 < x1:
+				x1, x2 = x2, x1
+				
+			if y2 < y1:
+				y1, y2 = y2, y1
+			
+			# Calc width and height
+			w = x2 - x1
+			h = y2 - y1
+			
+			# Calculate centering offset
+			targetWidth =  self.previewPixbuf.get_width() * self.previewZoom
+			targetHeight =  self.previewPixbuf.get_height() * self.previewZoom
+			
+			shiftX = int((self.previewWidth - targetWidth) / 2)
+			if shiftX < 0:
+				shiftX = 0
+			shiftY = int((self.previewHeight - targetHeight) / 2)
+			if shiftY < 0:
+				shiftY = 0
+			
+			# Compensate for centering
+			x1 -= shiftX / self.previewZoom
+			y1 -= shiftY / self.previewZoom
+			
+			# Determine correct zoom to fit region
+			if w > h:
+				self.previewZoom = self.previewWidth / w
+			else:
+				self.previewZoom = self.previewHeight / h
+				
+			# Cap zoom at 500%
+			if self.previewZoom > 5.0:
+				self.previewZoom = 5.0
+			
+			# Transform to relative coords
+			tx = int(x1 * self.previewZoom)
+			ty = int(y1 * self.previewZoom)
+			
+			self.previewIsBestFit = False
+			self.render_preview()
+			
+			self.gui.previewLayout.get_hadjustment().set_value(tx)
+			self.gui.previewLayout.get_vadjustment().set_value(ty)
+			
+			self.update_status()
+		
+	def preview_mouse_moved(self, event):
+		'''Handles click-and-drag behavior for the preview display.'''
+		if len(self.scannedPages) < 1:
+			return
+			
+		if event.is_hint:
+			x, y, state = event.window.get_pointer()
+		else:
+			state = event.state
+			
+		x, y = event.x_root, event.y_root
+		
+		if (state & gtk.gdk.BUTTON2_MASK) or (state & gtk.gdk.BUTTON1_MASK):
+			hAdjust = self.gui.previewLayout.get_hadjustment()
+			newX = hAdjust.value + (self.previewDragStart[0] - x)
+			if newX >= hAdjust.lower and newX <= hAdjust.upper - hAdjust.page_size:
+				hAdjust.set_value(newX)
+				
+			vAdjust = self.gui.previewLayout.get_vadjustment()
+			newY = vAdjust.value + (self.previewDragStart[1] - y)
+			if newY >= vAdjust.lower and newY <= vAdjust.upper - vAdjust.page_size:
+				vAdjust.set_value(newY)
+			
+		self.previewDragStart = (x, y)
+		
+	def preview_scrolled(self, event):
+		if len(self.scannedPages) < 1:
+			return
+		
+		currentX = self.gui.previewLayout.get_hadjustment()
+		currentY = self.gui.previewLayout.get_vadjustment()
+		newX = currentX.value
+		newY = currentY.value
+		
+		if event.direction == gtk.gdk.SCROLL_UP:
+			self.zoom_in()
+			#~ newY = currentY.value - currentY.page_size
+		elif event.direction == gtk.gdk.SCROLL_DOWN:
+			self.zoom_out()
+			#~ newY = currentY.value + currentY.page_size
+		#~ elif event.direction == gtk.gdk.SCROLL_LEFT:
+			#~ newX = currentX.value - currentX.page_size
+		#~ elif event.direction == gtk.gdk.SCROLL_RIGHT:
+			#~ newX = currentX.value + currentX.page_size
+			
+		#~ if newX != currentX.value:
+			#~ if newX < currentX.lower:
+				#~ newX = currentX.lower
+			#~ elif newX > currentX.upper - currentX.page_size:
+				#~ newX = currentX.upper - currentX.page_size
+			#~ currentX.set_value(newX)
+			#~ self.gui.previewLayout.set_hadjustment(currentX)
+		#~ if newY != currentY.value:
+			#~ if newY < currentY.lower:
+				#~ newY = currentY.lower
+			#~ elif newY > currentY.upper - currentY.page_size:
+				#~ newY = currentY.upper - currentY.page_size
+			#~ currentY.set_value(newY)
+			#~ self.gui.previewLayout.set_vadjustment(currentY)		
 			
 	def thumbnail_inserted(self, treemodel, path, iter):
 		'''Catches when a thumbnail is inserted in the list and, if it is the result of a drag-and-drop operation, reorders the list of scanned pages to match.'''
@@ -566,40 +699,6 @@ class NoStaples:
 		iter = self.gui.thumbnailsListStore.get_iter(index)
 		thumbnail = self.scannedPages[index].get_thumbnail_pixbuf(self.thumbnailSize)
 		self.gui.thumbnailsListStore.set_value(iter, 0, thumbnail)
-		
-	def preview_button_pressed(self, event):
-		'''Catches button presses on the preview display and traps the coords for dragging.'''
-		if len(self.scannedPages) < 1:
-			return
-			
-		self.previewDragStart = (event.x_root, event.y_root)
-		
-	def preview_mouse_moved(self, event):
-		'''Handles click-and-drag behavior for the preview display.'''
-		if len(self.scannedPages) < 1:
-			return
-			
-		if event.is_hint:
-			x, y, state = event.window.get_pointer()
-		else:
-			state = event.state
-			
-		x, y = event.x_root, event.y_root
-		
-		if (state & gtk.gdk.BUTTON2_MASK) or (state & gtk.gdk.BUTTON1_MASK):
-			currentX = self.gui.previewLayout.get_hadjustment()
-			newX = currentX.value + (self.previewDragStart[0] - x)
-			if newX >= currentX.lower and newX <= currentX.upper - currentX.page_size:
-				currentX.set_value(newX)
-				self.gui.previewLayout.set_hadjustment(currentX)
-				
-			currentY = self.gui.previewLayout.get_vadjustment()
-			newY = currentY.value + (self.previewDragStart[1] - y)
-			if newY >= currentY.lower and newY <= currentY.upper - currentY.page_size:
-				currentY.set_value(newY)
-				self.gui.previewLayout.set_vadjustment(currentY)
-			
-		self.previewDragStart = (x, y)
 		
 	def render_preview(self):
 		'''Render the current page to the preview display.'''
