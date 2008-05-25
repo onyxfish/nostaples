@@ -510,14 +510,20 @@ class NoStaples:
 		if len(self.scannedPages) < 1:
 			return
 		
-		if event.button == 3:
+		if event.button == 1:
+			if self.gui.previewHScroll.get_property('visible') or self.gui.previewVScroll.get_property('visible') :
+				self.gui.previewImageDisplay.window.set_cursor(gtk.gdk.Cursor(gtk.gdk.FLEUR))
+		elif event.button == 3:
 			self.zoomDragStartX, self.zoomDragStartY = event.x, event.y
 			
 	def preview_button_released(self, event):
+		'''Handles actual zoom part of the drag-to-zoom bejavior.'''
 		if len(self.scannedPages) < 1:
 			return
 		
-		if event.button == 3:				
+		if event.button == 1:
+			self.gui.previewImageDisplay.window.set_cursor(None)
+		elif event.button == 3:				
 			# Transform to absolute coords
 			x1 = self.zoomDragStartX / self.previewZoom
 			y1 = self.zoomDragStartY / self.previewZoom
@@ -550,6 +556,10 @@ class NoStaples:
 			x1 -= shiftX / self.previewZoom
 			y1 -= shiftY / self.previewZoom
 			
+			# Determine center-point of zoom region
+			x3 = x1 + w / 2
+			y3 = y1 + h / 2
+			
 			# Determine correct zoom to fit region
 			if w > h:
 				self.previewZoom = self.previewWidth / w
@@ -559,10 +569,14 @@ class NoStaples:
 			# Cap zoom at 500%
 			if self.previewZoom > 5.0:
 				self.previewZoom = 5.0
+				
+			# Transform center-point to relative coords			
+			tx = int(x3 * self.previewZoom)
+			ty = int(y3 * self.previewZoom)
 			
-			# Transform to relative coords
-			tx = int(x1 * self.previewZoom)
-			ty = int(y1 * self.previewZoom)
+			# Center in preview display
+			tx -= int(self.previewWidth / 2)
+			ty -= int(self.previewHeight / 2)
 			
 			self.previewIsBestFit = False
 			self.render_preview()
@@ -573,10 +587,10 @@ class NoStaples:
 			self.update_status()
 		
 	def preview_mouse_moved(self, event):
-		'''Handles click-and-drag-to-move/click-and-drag-to-zoom behavior for the preview display.'''
+		'''Handles motion element of the drag-to-move/drag-to-zoom behavior for the preview display.'''
 		if len(self.scannedPages) < 1:
 			return
-			
+		
 		if event.is_hint:
 			x, y, state = event.window.get_pointer()
 		else:
@@ -585,7 +599,7 @@ class NoStaples:
 		x, y = event.x_root, event.y_root
 		
 		# Move
-		if (state & gtk.gdk.BUTTON2_MASK) or (state & gtk.gdk.BUTTON1_MASK):
+		if (state & gtk.gdk.BUTTON1_MASK):
 			hAdjust = self.gui.previewLayout.get_hadjustment()
 			newX = hAdjust.value + (self.previewDragStart[0] - x)
 			if newX >= hAdjust.lower and newX <= hAdjust.upper - hAdjust.page_size:
@@ -614,7 +628,7 @@ class NoStaples:
 			self.gui.previewImageDisplay.set_from_pixbuf(self.scaledPixbuf)
 			self.gui.previewImageDisplay.window.invalidate_rect((0, 0, self.previewWidth, self.previewHeight), False)
 			self.gui.previewImageDisplay.window.process_updates(False)
-			gc = self.gui.previewImageDisplay.window.new_gc(self.previewZoomRectColor)
+			gc = self.gui.previewImageDisplay.window.new_gc(foreground=self.previewZoomRectColor, line_style=gtk.gdk.LINE_ON_OFF_DASH, line_width=2)
 			self.gui.previewImageDisplay.window.draw_rectangle(gc, False, int(x1), int(y1), int(w), int(h))
 			
 		self.previewDragStart = (x, y)
