@@ -56,11 +56,13 @@ class NoStaples:
 		self.nextScanFileIndex = 0
 		self.previewIndex = 0
 		self.previewPixbuf = None
+		self.scaledPixbuf = None
 		self.previewWidth = 0
 		self.previewHeight = 0
 		self.previewZoom = 1.0
 		self.previewIsBestFit = True
-		self.previewDragStart = (0,0)
+		self.previewDragStart = (0, 0)
+		self.previewZoomRectColor = gtk.gdk.colormap_get_system().alloc_color(gtk.gdk.Color(65535, 0, 0), False, True)
 		self.thumbnailSize = self.stateEngine.get_state('thumbnail_size')
 		self.thumbnailSelection = None
 		self.insertIsNotDrag = False
@@ -196,8 +198,10 @@ class NoStaples:
 		
 		if self.thumbnailSelection <= len(self.scannedPages) - 1:
 			self.gui.thumbnailsTreeView.get_selection().select_path(self.thumbnailSelection)
+			self.gui.thumbnailsTreeView.scroll_to_cell(self.thumbnailSelection)
 		elif len(self.scannedPages) > 0:
 			self.gui.thumbnailsTreeView.get_selection().select_path(self.thumbnailSelection - 1)
+			self.gui.thumbnailsTreeView.scroll_to_cell(self.thumbnailSelection - 1)
 		
 	def insert_scan(self):
 		'''Scans a page and inserts it before the current selected thumbnail.'''
@@ -382,6 +386,7 @@ class NoStaples:
 			return
 			
 		self.gui.thumbnailsTreeView.get_selection().select_path(0)
+		self.gui.thumbnailsTreeView.scroll_to_cell(0)
 		
 	def goto_previous_page(self):
 		'''Moves to the previous scanned page.'''
@@ -392,6 +397,7 @@ class NoStaples:
 			return
 			
 		self.gui.thumbnailsTreeView.get_selection().select_path(self.previewIndex - 1)
+		self.gui.thumbnailsTreeView.scroll_to_cell(self.previewIndex - 1)
 		
 	def goto_next_page(self):
 		'''Moves to the next scanned page.'''
@@ -402,6 +408,7 @@ class NoStaples:
 			return
 			
 		self.gui.thumbnailsTreeView.get_selection().select_path(self.previewIndex + 1)
+		self.gui.thumbnailsTreeView.scroll_to_cell(self.previewIndex + 1)
 		
 	def goto_last_page(self):
 		'''Moves to the last scanned page.'''
@@ -409,6 +416,7 @@ class NoStaples:
 			return
 			
 		self.gui.thumbnailsTreeView.get_selection().select_path(len(self.scannedPages) - 1)
+		self.gui.thumbnailsTreeView.scroll_to_cell(len(self.scannedPages) - 1)
 		
 	def show_about(self):
 		'''Show the about dialog.'''			
@@ -565,7 +573,7 @@ class NoStaples:
 			self.update_status()
 		
 	def preview_mouse_moved(self, event):
-		'''Handles click-and-drag behavior for the preview display.'''
+		'''Handles click-and-drag-to-move/click-and-drag-to-zoom behavior for the preview display.'''
 		if len(self.scannedPages) < 1:
 			return
 			
@@ -576,6 +584,7 @@ class NoStaples:
 			
 		x, y = event.x_root, event.y_root
 		
+		# Move
 		if (state & gtk.gdk.BUTTON2_MASK) or (state & gtk.gdk.BUTTON1_MASK):
 			hAdjust = self.gui.previewLayout.get_hadjustment()
 			newX = hAdjust.value + (self.previewDragStart[0] - x)
@@ -586,10 +595,32 @@ class NoStaples:
 			newY = vAdjust.value + (self.previewDragStart[1] - y)
 			if newY >= vAdjust.lower and newY <= vAdjust.upper - vAdjust.page_size:
 				vAdjust.set_value(newY)
+		# Zoom
+		elif (state & gtk.gdk.BUTTON3_MASK):
+			x1 = self.zoomDragStartX
+			y1 = self.zoomDragStartY
+			x2 = event.x
+			y2 = event.y
+			
+			if x2 < x1:
+				x1, x2 = x2, x1
+				
+			if y2 < y1:
+				y1, y2 = y2, y1
+			
+			w = x2 - x1
+			h = y2 - y1
+
+			self.gui.previewImageDisplay.set_from_pixbuf(self.scaledPixbuf)
+			self.gui.previewImageDisplay.window.invalidate_rect((0, 0, self.previewWidth, self.previewHeight), False)
+			self.gui.previewImageDisplay.window.process_updates(False)
+			gc = self.gui.previewImageDisplay.window.new_gc(self.previewZoomRectColor)
+			self.gui.previewImageDisplay.window.draw_rectangle(gc, False, int(x1), int(y1), int(w), int(h))
 			
 		self.previewDragStart = (x, y)
 		
 	def preview_scrolled(self, event):
+		'''Use scroll events to loop through scanned pages.'''
 		if len(self.scannedPages) < 1:
 			return
 		
@@ -599,30 +630,9 @@ class NoStaples:
 		newY = currentY.value
 		
 		if event.direction == gtk.gdk.SCROLL_UP:
-			self.zoom_in()
-			#~ newY = currentY.value - currentY.page_size
+			self.goto_previous_page()
 		elif event.direction == gtk.gdk.SCROLL_DOWN:
-			self.zoom_out()
-			#~ newY = currentY.value + currentY.page_size
-		#~ elif event.direction == gtk.gdk.SCROLL_LEFT:
-			#~ newX = currentX.value - currentX.page_size
-		#~ elif event.direction == gtk.gdk.SCROLL_RIGHT:
-			#~ newX = currentX.value + currentX.page_size
-			
-		#~ if newX != currentX.value:
-			#~ if newX < currentX.lower:
-				#~ newX = currentX.lower
-			#~ elif newX > currentX.upper - currentX.page_size:
-				#~ newX = currentX.upper - currentX.page_size
-			#~ currentX.set_value(newX)
-			#~ self.gui.previewLayout.set_hadjustment(currentX)
-		#~ if newY != currentY.value:
-			#~ if newY < currentY.lower:
-				#~ newY = currentY.lower
-			#~ elif newY > currentY.upper - currentY.page_size:
-				#~ newY = currentY.upper - currentY.page_size
-			#~ currentY.set_value(newY)
-			#~ self.gui.previewLayout.set_vadjustment(currentY)		
+			self.goto_next_page()		
 			
 	def thumbnail_inserted(self, treemodel, path, iter):
 		'''Catches when a thumbnail is inserted in the list and, if it is the result of a drag-and-drop operation, reorders the list of scanned pages to match.'''
@@ -664,10 +674,12 @@ class NoStaples:
 			self.scannedPages.append(page)
 			self.gui.thumbnailsListStore.append([page.get_thumbnail_pixbuf(self.thumbnailSize)])
 			self.gui.thumbnailsTreeView.get_selection().select_path(len(self.scannedPages) - 1)
+			self.gui.thumbnailsTreeView.scroll_to_cell(len(self.scannedPages) - 1)
 		else:
 			self.scannedPages.insert(index, page)
 			self.gui.thumbnailsListStore.insert(index, [page.get_thumbnail_pixbuf(self.thumbnailSize)])
 			self.gui.thumbnailsTreeView.get_selection().select_path(index)
+			self.gui.thumbnailsTreeView.scroll_to_cell(index)
 		
 	def jump_to_page(self, index):
 		'''Moves to a specified scanned page.'''
@@ -709,12 +721,12 @@ class NoStaples:
 			targetWidth = int(self.previewPixbuf.get_width() * self.previewZoom)
 			targetHeight = int(self.previewPixbuf.get_height() * self.previewZoom)
 			
-			pixbuf = self.previewPixbuf.scale_simple(targetWidth, targetHeight, gtk.gdk.INTERP_BILINEAR)
+			self.scaledPixbuf = self.previewPixbuf.scale_simple(targetWidth, targetHeight, gtk.gdk.INTERP_BILINEAR)
 		else:
 			targetWidth = self.previewPixbuf.get_width()
 			targetHeight = self.previewPixbuf.get_height()
 			
-			pixbuf = self.previewPixbuf
+			self.scaledPixbuf = self.previewPixbuf
 		
 		# Resize preview area
 		self.gui.previewLayout.set_size(targetWidth, targetHeight)
@@ -740,7 +752,7 @@ class NoStaples:
 			self.gui.previewVScroll.hide()
 		
 		# Render updated preview
-		self.gui.previewImageDisplay.set_from_pixbuf(pixbuf)
+		self.gui.previewImageDisplay.set_from_pixbuf(self.scaledPixbuf)
 					
 	def update_scanner_list(self, widget=None):
 		'''Populates a menu with a list of available scanners.'''
