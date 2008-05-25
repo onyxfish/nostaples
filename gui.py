@@ -106,7 +106,6 @@ class GtkGUI():
 		
 		self.previewImageDisplay = gtk.Image()
 		self.previewLayout.add(self.previewImageDisplay)
-		self.previewLayout.add_events(gtk.gdk.POINTER_MOTION_MASK | gtk.gdk.POINTER_MOTION_HINT_MASK | gtk.gdk.BUTTON_RELEASE_MASK | gtk.gdk.SCROLL_MASK)
 		self.previewLayout.modify_bg(gtk.STATE_NORMAL, gtk.gdk.colormap_get_system().alloc_color(gtk.gdk.Color(0, 0, 0), False, True))
 		self.previewImageDisplay.show()
 
@@ -202,11 +201,15 @@ class GtkGUI():
 					'on_ContrastScale_value_changed' : self.on_ContrastScale_value_changed,		
 					'on_SharpnessScale_value_changed' : self.on_SharpnessScale_value_changed,
 					'on_ColorAllPagesCheck_toggled' : self.on_ColorAllPagesCheck_toggled,
+					'on_TitleEntry_activate' : self.on_TitleEntry_activate,
+					'on_AuthorEntry_activate' : self.on_AuthorEntry_activate,
+					'on_KeywordsEntry_activate' : self.on_KeywordsEntry_activate,
 					'on_PreviewLayout_size_allocate' : self.on_PreviewLayout_size_allocate,
 					'on_PreviewLayout_button_press_event' : self.on_PreviewLayout_button_press_event,
 					'on_PreviewLayout_button_release_event' : self.on_PreviewLayout_button_release_event,
 					'on_PreviewLayout_motion_notify_event' : self.on_PreviewLayout_motion_notify_event,
 					'on_PreviewLayout_scroll_event' : self.on_PreviewLayout_scroll_event}
+		
 		self.gladeTree.signal_autoconnect(signals)
 		
 		self.scanWindow.show()
@@ -435,6 +438,15 @@ class GtkGUI():
 		
 	def on_ColorAllPagesCheck_toggled(self, toggleButton):
 		self.app.color_all_pages_toggled()
+		
+	def on_TitleEntry_activate(self, widget):
+		self.metadataDialog.response(1)
+		
+	def on_AuthorEntry_activate(self, widget):
+		self.metadataDialog.response(1)
+		
+	def on_KeywordsEntry_activate(self, widget):
+		self.metadataDialog.response(1)
 		
 	def on_PreviewLayout_size_allocate(self, widget, allocation):
 		self.app.preview_resized(allocation)

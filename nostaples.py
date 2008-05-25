@@ -19,10 +19,9 @@ import os
 import threading
 import time
 import gtk
-import gtk.glade
 import gobject
 import Image, ImageEnhance
-from pyPdf.pdf import *
+from pyPdf.pdf import PdfFileWriter, PdfFileReader, NameObject, createStringObject
 
 import constants
 import state
@@ -106,14 +105,44 @@ class NoStaples:
 		assert not self.scanEvent.isSet(), 'Scanning in progress.'
 			
 		if len(self.scannedPages) < 1:
-			self.error_box(self.scanWindow, 'No pages have been scanned.')
+			self.gui.error_box(self.scanWindow, 'No pages have been scanned.')
 			return
-			
-		title = ''
+		
+		# Save dialog
+		filter = gtk.FileFilter()
+		filter.set_name('PDF Files')
+		filter.add_mime_type('application/pdf')
+		filter.add_pattern('*.pdf')
+		self.gui.saveDialog.add_filter(filter)
+		
+		savePath = self.stateEngine.get_state('save_path')
+		if not os.path.exists(savePath):
+			savePath = os.path.expanduser('~')
+		self.gui.saveDialog.set_current_folder(savePath)
+		self.gui.saveDialog.set_current_name('')
+		
+		response = self.gui.saveDialog.run()
+		self.gui.saveDialog.hide()
+		
+		if response != 1:
+			return
+		
+		filename = self.gui.saveDialog.get_filename()
+		filter = self.gui.saveDialog.get_filter()
+		
+		if filter.get_name() == 'PDF Files' and filename[-4:] != '.pdf':
+			filename = ''.join([filename, '.pdf'])
+		
+		# PDF metadata dialog
+		title = filename.split('/')[-1]
 		author = ''
 		keywords =''
 		
-		while title == '':
+		self.gui.titleEntry.set_text(title)
+		self.gui.authorEntry.set_text(author)
+		self.gui.keywordsEntry.set_text(keywords)
+		
+		while 1:
 			response = self.gui.metadataDialog.run()
 		
 			if response != 1:
@@ -126,32 +155,22 @@ class NoStaples:
 		
 			if title == '':
 				self.gui.error_box(self.scanWindow, 'You must provide a title for this document.')
+			else:
+				break
 			
 		self.gui.metadataDialog.hide()
 		
-		filter = gtk.FileFilter()
-		filter.set_name('PDF Files')
-		filter.add_mime_type('application/pdf')
-		filter.add_pattern('*.pdf')
-		self.saveDialog.add_filter(filter)
+		# Create PDF writer and update meta-data
+		# Note: This is sort of a nasty hack as it requires accessing a member var marked private, but it is the only way to do this without modding/subclassing PdfFileWriter()
+		output = PdfFileWriter()
+		output._info.getObject().update({
+			NameObject('/Producer'): createStringObject(u'NoStaples via PyPDF'),
+			NameObject('/Title'): createStringObject(title),
+			NameObject('/Author'): createStringObject(author),
+			NameObject('/Keywords'): createStringObject(keywords)
+			})
 		
-		savePath = self.stateEngine.get_state('save_path')
-		if not os.path.exists(savePath):
-			savePath = os.path.expanduser('~')
-		filename = ''.join([title.replace(' ', '-').lower(), '.pdf'])
-		self.gui.saveDialog.set_current_folder(savePath)
-		self.gui.saveDialog.set_current_name(filename)
-		
-		response = self.gui.saveDialog.run()
-		self.gui.saveDialog.hide()
-		
-		if response != 1:
-			return
-		
-		filename = self.gui.saveDialog.get_filename()
-		
-		output = NoStaplesPdfFileWriter(title, author, keywords)
-			
+		# Generate individual pdfs with PIL and then cat pages together with PyPdf
 		for page in self.scannedPages:
 			tempImage = Image.open(page.filename)
 			pdfFilename = ''.join([page.filename[:-4], '.pdf'])
@@ -171,7 +190,7 @@ class NoStaples:
 			os.remove(pdfFilename)
 			
 		output.write(file(filename, 'w'))
-		self.stateEngine.set_state('save_path', self.saveDialog.get_current_folder())
+		self.stateEngine.set_state('save_path', self.gui.saveDialog.get_current_folder())
 		
 		for page in self.scannedPages:
 			os.remove(page.filename)
@@ -940,32 +959,6 @@ class NoStaples:
 		gtk.gdk.threads_leave()
 		
 		self.scanEvent.clear()
-		
-class NoStaplesPdfFileWriter(PdfFileWriter):
-	'''A subclass of a PyPdf PdfFileWriter that adds support for custom meta-data.'''
-	
-	def __init__(self, title, author, keywords):
-		'''Overrides the built in PdfFileWriter constructor to add support for custom metadata.'''
-		self._header = '%PDF-1.3'
-		self._objects = []
-		
-		pages = DictionaryObject()
-		pages.update({NameObject('/Type'): NameObject('/Pages'),
-					NameObject('/Count'): NumberObject(0),
-					NameObject('/Kids'): ArrayObject()})
-		self._pages = self._addObject(pages)
-		
-		info = DictionaryObject()
-		info.update({NameObject('/Producer'): createStringObject(u'NoStaples w/ Python PDF Library'),
-					NameObject('/Title'): createStringObject(title),
-					NameObject('/Author'): createStringObject(author),
-					NameObject('/Keywords'): createStringObject(keywords)})
-		self._info = self._addObject(info)
-	
-		root = DictionaryObject()
-		root.update({NameObject('/Type'): NameObject('/Catalog'),
-					NameObject('/Pages'): self._pages})
-		self._root = self._addObject(root)
 		
 # Main loop
 
