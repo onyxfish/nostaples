@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Mon May 26 22:40:54 2008 -->
+<!--Generated with glade3 3.4.5 on Tue May 27 07:58:56 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="ScanWindow">
     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
@@ -29,11 +29,16 @@
                     <property name="visible">True</property>
                     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
                     <child>
-                      <widget class="GtkMenuItem" id="ScanMenuItem">
+                      <widget class="GtkImageMenuItem" id="ScanMenuItem">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Scan</property>
+                        <property name="label" translatable="yes">S_can</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_ScanMenuItem_activate"/>
+                        <child internal-child="image">
+                          <widget class="GtkImage" id="menu-item-image2">
+                            <property name="visible">True</property>
+                            <property name="icon_name">scanner</property>
+                          </widget>
+                        </child>
                       </widget>
                     </child>
                     <child>
@@ -45,10 +50,15 @@
                     <child>
                       <widget class="GtkImageMenuItem" id="SaveAsMenuItem">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">gtk-save-as</property>
+                        <property name="label" translatable="yes">Save _As...</property>
                         <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
                         <signal name="activate" handler="on_SaveAsMenuItem_activate"/>
+                        <accelerator key="S" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                        <child internal-child="image">
+                          <widget class="GtkImage" id="menu-item-image1">
+                            <property name="stock">gtk-save-as</property>
+                          </widget>
+                        </child>
                       </widget>
                     </child>
                     <child>
@@ -86,6 +96,7 @@
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                         <signal name="activate" handler="on_DeleteMenuItem_activate"/>
+                        <accelerator key="Delete" modifiers="" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -133,7 +144,7 @@
                     <child>
                       <widget class="GtkCheckMenuItem" id="ShowToolbarMenuItem">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Toolbar</property>
+                        <property name="label" translatable="yes">_Toolbar</property>
                         <property name="use_underline">True</property>
                         <property name="active">True</property>
                         <signal name="toggled" handler="on_ShowToolbarMenuItem_toggled"/>
@@ -142,7 +153,7 @@
                     <child>
                       <widget class="GtkCheckMenuItem" id="ShowStatusbarMenuItem">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Statusbar</property>
+                        <property name="label" translatable="yes">_Statusbar</property>
                         <property name="use_underline">True</property>
                         <property name="active">True</property>
                         <signal name="toggled" handler="on_ShowStatusBarMenuItem_toggled"/>
@@ -151,7 +162,7 @@
                     <child>
                       <widget class="GtkCheckMenuItem" id="ShowThumbnailsMenuItem">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Thumbnails</property>
+                        <property name="label" translatable="yes">Thumb_nails</property>
                         <property name="use_underline">True</property>
                         <property name="active">True</property>
                         <signal name="toggled" handler="on_ShowThumbnailsMenuItem_toggled"/>
@@ -170,6 +181,7 @@
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                         <signal name="activate" handler="on_ZoomInMenuItem_activate"/>
+                        <accelerator key="plus" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -179,6 +191,7 @@
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                         <signal name="activate" handler="on_ZoomOutMenuItem_activate"/>
+                        <accelerator key="minus" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -188,6 +201,7 @@
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                         <signal name="activate" handler="on_ZoomOneToOneMenuItem_activate"/>
+                        <accelerator key="1" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -197,6 +211,7 @@
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                         <signal name="activate" handler="on_ZoomBestFitMenuItem_activate"/>
+                        <accelerator key="F" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                       </widget>
                     </child>
                   </widget>
@@ -214,7 +229,7 @@
                     <child>
                       <widget class="GtkMenuItem" id="RotateClockMenuItem">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Rotate Clockwise</property>
+                        <property name="label" translatable="yes">_Rotate Clockwise</property>
                         <property name="use_underline">True</property>
                         <signal name="activate" handler="on_RotateClockMenuItem_activate"/>
                       </widget>
@@ -222,7 +237,7 @@
                     <child>
                       <widget class="GtkMenuItem" id="RotateCounterClockMenuItem">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Rotate Counterclockwise</property>
+                        <property name="label" translatable="yes">Rotate _Counterclockwise</property>
                         <property name="use_underline">True</property>
                         <signal name="activate" handler="on_RotateCounterClockMenuItem_activate"/>
                       </widget>
@@ -230,7 +245,7 @@
                     <child>
                       <widget class="GtkCheckMenuItem" id="RotateAllPagesMenuItem">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Apply rotation to all pages?</property>
+                        <property name="label" translatable="yes">Apply rotation to all _pages?</property>
                         <property name="use_underline">True</property>
                       </widget>
                     </child>
@@ -243,7 +258,7 @@
                     <child>
                       <widget class="GtkCheckMenuItem" id="AdjustColorsMenuItem">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Adjust Colors</property>
+                        <property name="label" translatable="yes">_Adjust Colors</property>
                         <property name="use_underline">True</property>
                         <signal name="toggled" handler="on_AdjustColorsMenuItem_toggled"/>
                         <signal name="toggled" handler="on_AdjustColorsMenuItem_toggled"/>
@@ -264,7 +279,7 @@
                     <child>
                       <widget class="GtkMenuItem" id="ScannerMenuItem">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Scanner</property>
+                        <property name="label" translatable="yes">_Scanner</property>
                         <property name="use_underline">True</property>
                         <child>
                           <widget class="GtkMenu" id="ScannerSubMenu">
@@ -283,7 +298,7 @@
                     <child>
                       <widget class="GtkMenuItem" id="ScanModeMenuItem">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Mode</property>
+                        <property name="label" translatable="yes">_Mode</property>
                         <property name="use_underline">True</property>
                         <child>
                           <widget class="GtkMenu" id="ScanModeSubMenu">
@@ -302,7 +317,7 @@
                     <child>
                       <widget class="GtkMenuItem" id="ScanResolutionMenuItem">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Resolution</property>
+                        <property name="label" translatable="yes">_Resolution</property>
                         <property name="use_underline">True</property>
                         <child>
                           <widget class="GtkMenu" id="ScanResolutionSubMenu">
@@ -337,6 +352,7 @@
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                         <signal name="activate" handler="on_GoFirstMenuItem_activate"/>
+                        <accelerator key="Home" modifiers="" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -346,12 +362,7 @@
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                         <signal name="activate" handler="on_GoPreviousMenuItem_activate"/>
-                      </widget>
-                    </child>
-                    <child>
-                      <widget class="GtkSeparatorMenuItem" id="separatormenuitem6">
-                        <property name="visible">True</property>
-                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                        <accelerator key="Left" modifiers="GDK_MOD1_MASK" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -361,6 +372,7 @@
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                         <signal name="activate" handler="on_GoNextMenuItem_activate"/>
+                        <accelerator key="Right" modifiers="GDK_MOD1_MASK" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -370,6 +382,7 @@
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                         <signal name="activate" handler="on_GoLastMenuItem_activate"/>
+                        <accelerator key="End" modifiers="" signal="activate"/>
                       </widget>
                     </child>
                   </widget>
@@ -387,12 +400,17 @@
                     <property name="visible">True</property>
                     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
                     <child>
-                      <widget class="GtkMenuItem" id="ContentsMenuItem">
+                      <widget class="GtkImageMenuItem" id="ContentsMenuItem">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Contents</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_ContentsMenuItem_activate"/>
                         <accelerator key="F1" modifiers="" signal="activate"/>
+                        <child internal-child="image">
+                          <widget class="GtkImage" id="menu-item-image3">
+                            <property name="visible">True</property>
+                            <property name="stock">gtk-help</property>
+                          </widget>
+                        </child>
                       </widget>
                     </child>
                     <child>
