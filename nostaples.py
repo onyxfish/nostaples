@@ -70,6 +70,11 @@ class NoStaples:
 		self.quitEvent = threading.Event()
 		
 		self.gui = gui.GtkGUI(self, 'nostaples.glade')
+		self.gui.set_file_controls_sensitive(False)
+		self.gui.set_delete_controls_sensitive(False)
+		self.gui.set_zoom_controls_sensitive(False)
+		self.gui.set_adjustment_controls_sensitive(False)		
+		self.gui.set_navigation_controls_sensitive(False)		
 		
 		self.update_scanner_list()
 		
@@ -83,6 +88,7 @@ class NoStaples:
 		self.stateEngine.init_state('show_thumbnails', True, self.toggle_thumbnails)
 		self.stateEngine.init_state('show_statusbar', True, self.toggle_statusbar)
 		self.stateEngine.init_state('save_path', os.path.expanduser('~'))		
+		self.stateEngine.init_state('pdf_author', 'Author')		
 		
 	# Functions called by gui signal handlers
 	
@@ -105,7 +111,7 @@ class NoStaples:
 		assert not self.scanEvent.isSet(), 'Scanning in progress.'
 			
 		if len(self.scannedPages) < 1:
-			self.gui.error_box(self.scanWindow, 'No pages have been scanned.')
+			self.gui.error_box(self.gui.scanWindow, 'No pages have been scanned.')
 			return
 		
 		# Save dialog
@@ -124,7 +130,7 @@ class NoStaples:
 		response = self.gui.saveDialog.run()
 		self.gui.saveDialog.hide()
 		
-		if response != 1:
+		if response != gtk.RESPONSE_ACCEPT:
 			return
 		
 		filename = self.gui.saveDialog.get_filename()
@@ -134,8 +140,8 @@ class NoStaples:
 			filename = ''.join([filename, '.pdf'])
 		
 		# PDF metadata dialog
-		title = filename.split('/')[-1]
-		author = ''
+		title = filename.split('/')[-1][0:-4]
+		author = self.stateEngine.get_state('pdf_author')
 		keywords =''
 		
 		self.gui.titleEntry.set_text(title)
@@ -145,7 +151,7 @@ class NoStaples:
 		while 1:
 			response = self.gui.metadataDialog.run()
 		
-			if response != 1:
+			if response != gtk.RESPONSE_APPLY:
 				self.gui.metadataDialog.hide()
 				return
 			
@@ -159,6 +165,7 @@ class NoStaples:
 				break
 			
 		self.gui.metadataDialog.hide()
+		self.stateEngine.set_state('pdf_author', str(author))
 		
 		# Create PDF writer and update meta-data
 		# Note: This is sort of a nasty hack as it requires accessing a member var marked private, but it is the only way to do this without modding/subclassing PdfFileWriter()
@@ -198,6 +205,12 @@ class NoStaples:
 		self.gui.previewImageDisplay.clear()
 		self.gui.thumbnailsListStore.clear()
 		
+		self.gui.set_file_controls_sensitive(False)
+		self.gui.set_delete_controls_sensitive(False)
+		self.gui.set_zoom_controls_sensitive(False)
+		self.gui.set_adjustment_controls_sensitive(False)		
+		self.gui.set_navigation_controls_sensitive(False)	
+		
 		self.scannedPages = []
 		self.nextScanFileIndex = 1
 		self.previewIndex = 0
@@ -214,6 +227,17 @@ class NoStaples:
 		self.gui.thumbnailsListStore.remove(deleteIter)
 		
 		self.gui.previewImageDisplay.clear()
+		self.gui.previewHScroll.hide()
+		self.gui.previewVScroll.hide()
+		
+		if len(self.scannedPages) < 1:
+			self.gui.set_file_controls_sensitive(False)		
+			self.gui.set_delete_controls_sensitive(False)
+			self.gui.set_zoom_controls_sensitive(False)
+			self.gui.set_adjustment_controls_sensitive(False)	
+		
+		if len(self.scannedPages) < 2:
+			self.gui.set_navigation_controls_sensitive(False)
 		
 		if self.thumbnailSelection <= len(self.scannedPages) - 1:
 			self.gui.thumbnailsTreeView.get_selection().select_path(self.thumbnailSelection)
@@ -515,8 +539,8 @@ class NoStaples:
 		if len(self.scannedPages) < 1:
 			return
 			
-		if self.scanEvent.isSet():
-			return
+		#~ if self.scanEvent.isSet():
+			#~ return
 		
 		if self.previewIsBestFit:
 			self.zoom_best_fit()
@@ -908,7 +932,8 @@ class NoStaples:
 		
 		gtk.gdk.threads_enter()
 		
-		self.gui.set_file_and_scan_controls_sensitive(False)
+		self.gui.set_file_controls_sensitive(False)
+		self.gui.set_scan_controls_sensitive(False)
 		self.gui.statusbar.push(constants.STATUSBAR_SCAN_CONTEXT_ID,'Scanning...')
 			
 		gtk.gdk.threads_leave()
@@ -954,7 +979,15 @@ class NoStaples:
 		self.add_page(index, scanPage)
 		
 		self.gui.statusbar.pop(constants.STATUSBAR_SCAN_CONTEXT_ID)	
-		self.gui.set_file_and_scan_controls_sensitive(True)
+		self.gui.set_file_controls_sensitive(True)
+		self.gui.set_scan_controls_sensitive(True)
+		
+		self.gui.set_delete_controls_sensitive(True)
+		self.gui.set_zoom_controls_sensitive(True)
+		self.gui.set_adjustment_controls_sensitive(True)	
+		
+		if len(self.scannedPages) > 1:
+			self.gui.set_navigation_controls_sensitive(True)
 		
 		gtk.gdk.threads_leave()
 		

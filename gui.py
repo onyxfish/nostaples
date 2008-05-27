@@ -146,6 +146,7 @@ class GtkGUI():
 		self.titleEntry = self.gladeTree.get_widget('TitleEntry')
 		self.authorEntry = self.gladeTree.get_widget('AuthorEntry')
 		self.keywordsEntry = self.gladeTree.get_widget('KeywordsEntry')
+		self.pdfMetadataApplyButton = self.gladeTree.get_widget('PdfMetadataApplyButton')
 		
 		# Save dialog
 		
@@ -254,14 +255,15 @@ class GtkGUI():
 		
 	# Sensitivity functions
 	
-	def set_file_and_scan_controls_sensitive(self, sensitive):
+	def set_file_controls_sensitive(self, sensitive):
 		'''Enables or disables all gui widgets related to scanning, saving, or manipulation of pages.'''
-		self.scanMenuItem.set_sensitive(sensitive)
 		self.saveAsMenuItem.set_sensitive(sensitive)
-		self.insertScanMenuItem.set_sensitive(sensitive)
-		self.preferencesMenuItem.set_sensitive(sensitive)
-		self.scanButton.set_sensitive(sensitive)
 		self.saveAsButton.set_sensitive(sensitive)
+			
+	def set_scan_controls_sensitive(self, sensitive):
+		self.scanMenuItem.set_sensitive(sensitive)
+		self.insertScanMenuItem.set_sensitive(sensitive)
+		self.scanButton.set_sensitive(sensitive)
 		
 		for child in self.scannerSubMenu.get_children():
 			child.set_sensitive(sensitive)
@@ -272,7 +274,7 @@ class GtkGUI():
 		for child in self.scanResolutionSubMenu.get_children():
 			child.set_sensitive(sensitive)
 			
-	def set_delete_and_reorder_controls_sensitive(self, sensitive):
+	def set_delete_controls_sensitive(self, sensitive):
 		'''Enables or disables all gui widgets related to deleting or reordering pages.'''
 		self.deleteMenuItem.set_sensitive(sensitive)
 	
@@ -440,13 +442,16 @@ class GtkGUI():
 		self.app.color_all_pages_toggled()
 		
 	def on_TitleEntry_activate(self, widget):
-		self.metadataDialog.response(1)
+		#~ self.metadataDialog.response(1)
+		self.pdfMetadataApplyButton.clicked()
 		
 	def on_AuthorEntry_activate(self, widget):
-		self.metadataDialog.response(1)
+		#~ self.metadataDialog.response(1)
+		self.pdfMetadataApplyButton.clicked()
 		
 	def on_KeywordsEntry_activate(self, widget):
-		self.metadataDialog.response(1)
+		#~ self.metadataDialog.response(1)
+		self.pdfMetadataApplyButton.clicked()
 		
 	def on_PreviewLayout_size_allocate(self, widget, allocation):
 		self.app.preview_resized(allocation)

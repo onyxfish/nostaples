@@ -40,8 +40,8 @@ class GConfStateEngine():
 		value = self.gconfClient.get(path)
 		
 		if not value:
-			self.set_state(state, default)
 			self.states[state] = default
+			self.set_state(state, default)
 		else:
 			if value.type == gconf.VALUE_INT:
 				self.states[state] = value.get_int()
@@ -58,11 +58,11 @@ class GConfStateEngine():
 		self.gconfClient.notify_add(path, self.__notify_state)
 	
 	def get_state(self, state):
-		assert state in self.states, 'State "%s" has not been initialized with a call to init_state()'
+		assert state in self.states, 'State "%s" has not been initialized with a call to init_state()' % state
 		return self.states[state]
 		
 	def set_state(self, state, value):
-		assert state in self.states, 'State "%s" has not been initialized with a call to init_state()'
+		assert state in self.states, 'State "%s" has not been initialized with a call to init_state()' % state
 		
 		if type(value) is IntType:
 			self.gconfClient.set_int(self.__get_gconf_path(state), value)
