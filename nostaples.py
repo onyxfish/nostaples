@@ -18,10 +18,11 @@
 import os
 import threading
 import time
+import commands
+import shutil
 import gtk
 import gobject
-import Image, ImageEnhance
-from pyPdf.pdf import PdfFileWriter, PdfFileReader, NameObject, createStringObject
+import Image, ImageEnhance, PSDraw
 
 import constants
 import state
@@ -95,11 +96,12 @@ class NoStaples:
 	def quit(self):
 		'''Called when ScanWindow is destroyed to cleanup threads and files.'''
 		self.quitEvent.set()
-			
-		for page in self.scannedPages:
-			os.remove(page.filename)
 		
-		gtk.main_quit()
+		try:
+			for page in self.scannedPages:
+				os.remove(page.filename)
+		finally:
+			gtk.main_quit()
 		
 	def scan_page(self):
 		'''Starts the scanning thread.'''
@@ -165,42 +167,90 @@ class NoStaples:
 				break
 			
 		self.gui.metadataDialog.hide()
+		self.gui.scanWindow.window.set_cursor(gtk.gdk.Cursor(gtk.gdk.WATCH))
+		gtk.gdk.flush()
 		self.stateEngine.set_state('pdf_author', str(author))
 		
-		# Create PDF writer and update meta-data
-		# Note: This is sort of a nasty hack as it requires accessing a member var marked private, but it is the only way to do this without modding/subclassing PdfFileWriter()
-		output = PdfFileWriter()
-		output._info.getObject().update({
-			NameObject('/Producer'): createStringObject(u'NoStaples via PyPDF'),
-			NameObject('/Title'): createStringObject(title),
-			NameObject('/Author'): createStringObject(author),
-			NameObject('/Keywords'): createStringObject(keywords)
-			})
+		'''Possibilities:
+		1. A selected scan size is passed to the scanner and then to the ps transformation and ghostscript.
+		2. Letter is always default, pages are not rotated in output.
+		'''
 		
-		# Generate individual pdfs with PIL and then cat pages together with PyPdf
-		for page in self.scannedPages:
-			tempImage = Image.open(page.filename)
-			pdfFilename = ''.join([page.filename[:-4], '.pdf'])
+		# Generate individual postscript files with PIL
+		for i in range(len(self.scannedPages)):			
+			psFilename = 'temp%i.ps' % i
+			pilImage = self.scannedPages[i].get_transformed_pil_image()
 			
-			rotatedImage = tempImage.rotate(page.rotation)
-			brightenedImage = ImageEnhance.Brightness(rotatedImage).enhance(page.brightness)
-			contrastedImage = ImageEnhance.Contrast(brightenedImage).enhance(page.contrast)
-			sharpenedImage = ImageEnhance.Sharpness(contrastedImage).enhance(page.sharpness)
+			psFile = file(psFilename, 'w')
+			ps = PSDraw.PSDraw(psFile)
 			
-			sharpenedImage.save(pdfFilename)
+			if abs(self.scannedPages[i].rotation % 180) == 0:
+				box = [0, 0, 612, 792]	# TODO - Temporary hard-coded portrait letter size in points (1/72 inches)
+			else:
+				box = [0, 0, 792, 612]	# TODO - Temporary hard-coded landscape letter size in points (1/72 inches)
+				
+			ps.begin_document()
+			ps.image(box, pilImage, self.scannedPages[i].dpi)
+			ps.end_document()
+			psFile.close()
 			
-			assert os.path.exists(pdfFilename), 'Temporary PDF file for "%s" was not created in a timely fashion.' % page.filename
+			assert os.path.exists(psFilename), 'Temporary PostScript file "%s" for "%s" was not created.' %(psFilename, self.scannedPages[i].filename)
+		
+		# Cat postscript files together with ps2pdf
+		gsCmd = ' '.join(['gs',  '-q',  '-dSAFER ', '-dNOPAUSE', '-dBATCH', '-sDEVICE=pdfwrite', '-dCompatibilityLevel=1.3', '-sPAPERSIZE=letter', '-sOutputFile=temp.pdf', '-c .setpdfwrite', '-f temp*.ps'])
+		
+		print 'Converting PostScript files with command: "%s".' % gsCmd
+		result = commands.getoutput(gsCmd)
+		
+		if result.find('not found') != -1:
+			# TODO
+			print 'ghostscript not installed'
+			pass
+		
+		assert os.path.exists('temp.pdf'), 'Temporary PDF file was not created by ghostscript.'
+		
+		# Generate metadata file
+		metadata = file('metadata.txt', 'w')
+		metadata.writelines(['InfoKey: Title\n',
+							'InfoValue: %s\n' % title,
+							'InfoKey: Author\n',
+							'InfoValue: %s\n' % author,
+							'InfoKey: Creator\n',
+							'InfoValue: NoStaples\n',
+							'InfoKey: Keywords\n',
+							'InfoValue: %s\n' % keywords])
+		metadata.close()
+		
+		# Add metadata with pdftk
+		pdftkCmd = ' '.join(['pdftk',  'temp.pdf', 'update_info', 'metadata.txt', 'output', 'final.pdf'])
+		print 'Adding PDF metadata with command: "%s".' % pdftkCmd
+		result = commands.getoutput(pdftkCmd)
+		
+		if result.find('not found') != -1:
+			# TODO
+			print 'pdftk not installed'
+			pass
 			
-			input = PdfFileReader(file(pdfFilename, 'rb'))
-			output.addPage(input.getPage(0))
+		assert os.path.exists('final.pdf'), 'Final PDF file was not created by pdftk.'
+		
+		# Move final pdf to target directory
+		try:
+			shutil.move('final.pdf', filename)
+		except IOError:
+			# TODO
+			print 'failed to copy final file'
+			pass		
+		
+		# Clean up
+		# TODO - try block
+		for i in range(len(self.scannedPages)):
+			os.remove(self.scannedPages[i].filename)
+			os.remove('temp%i.ps' % i)
 			
-			os.remove(pdfFilename)
-			
-		output.write(file(filename, 'w'))
+		os.remove('temp.pdf')
+		os.remove('metadata.txt')
+		
 		self.stateEngine.set_state('save_path', self.gui.saveDialog.get_current_folder())
-		
-		for page in self.scannedPages:
-			os.remove(page.filename)
 		
 		self.gui.previewImageDisplay.clear()
 		self.gui.thumbnailsListStore.clear()
@@ -215,6 +265,8 @@ class NoStaples:
 		self.nextScanFileIndex = 1
 		self.previewIndex = 0
 		self.update_status()
+		
+		self.gui.scanWindow.window.set_cursor(None)
 		
 	def delete_selected_page(self):
 		'''Deletes the page currently selected in the thumbnail pager.'''
@@ -932,6 +984,7 @@ class NoStaples:
 		
 		gtk.gdk.threads_enter()
 		
+		self.gui.scanWindow.window.set_cursor(gtk.gdk.Cursor(gtk.gdk.WATCH))		
 		self.gui.set_file_controls_sensitive(False)
 		self.gui.set_scan_controls_sensitive(False)
 		self.gui.statusbar.push(constants.STATUSBAR_SCAN_CONTEXT_ID,'Scanning...')
@@ -949,6 +1002,7 @@ class NoStaples:
 			# TODO - better notification here
 			gtk.gdk.threads_enter()
 			self.gui.statusbar.pop(constants.STATUSBAR_SCAN_CONTEXT_ID)
+			self.gui.scanWindow.window.set_cursor(None)		
 			gtk.gdk.threads_leave()
 			return
 			
@@ -958,12 +1012,13 @@ class NoStaples:
 		if self.cancelScanEvent.isSet():
 			gtk.gdk.threads_enter()
 			self.gui.statusbar.pop(constants.STATUSBAR_SCAN_CONTEXT_ID)
+			self.gui.scanWindow.window.set_cursor(None)	
 			gtk.gdk.threads_leave()
 			return
 		
 		self.nextScanFileIndex += 1
 		
-		scanPage = page.Page(scanFilename)
+		scanPage = page.Page(scanFilename, float(self.scanResolution))
 		
 		gtk.gdk.threads_enter()
 		
@@ -989,6 +1044,8 @@ class NoStaples:
 		if len(self.scannedPages) > 1:
 			self.gui.set_navigation_controls_sensitive(True)
 		
+		self.gui.scanWindow.window.set_cursor(None)		
+
 		gtk.gdk.threads_leave()
 		
 		self.scanEvent.clear()

@@ -22,7 +22,7 @@ import gtk
 class Page:
 	'''A simple convience class for holding per-scanned-page properties and abstracting away image transformations.'''
 	
-	def __init__(self, filename):
+	def __init__(self, filename, dpi):
 		'''Constructs a Page object and pulls a local copy of the image from the scan file.'''
 		assert os.path.exists(filename), 'Image file "%s" could not be found.' % filename
 		
@@ -31,6 +31,7 @@ class Page:
 		self.brightness = 1.0
 		self.contrast = 1.0
 		self.sharpness = 1.0
+		self.dpi = dpi
 		
 		self.rawPixbuf = gtk.gdk.pixbuf_new_from_file(self.filename)
 		
@@ -58,6 +59,10 @@ class Page:
 		'''Returns an unmodified pixbuf for this page.'''
 		return self.rawPixbuf
 		
+	def get_raw_pil_image(self):
+		'''Returns a PIL version of the unmodified pixbuf for this page.'''
+		return self.__convert_pixbuf_to_pil_image(self.rawPixbuf)
+		
 	def get_transformed_pixbuf(self):
 		'''Generates a GTK Pixbuf that has had rotation and color adjustments applied to it (i.e. a working copy).'''
 		if self.brightness != 1.0 or self.contrast != 1.0 or self.sharpness != 1.0:
@@ -82,6 +87,11 @@ class Page:
 			pixbuf = pixbuf.rotate_simple(gtk.gdk.PIXBUF_ROTATE_CLOCKWISE)
 			
 		return pixbuf
+		
+	def get_transformed_pil_image(self):
+		'''Returns a PIL version of the transformed pixbuf for this page.'''
+		# TODO - speed this up by bypassing all the conversion in get_transformed_pixbuf.
+		return self.__convert_pixbuf_to_pil_image(self.get_transformed_pixbuf())
 		
 	def get_thumbnail_pixbuf(self, size):
 		'''Generates a GTK Pixbuf that hashad rotation and color adjustments applied to it and has been scaled down to fit the thumbnail pager.'''
@@ -123,3 +133,7 @@ class Page:
 		pixbuf = pixbuf.scale_simple(targetWidth, targetHeight, gtk.gdk.INTERP_BILINEAR)
 		
 		return pixbuf
+		
+	def get_thumbnail_pil_image(self, size):
+		'''Returns a PIL version of the thumbnail pixbuf for this page.'''
+		return self.__convert_pixbuf_to_pil_image(self.get_thumbnail_pixbuf(size))

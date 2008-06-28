@@ -26,7 +26,7 @@ SCAN_SUCCESS = 1
 
 def get_available_scanners():
 	updateCmd = 'scanimage -f "%d=%v %m;"'
-	print 'Updating available scanners with command: "%s"' % updateCmd
+	print 'Updating available scanners with command: "%s".' % updateCmd
 	output = commands.getoutput(updateCmd)
 
 	scannerDict = {}
@@ -39,7 +39,7 @@ def get_available_scanners():
 	
 def get_scanner_options(scanner):
 	updateCmd = ' '.join(['scanimage --help -d',  scanner])
-	print 'Updating scanner options with command: "%s"' % updateCmd
+	print 'Updating scanner options with command: "%s".' % updateCmd
 	output = commands.getoutput(updateCmd)
 
 	try:
@@ -64,7 +64,7 @@ def scan_to_file(scanner, mode, resolution, filename):
 	outputFile = '>%s' % filename
 	scanCmd = ' '.join([scanProgram, modeFlag, resolutionFlag, scannerFlag, outputFile])
 	
-	print 'Scanning with command: "%s"' % scanCmd
+	print 'Scanning with command: "%s".' % scanCmd
 	output = commands.getoutput(scanCmd)
 	
 	if not os.path.exists(filename):
