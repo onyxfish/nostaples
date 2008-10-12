@@ -17,7 +17,6 @@
 
 import os
 import commands
-import threading
 import re
 
 SCAN_CANCELLED = -1
@@ -25,51 +24,57 @@ SCAN_FAILURE = 0
 SCAN_SUCCESS = 1
 
 def get_available_scanners():
-	updateCmd = 'scanimage -f "%d=%v %m;"'
-	print 'Updating available scanners with command: "%s".' % updateCmd
-	output = commands.getoutput(updateCmd)
+    update_command = 'scanimage -f "%d=%v %m;"'
+    print 'Updating available scanners with command: "%s".' % \
+        update_command
+    output = commands.getoutput(update_command)
 
-	scannerDict = {}
-	scannerList = re.findall('(.*?)=(.*?)[;|$]', output)
-	
-	for v, k in scannerList:
-		scannerDict[k] = v
-		
-	return scannerDict
-	
+    scanner_dict = {}
+    scanner_list = re.findall('(.*?)=(.*?)[;|$]', output)
+    
+    for value, key in scanner_list:
+        scanner_dict[key] = value
+        
+    return scanner_dict
+    
 def get_scanner_options(scanner):
-	updateCmd = ' '.join(['scanimage --help -d',  scanner])
-	print 'Updating scanner options with command: "%s".' % updateCmd
-	output = commands.getoutput(updateCmd)
+    update_command = ' '.join(['scanimage --help -d',  scanner])
+    print 'Updating scanner options with command: "%s".' % \
+        update_command
+    output = commands.getoutput(update_command)
 
-	try:
-		modeList = re.findall('--mode (.*) ', output)[0].split('|')
-	except IndexError:
-		print 'Could not parse scan modes or no modes available for device "%s".' % scanner
-		modeList = None
-		
-	try:
-		resolutionList = re.findall('--resolution (.*)dpi ', output)[0].split('|')
-	except IndexError:
-		print 'Could not parse resolutions or no resolutions available for device "%s".' % scanner
-		resolutionList = None
-	
-	return (modeList, resolutionList)
+    try:
+        mode_list = re.findall('--mode (.*) ', output)[0].split('|')
+    except IndexError:
+        print 'Could not parse scan modes or no modes available for \
+            device "%s".' % scanner
+        mode_list = None
+        
+    try:
+        resolution_list = re.findall('--resolution (.*)dpi ', output)[0].split('|')
+    except IndexError:
+        print 'Could not parse resolutions or no resolutions available for \
+            device "%s".' % scanner
+        resolution_list = None
+    
+    return (mode_list, resolution_list)
 
-def scan_to_file(scanner, mode, resolution, filename):	
-	scanProgram = 'scanimage --format=pnm'
-	modeFlag = ' '.join(['--mode', mode])
-	resolutionFlag = ' '.join(['--resolution', resolution])
-	scannerFlag = ' '.join(['-d', scanner])
-	outputFile = '>%s' % filename
-	scanCmd = ' '.join([scanProgram, modeFlag, resolutionFlag, scannerFlag, outputFile])
-	
-	print 'Scanning with command: "%s".' % scanCmd
-	output = commands.getoutput(scanCmd)
-	
-	if not os.path.exists(filename):
-		print 'Scan failed: file %s not created.' % filename
-		return SCAN_FAILURE
-			
-	print 'Scan complete'
-	return SCAN_SUCCESS
+def scan_to_file(scanner, mode, resolution, filename):    
+    scan_program = 'scanimage --format=pnm'
+    mode_flag = ' '.join(['--mode', mode])
+    resolution_flag = ' '.join(['--resolution', resolution])
+    scanner_flag = ' '.join(['-d', scanner])
+    output_file = '>%s' % filename
+    scan_command = ' '.join(
+        [scan_program, mode_flag, resolution_flag, scanner_flag, output_file])
+    
+    print 'Scanning with command: "%s".' % scan_command
+    # Only needed if debugging problems with scanner backends
+    #output = commands.getoutput(scan_command)
+    
+    if not os.path.exists(filename):
+        print 'Scan failed: file %s not created.' % filename
+        return SCAN_FAILURE
+            
+    print 'Scan complete'
+    return SCAN_SUCCESS

@@ -21,76 +21,79 @@ import gconf
 GCONF_FOLDER = "/apps/nostaples"
 
 class GConfStateEngine():
-	'''An engine to preserve program settings between runs that is based on GNOME's gconf.'''
-	
-	def __init__(self):
-		self.states = {}
-		self.callbacks = {}
-		self.gconfClient = gconf.client_get_default()
-		self.gconfClient.add_dir(GCONF_FOLDER, gconf.CLIENT_PRELOAD_NONE)
-		
-	def __get_gconf_path(self, state):
-		return '/'.join([GCONF_FOLDER, state])
-		
-	def __get_state_from_path(self, path):
-		return path.split('/')[-1]
-		
-	def init_state(self, state, default, callback=None):
-		path = self.__get_gconf_path(state)
-		value = self.gconfClient.get(path)
-		
-		if not value:
-			self.states[state] = default
-			self.set_state(state, default)
-		else:
-			if value.type == gconf.VALUE_INT:
-				self.states[state] = value.get_int()
-			elif value.type == gconf.VALUE_STRING:
-				self.states[state] = value.get_string()
-			elif value.type == gconf.VALUE_FLOAT:
-				self.states[state] = value.get_float()
-			elif value.type == gconf.VALUE_BOOL:
-				self.states[state] = value.get_bool()
-			else:
-				raise TypeError, 'Variable type not supported.'
-				
-		self.callbacks[state] = callback
-		self.gconfClient.notify_add(path, self.__notify_state)
-	
-	def get_state(self, state):
-		assert state in self.states, 'State "%s" has not been initialized with a call to init_state()' % state
-		return self.states[state]
-		
-	def set_state(self, state, value):
-		assert state in self.states, 'State "%s" has not been initialized with a call to init_state()' % state
-		
-		if type(value) is IntType:
-			self.gconfClient.set_int(self.__get_gconf_path(state), value)
-		elif type(value) is StringType:
-			self.gconfClient.set_string(self.__get_gconf_path(state), value)
-		elif type(value) is FloatType:
-			self.gconfClient.set_float(self.__get_gconf_path(state), value)
-		elif type(value) is BooleanType:
-			self.gconfClient.set_bool(self.__get_gconf_path(state), value)
-		else:
-			raise TypeError, 'Variable type not supported by gconf.'
-			
-		self.states[state] = value
-		
-	def __notify_state(self, client, connectionId, entry, error):		
-		state = self.__get_state_from_path(entry.get_key())
-		value = entry.get_value()
-		
-		if value.type == gconf.VALUE_INT:
-			self.states[state] = value.get_int()
-		elif value.type == gconf.VALUE_STRING:
-			self.states[state] = value.get_string()
-		elif value.type == gconf.VALUE_FLOAT:
-			self.states[state] = value.get_float()
-		elif value.type == gconf.VALUE_BOOL:
-			self.states[state] = value.get_bool()
-		else:
-			raise TypeError, 'Variable type not supported.'
-			
-		if self.callbacks[state]:
-			self.callbacks[state]()
+    '''An engine to persist program settings using GNOME's gconf.'''
+    
+    def __init__(self):
+        self.states = {}
+        self.callbacks = {}
+        self.gconf_client = gconf.client_get_default()
+        self.gconf_client.add_dir(
+            GCONF_FOLDER, gconf.CLIENT_PRELOAD_NONE)
+        
+    def __get_gconf_path(self, state):
+        return '/'.join([GCONF_FOLDER, state])
+        
+    def __get_state_from_path(self, path):
+        return path.split('/')[-1]
+        
+    def init_state(self, state, default, callback=None):
+        path = self.__get_gconf_path(state)
+        value = self.gconf_client.get(path)
+        
+        if not value:
+            self.states[state] = default
+            self.set_state(state, default)
+        else:
+            if value.type == gconf.VALUE_INT:
+                self.states[state] = value.get_int()
+            elif value.type == gconf.VALUE_STRING:
+                self.states[state] = value.get_string()
+            elif value.type == gconf.VALUE_FLOAT:
+                self.states[state] = value.get_float()
+            elif value.type == gconf.VALUE_BOOL:
+                self.states[state] = value.get_bool()
+            else:
+                raise TypeError, 'Variable type not supported.'
+                
+        self.callbacks[state] = callback
+        self.gconf_client.notify_add(path, self.__notify_state)
+    
+    def get_state(self, state):
+        assert state in self.states, \
+            'State "%s" has not been initialized with a call to init_state()' % state
+        return self.states[state]
+        
+    def set_state(self, state, value):
+        assert state in self.states, \
+            'State "%s" has not been initialized with a call to init_state()' % state
+        
+        if type(value) is IntType:
+            self.gconf_client.set_int(self.__get_gconf_path(state), value)
+        elif type(value) is StringType:
+            self.gconf_client.set_string(self.__get_gconf_path(state), value)
+        elif type(value) is FloatType:
+            self.gconf_client.set_float(self.__get_gconf_path(state), value)
+        elif type(value) is BooleanType:
+            self.gconf_client.set_bool(self.__get_gconf_path(state), value)
+        else:
+            raise TypeError, 'Variable type not supported by gconf.'
+            
+        self.states[state] = value
+        
+    def __notify_state(self, client, connection_id, entry, error):        
+        state = self.__get_state_from_path(entry.get_key())
+        value = entry.get_value()
+        
+        if value.type == gconf.VALUE_INT:
+            self.states[state] = value.get_int()
+        elif value.type == gconf.VALUE_STRING:
+            self.states[state] = value.get_string()
+        elif value.type == gconf.VALUE_FLOAT:
+            self.states[state] = value.get_float()
+        elif value.type == gconf.VALUE_BOOL:
+            self.states[state] = value.get_bool()
+        else:
+            raise TypeError, 'Variable type not supported.'
+            
+        if self.callbacks[state]:
+            self.callbacks[state]()

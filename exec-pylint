@@ -1,0 +1,4 @@
+#!/bin/bash
+
+pylint --rcfile pylint.config *.py > pylint.html
+
