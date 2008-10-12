@@ -383,19 +383,22 @@ class GtkGUI():
     
     def set_file_controls_sensitive(self, sensitive):
         '''
-        Enables or disables all gui widgets related to scanning, saving, 
-        or manipulation of pages.
+        Enables or disables all gui widgets related to saving.
         '''
         self.save_as_menu_item.set_sensitive(sensitive)
         self.save_as_button.set_sensitive(sensitive)
             
     def set_scan_controls_sensitive(self, sensitive):
+        '''
+        Enables or disables all gui widgets related to scanning and
+        setting of scanner options.
+        '''
         self.scan_menu_item.set_sensitive(sensitive)
         self.insert_scan_menu_item.set_sensitive(sensitive)
         self.scan_button.set_sensitive(sensitive)
         
-        for child in self.scanner_sub_menu.get_children():
-            child.set_sensitive(sensitive)
+        #for child in self.scanner_sub_menu.get_children():
+            #child.set_sensitive(sensitive)
             
         for child in self.scan_mode_sub_menu.get_children():
             child.set_sensitive(sensitive)

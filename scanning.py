@@ -69,11 +69,15 @@ def scan_to_file(scanner, mode, resolution, filename):
         [scan_program, mode_flag, resolution_flag, scanner_flag, output_file])
     
     print 'Scanning with command: "%s".' % scan_command
-    # Only needed if debugging problems with scanner backends
-    #output = commands.getoutput(scan_command)
+    output = commands.getoutput(scan_command)
     
     if not os.path.exists(filename):
         print 'Scan failed: file %s not created.' % filename
+        return SCAN_FAILURE
+    
+    if os.stat(filename).st_size <= 0:
+        print 'Scan failed: file %s is empty.' % filename
+        os.remove(filename)
         return SCAN_FAILURE
             
     print 'Scan complete'

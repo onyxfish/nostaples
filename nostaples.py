@@ -807,7 +807,8 @@ class NoStaples:
             self.gui.preview_image_display.get_parent_window().invalidate_rect(
                 (0, 0, self.preview_width, self.preview_height), 
                 False)
-            self.gui.preview_image_display.get_parent_window().process_updates(False)
+            self.gui.preview_image_display.get_parent_window(). \
+                process_updates(False)
             
             graphics_context = \
                 self.gui.preview_image_display.get_parent_window().new_gc(
@@ -998,17 +999,20 @@ class NoStaples:
                     
     def update_scanner_list(self, widget=None):
         '''Populates a menu with a list of available scanners.'''
-        assert not self.scan_event.isSet(), 'Scanning in progress.'
+        #assert not self.scan_event.isSet(), 'Scanning in progress.'
         
-        self.scanner_dict = scanning.get_available_scanners()
-        
+        # Clear existing menu items
+        # TODO: .clear()?
         for child in self.gui.scanner_sub_menu.get_children():
             self.gui.scanner_sub_menu.remove(child)
+
+        self.scanner_dict = scanning.get_available_scanners()
         
         scanners = self.scanner_dict.keys()
         first_item = None
         selected_item = None
         for i in range(len(scanners)):
+            # The first menu item defines the group
             if i == 0:
                 menu_item = gtk.RadioMenuItem(None, scanners[i])
                 first_item = menu_item
@@ -1034,24 +1038,61 @@ class NoStaples:
         
         # Emulate the default scanner being toggled
         self.update_scanner_options(selected_item)
+        
+        # Notify user if no scanners are connected
+        if selected_item == None:
+            self.gui.statusbar.push(
+                constants.STATUSBAR_SCANNER_STATUS_CONTEXT_ID,
+                'No scanners available')
+        else:
+            self.gui.statusbar.pop(
+            constants.STATUSBAR_SCANNER_STATUS_CONTEXT_ID)
 
     def update_scanner_options(self, widget=None):
         '''
         Populates a menu with a list of available options for the currently 
         selected scanner.
+        
+        @param widget: The selected menu item.  None if no scanners are
+            available.
+        @type widget: gtk.MenuItem.
         '''
-        assert not self.scan_event.isSet(), 'Scanning in progress.'
+        #assert not self.scan_event.isSet(), 'Scanning in progress.'
+        
+        # Clear scan modes sub menu
+        for child in self.gui.scan_mode_sub_menu.get_children():
+            self.gui.scan_mode_sub_menu.remove(child)
+        
+        # Clear scan resolutions sub menu
+        for child in self.gui.scan_resolution_sub_menu.get_children():
+            self.gui.scan_resolution_sub_menu.remove(child)
+        
+        # No available scanners
+        if (widget == None):            
+            menu_item = gtk.MenuItem('No Scanner Selected')
+            self.gui.scan_mode_sub_menu.append(menu_item)
+            self.gui.scan_mode_sub_menu.show_all()
+            
+            menu_item = gtk.MenuItem('No Scanner Selected')
+            self.gui.scan_resolution_sub_menu.append(menu_item)
+            self.gui.scan_resolution_sub_menu.show_all()
+            
+            self.active_scanner = None;
+            self.gui.set_scan_controls_sensitive(False)
+            
+            return
         
         # Get the selected scanner
         toggled_scanner = widget.get_children()[0].get_text()
         
-        self.active_scanner = toggled_scanner            
+        # Get new scanner options
+        self.active_scanner = toggled_scanner   
+        self.gui.set_scan_controls_sensitive(True)
+                
         mode_list, resolution_list = scanning.get_scanner_options(
             self.scanner_dict[self.active_scanner])
         
-        for child in self.gui.scan_mode_sub_menu.get_children():
-            self.gui.scan_mode_sub_menu.remove(child)
-        
+        # Generate new scan mode menu
         if not mode_list:
             menu_item = gtk.MenuItem("No Scan Modes")
             menu_item.set_sensitive(False)
@@ -1078,11 +1119,9 @@ class NoStaples:
         self.gui.scan_mode_sub_menu.show_all()
         
         # Emulate the default scan mode being toggled
-        self.update_scan_mode(selected_item)        
+        self.update_scan_mode(selected_item)
         
-        for child in self.gui.scan_resolution_sub_menu.get_children():
-            self.gui.scan_resolution_sub_menu.remove(child)
-        
+        # Generate new resolution menu
         if not resolution_list:
             menu_item = gtk.MenuItem("No Resolutions")
             self.gui.scan_resolution_sub_menu.append(menu_item)
@@ -1108,12 +1147,12 @@ class NoStaples:
             
         self.gui.scan_resolution_sub_menu.show_all()
         
+        # Emulate the default scan resolution being toggled
+        self.update_scan_resolution(selected_item)
+        
         # NB: Only do this if everything else has succeeded, 
         # otherwise a crash could repeat everytime the app is started
         self.state_engine.set_state('active_scanner', self.active_scanner)
-        
-        # Emulate the default scan resolution being toggled
-        self.update_scan_resolution(selected_item)
     
     @threaded
     def scan_thread(self, index):
@@ -1149,11 +1188,26 @@ class NoStaples:
             scan_filename)
         
         if result == scanning.SCAN_FAILURE:
-            # TODO - better notification here
             gtk.gdk.threads_enter()
+            
             self.gui.statusbar.pop(constants.STATUSBAR_SCAN_CONTEXT_ID)
-            self.gui.scan_window.window.set_cursor(None)        
+            self.gui.scan_window.window.set_cursor(None)
+            self.gui.set_scan_controls_sensitive(True)
+            if len(self.scanned_pages) > 0:
+                self.gui.set_file_controls_sensitive(True)
+                
+            # Check that scan didn't fail because the scanner got unplugged
+            self.update_scanner_list()
+            if self.active_scanner == None:
+                # TODO: Notify that scanner was disconnected
+                pass
+            else:
+                # TODO: Notify that scan failed for reasons that aren't clear
+                pass
+                        
             gtk.gdk.threads_leave()
+            
+            self.scan_event.clear()
             return
             
         if self.quit_event.isSet():
@@ -1162,8 +1216,12 @@ class NoStaples:
         if self.cancel_scan_event.isSet():
             gtk.gdk.threads_enter()
             self.gui.statusbar.pop(constants.STATUSBAR_SCAN_CONTEXT_ID)
-            self.gui.scan_window.window.set_cursor(None)    
+            self.gui.scan_window.window.set_cursor(None)
+            self.gui.set_scan_controls_sensitive(True)
+            if (len(self.scanned_pages) > 0):
+                self.gui.set_file_controls_sensitive(True)  
             gtk.gdk.threads_leave()
+            self.scan_event.clear()
             return
         
         self.next_scan_file_index += 1
@@ -1183,7 +1241,7 @@ class NoStaples:
         
         self.add_page(index, scan_page)
         
-        self.gui.statusbar.pop(constants.STATUSBAR_SCAN_CONTEXT_ID)    
+        self.gui.statusbar.pop(constants.STATUSBAR_SCAN_CONTEXT_ID)
         self.gui.set_file_controls_sensitive(True)
         self.gui.set_scan_controls_sensitive(True)
         
