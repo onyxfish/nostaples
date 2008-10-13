@@ -15,15 +15,24 @@
 #~ You should have received a copy of the GNU General Public License
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
+'''
+This module handles persisting states to and from a GConf backened.
+'''
+
 from types import IntType, StringType, FloatType, BooleanType
 import gconf
 
 GCONF_FOLDER = "/apps/nostaples"
 
 class GConfStateEngine():
-    '''An engine to persist program settings using GNOME's gconf.'''
+    '''
+    An engine to persist program settings using GNOME's gconf.
+    '''
     
     def __init__(self):
+        '''
+        Gets a reference to GConf and preps the NoStaples directory.
+        '''
         self.states = {}
         self.callbacks = {}
         self.gconf_client = gconf.client_get_default()
@@ -31,12 +40,23 @@ class GConfStateEngine():
             GCONF_FOLDER, gconf.CLIENT_PRELOAD_NONE)
         
     def __get_gconf_path(self, state):
+        '''
+        Helper function to get a GConf path for a particular state variable.
+        '''
         return '/'.join([GCONF_FOLDER, state])
         
     def __get_state_from_path(self, path):
+        '''
+        Helper function to determine get the name of a state variable given
+        a GConf path.
+        '''
         return path.split('/')[-1]
         
     def init_state(self, state, default, callback=None):
+        '''
+        Checks that a state exists.  If not, creates it with a default value
+        and notification callback.
+        '''
         path = self.__get_gconf_path(state)
         value = self.gconf_client.get(path)
         
@@ -59,13 +79,21 @@ class GConfStateEngine():
         self.gconf_client.notify_add(path, self.__notify_state)
     
     def get_state(self, state):
+        '''
+        Gets a state from the GConf database.
+        '''
         assert state in self.states, \
-            'State "%s" has not been initialized with a call to init_state()' % state
+            'State "%s" has not been initialized with \
+            a call to init_state()' % state
         return self.states[state]
         
     def set_state(self, state, value):
+        '''
+        Sets a state in the GConf database.
+        '''
         assert state in self.states, \
-            'State "%s" has not been initialized with a call to init_state()' % state
+            'State "%s" has not been initialized with \
+            a call to init_state()' % state
         
         if type(value) is IntType:
             self.gconf_client.set_int(self.__get_gconf_path(state), value)
@@ -80,7 +108,11 @@ class GConfStateEngine():
             
         self.states[state] = value
         
-    def __notify_state(self, client, connection_id, entry, error):        
+    def __notify_state(self, client, connection_id, entry, error):
+        '''
+        Handles updating the local copy of a state when notification is
+        received that it has been modified in GConf.
+        '''       
         state = self.__get_state_from_path(entry.get_key())
         value = entry.get_value()
         

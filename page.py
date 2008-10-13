@@ -15,6 +15,11 @@
 #~ You should have received a copy of the GNU General Public License
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
+'''
+The class in this module represents a single scanned page.  It has methods
+to handle transforming and converting the page as necessary for display.
+'''
+
 import os
 import Image, ImageEnhance
 import gtk

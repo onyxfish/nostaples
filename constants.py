@@ -15,7 +15,13 @@
 #~ You should have received a copy of the GNU General Public License
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
-from reportlab.lib.pagesizes import *
+'''
+This module contains global configuration constants that are not likely to 
+change often as well as enumeration-like state constants.
+'''
+
+from reportlab.lib.pagesizes import A0, A1, A2, A3, A4, A5, A6, \
+    B0, B1, B2, B3, B4, B5, B6, LETTER, LEGAL, ELEVENSEVENTEEN
 
 PAGESIZES = {'A0' : A0, 
                         'A1' : A1, 

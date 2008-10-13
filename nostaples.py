@@ -15,7 +15,13 @@
 #~ You should have received a copy of the GNU General Public License
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
+'''
+This module holds all the NoStaples application functionality.  GUI handling,
+state persistence, and scanning are each handled in their own modules.
+'''
+
 import os
+import sys
 import threading
 
 import gtk
@@ -34,6 +40,7 @@ gtk.gdk.threads_init()
 def threaded(func):
     '''Threading function decorator.'''
     def proxy(*args, **kwargs):
+        '''Invokes the specified function on a new thread.'''
         new_thread = threading.Thread(
             target=func, args=args, kwargs=kwargs)
         new_thread.start()
@@ -280,7 +287,7 @@ class NoStaples:
         '''
         Searches through the possible page sizes and finds the one that
         best fits the image without cropping.
-        '''
+        '''        
         image_width_in_points = width_in_inches * points_per_inch
         image_height_in_points = height_in_inches * points_per_inch
         
@@ -345,11 +352,13 @@ class NoStaples:
         if self.thumbnail_selection <= len(self.scanned_pages) - 1:
             self.gui.thumbnails_tree_view.get_selection().select_path(
                 self.thumbnail_selection)
-            self.gui.thumbnails_tree_view.scroll_to_cell(self.thumbnail_selection)
+            self.gui.thumbnails_tree_view.scroll_to_cell(
+                self.thumbnail_selection)
         elif len(self.scanned_pages) > 0:
             self.gui.thumbnails_tree_view.get_selection().select_path(
                 self.thumbnail_selection - 1)
-            self.gui.thumbnails_tree_view.scroll_to_cell(self.thumbnail_selection - 1)
+            self.gui.thumbnails_tree_view.scroll_to_cell(
+                self.thumbnail_selection - 1)
         
     def insert_scan(self):
         '''Scans a page and inserts it before the current selected thumbnail.'''
@@ -875,10 +884,11 @@ class NoStaples:
         if len(self.scanned_pages) < 1:
             return
         
-        current_x = self.gui.preview_layout.get_hadjustment()
-        current_y = self.gui.preview_layout.get_vadjustment()
-        new_x = current_x.value
-        new_y = current_y.value
+        # TODO: remove?
+#        current_x = self.gui.preview_layout.get_hadjustment()
+#        current_y = self.gui.preview_layout.get_vadjustment()
+#        new_x = current_x.value
+#        new_y = current_y.value
         
         if event.direction == gtk.gdk.SCROLL_UP:
             self.goto_previous_page()
@@ -1123,7 +1133,7 @@ class NoStaples:
             self.gui.scan_resolution_sub_menu.append(menu_item)
             self.gui.scan_resolution_sub_menu.show_all()
             
-            self.active_scanner = None;
+            self.active_scanner = None
             self.gui.set_scan_controls_sensitive(False)
             
             return
