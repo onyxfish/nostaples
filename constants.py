@@ -15,6 +15,26 @@
 #~ You should have received a copy of the GNU General Public License
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
+from reportlab.lib.pagesizes import *
+
+PAGESIZES = {'A0' : A0, 
+                        'A1' : A1, 
+                        'A2' : A2, 
+                        'A3' : A3,
+                        'A4' : A4, 
+                        'A5' : A5, 
+                        'A6' : A6,
+                        'B0' : B0, 
+                        'B1' : B1, 
+                        'B2' : B2, 
+                        'B3' : B3, 
+                        'B4' : B4, 
+                        'B5' : B5, 
+                        'B6' : B6,
+                        'LETTER' : LETTER, 
+                        'LEGAL' : LEGAL, 
+                        'ELEVENSEVENTEEN' : ELEVENSEVENTEEN}
+                        
 DEFAULT_ACTIVE_SCANNER = None
 DEFAULT_SCAN_MODE = "Color"
 DEFAULT_SCAN_RESOLUTION = 75

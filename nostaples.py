@@ -19,8 +19,9 @@ import os
 import threading
 
 import gtk
-from reportlab.pdfgen.canvas import Canvas
-from reportlab.lib.pagesizes import letter, A4, landscape, portrait
+from reportlab.pdfgen.canvas import Canvas as PdfCanvas
+from reportlab.lib.pagesizes import landscape, portrait
+from reportlab.lib.units import inch as points_per_inch
 
 import constants
 import state
@@ -209,7 +210,7 @@ class NoStaples:
         self.state_engine.set_state('pdf_author', str(author))
 
         # Setup output pdf
-        pdf = Canvas(filename)
+        pdf = PdfCanvas(filename)
         pdf.setTitle(title)
         pdf.setAuthor(author)
         pdf.setKeywords(keywords)
@@ -217,7 +218,6 @@ class NoStaples:
         # Generate pages
         for i in range(len(self.scanned_pages)):    
             pil_image = self.scanned_pages[i].get_transformed_pil_image()
-            image_width, image_height = pil_image.size
                     
             temp_filename = 'temp%i.bmp' % i
             pil_image.save(temp_filename)
@@ -225,19 +225,23 @@ class NoStaples:
             assert os.path.exists(temp_filename), \
                 'Temporary bitmap file was not created by PIL.'
             
-            # Constrains output to fixed page size
-            # This is the best we can do since we have no control over the 
-            # input size (due to varying support by SANE backends)
-            # TODO: should be customizable (letter, A4, etc.)
-            if image_width > image_height:
-                canvas_width, canvas_height = landscape(letter)
-            else:
-                canvas_width, canvas_height = portrait(letter)
+            image_width_in_inches = \
+                pil_image.size[0] / int(self.scan_resolution)
+            image_height_in_inches = \
+                pil_image.size[1] / int(self.scan_resolution)
+            
+            # NB: Because not all SANE backends support specifying the size
+            # of the scan area, the best we can do is scan at the default
+            # setting and then convert that to an appropriate PDF.  For the
+            # vast majority of scanners we hope that this would be either
+            # letter or A4.
+            pdf_width, pdf_height = self.find_best_fitting_pagesize(
+                image_width_in_inches, image_height_in_inches)
                 
-            pdf.setPageSize((canvas_width, canvas_height))
+            pdf.setPageSize((pdf_width, pdf_height))
             pdf.drawImage(
                 temp_filename, 
-                0, 0, width=canvas_width, height=canvas_height, 
+                0, 0, width=pdf_width, height=pdf_height, 
                 preserveAspectRatio=True)
             pdf.showPage()
             
@@ -272,6 +276,48 @@ class NoStaples:
         
         self.gui.scan_window.window.set_cursor(None)
         
+    def find_best_fitting_pagesize(self, width_in_inches, height_in_inches):
+        '''
+        Searches through the possible page sizes and finds the one that
+        best fits the image without cropping.
+        '''
+        image_width_in_points = width_in_inches * points_per_inch
+        image_height_in_points = height_in_inches * points_per_inch
+        
+        nearest_size = None
+        nearest_distance = sys.maxint
+        
+        for size in constants.PAGESIZES.values():
+            # Orient the size to match the page
+            if image_width_in_points > image_height_in_points:
+                size = landscape(size)
+            else:
+                size = portrait(size)
+            
+            # Only compare the size if its large enough to contain the entire 
+            # image
+            if size[0] < image_width_in_points or \
+               size[1] < image_height_in_points:
+                continue
+            
+            # Compute distance for comparison
+            distance = \
+                size[0] - image_width_in_points + \
+                size[1] - image_height_in_points
+            
+            # Save if closer than prior nearest distance
+            if distance < nearest_distance:
+                nearest_distance = distance
+                nearest_size = size
+                
+                # Stop searching if a perfect match is found
+                if nearest_distance == 0:
+                    break
+                
+            assert nearest_size != None, 'No nearest size found.'
+                
+        return nearest_size
+                    
     def delete_selected_page(self):
         '''Deletes the page currently selected in the thumbnail pager.'''
         if len(self.scanned_pages) < 1 or self.thumbnail_selection is None:
