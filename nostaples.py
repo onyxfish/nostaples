@@ -122,11 +122,14 @@ class NoStaples:
         self.state_manager.init_state(
             'thumbnail_size', constants.DEFAULT_THUMBNAIL_SIZE)
         self.state_manager.init_state(
-            'show_toolbar', True, self.toggle_toolbar)
+            'show_toolbar', True, 
+            self._show_toolbar_changed)
         self.state_manager.init_state(
-            'show_thumbnails', True, self.toggle_thumbnails)
+            'show_thumbnails', True, 
+            self._show_thumbnails_changed)
         self.state_manager.init_state(
-            'show_statusbar', True, self.toggle_statusbar)
+            'show_statusbar', True, 
+            self._show_statusbar_changed)
         self.state_manager.init_state(
             'save_path', os.path.expanduser('~'))        
         self.state_manager.init_state(
@@ -140,8 +143,11 @@ class NoStaples:
     
     def _scan_mode_changed(self):
         '''
-        A callback that is invoked when an external operation alters
-        the scan mode while the application is running.
+        Selects the chosen scan mode from the menu, or, if the selection
+        is invalid, selects a safe alternative.
+        
+        Should always be called as a callback by the state_manager.
+        Internal changes are handled in L{update_scan_mode}.
         '''
         menu_items = self.gui.scan_mode_sub_menu.get_children()
         
@@ -168,8 +174,11 @@ class NoStaples:
     
     def _scan_resolution_changed(self):
         '''
-        A callback that is invoked when an external operation alters
-        the scan resolutoin while the application is running.
+        Selects the chosen scan resolution from the menu, or, if the selection
+        is invalid, selects a safe alternative.
+        
+        Should always be called as a callback by the state_manager.
+        Internal changes are handled in L{update_scan_resolution}.
         '''
         menu_items = self.gui.scan_resolution_sub_menu.get_children()
         
@@ -199,16 +208,46 @@ class NoStaples:
         pass
     
     def _show_toolbar_changed(self):
-        # TODO
-        pass
+        '''
+        Shows or hides the toolbar based on changes made to the 
+        'show_toolbar' state.
+        
+        May be called as a callback by the state_manager.
+        '''
+        if self.state_manager['show_toolbar']:
+            self.gui.show_toolbar_menu_item.set_active(True)
+            self.gui.toolbar.show()
+        else:
+            self.gui.show_toolbar_menu_item.set_active(False)
+            self.gui.toolbar.hide()
     
     def _show_thumbnails_changed(self):
-        # TODO
-        pass
+        '''
+        Shows or hides the thumbnails based on changes made to the 
+        'show_thumbnails' state.
+        
+        May be called as a callback by the state_manager.
+        '''
+        if self.state_manager['show_thumbnails']:
+            self.gui.show_thumbnails_menu_item.set_active(True)
+            self.gui.thumbnails_scrolled_window.show()
+        else:
+            self.gui.show_thumbnails_menu_item.set_active(False)
+            self.gui.thumbnails_scrolled_window.hide()
     
     def _show_statusbar_changed(self):
-        # TODO
-        pass
+        '''
+        Shows or hides the statusbar based on changes made to the 
+        'show_statusbar' state.
+        
+        May be called as a callback by the state_manager.
+        '''
+        if self.state_manager['show_statusbar']:
+            self.gui.show_statusbar_menu_item.set_active(True)
+            self.gui.statusbar.show()
+        else:
+            self.gui.show_statusbar_menu_item.set_active(False)
+            self.gui.statusbar.hide()
     
     def _save_path_changed(self):
         # TODO
@@ -472,33 +511,6 @@ class NoStaples:
             
         self.gui.preferences_dialog.run()
         self.gui.preferences_dialog.hide()
-        
-    def toggle_toolbar(self):
-        '''
-        Toggles the visibility of the toolbar.
-        '''
-        if self.state_manager['show_toolbar']:
-            self.gui.toolbar.show()
-        else:
-            self.gui.toolbar.hide()
-        
-    def toggle_thumbnails(self):
-        '''
-        Toggles the visibility of the thumbnail pager.
-        '''
-        if self.state_manager['show_thumbnails']:
-            self.gui.thumbnails_scrolled_window.show()
-        else:
-            self.gui.thumbnails_scrolled_window.hide()
-        
-    def toggle_statusbar(self):
-        '''
-        Toggles the visibility of the statusbar.
-        '''
-        if self.state_manager['show_statusbar']:
-            self.gui.statusbar.show()
-        else:
-            self.gui.statusbar.hide()
         
     def zoom_in(self):
         '''

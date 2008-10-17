@@ -473,14 +473,17 @@ class GtkGUI():
     def _on_show_toolbar_menu_item_toggled(self, check_menu_item):
         self.app.state_manager['show_toolbar'] = \
             check_menu_item.get_active()
+        self.app._show_toolbar_changed()
         
     def _on_show_statusbar_menu_item_toggled(self, check_menu_item):
         self.app.state_manager['show_statusbar'] = \
             check_menu_item.get_active()
+        self.app._show_statusbar_changed()
         
     def _on_show_thumbnails_menu_item_toggled(self, check_menu_item):
         self.app.state_manager['show_thumbnails'] = \
             check_menu_item.get_active()
+        self.app._show_thumbnails_changed()
         
     def _on_zoom_in_menu_item_activate(self, menu_item):
         self.app.zoom_in()
