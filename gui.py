@@ -140,7 +140,7 @@ class GtkGUI():
         self.thumbnails_cell = gtk.CellRendererPixbuf()
         self.thumbnails_column.set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
         self.thumbnails_column.set_fixed_width(
-            self.app.state_engine.get_state('thumbnail_size'))
+            self.app.state_manager['thumbnail_size'])
         self.thumbnails_tree_view.append_column(self.thumbnails_column)
         self.thumbnails_column.pack_start(self.thumbnails_cell, True)
         self.thumbnails_column.set_attributes(self.thumbnails_cell, pixbuf=0)
@@ -181,15 +181,15 @@ class GtkGUI():
             'ScanStatusBar')
         self.statusbar.push(constants.STATUSBAR_BASE_CONTEXT_ID, 'Ready')
         
-        if self.app.state_engine.get_state('show_toolbar') == False:
+        if self.app.state_manager['show_toolbar'] == False:
             self.show_toolbar_menu_item.set_active(False)
             self.toolbar.hide()
         
-        if self.app.state_engine.get_state('show_thumbnails') == False:
+        if self.app.state_manager['show_thumbnails'] == False:
             self.show_thumbnails_menu_item.set_active(False)
             self.thumbnails_scrolled_window.hide()
         
-        if self.app.state_engine.get_state('show_statusbar') == False:
+        if self.app.state_manager['show_statusbar'] == False:
             self.show_statusbar_menu_item.set_active(False)
             self.statusbar.hide()
             
@@ -214,7 +214,8 @@ class GtkGUI():
             
         self.preview_mode_combo_box = self.glade_xml.get_widget(
             'PreviewModeComboBox')
-        self.setup_combobox(
+            
+        setup_combobox(
             self.preview_mode_combo_box, 
             ['Nearest (Fastest)',
                 'Bilinear', 
@@ -356,41 +357,6 @@ class GtkGUI():
                     self._on_preview_layout_scroll_event}
         
         self.glade_xml.signal_autoconnect(signals)
-        
-    # Utility functions
-        
-    def setup_combobox(self, combobox, item_list, selection):
-        '''
-        A short-cut for setting up simple comboboxes.
-        '''
-        liststore = gtk.ListStore(gobject.TYPE_STRING)
-        combobox.clear()
-        combobox.set_model(liststore)
-        cell = gtk.CellRendererText()
-        combobox.pack_start(cell, True)
-        combobox.add_attribute(cell, 'text', 0)  
-
-        for item in item_list:
-            liststore.append([item])
-            
-        try:
-            index = item_list.index(selection)
-        except ValueError:
-            index = 0
-
-        combobox.set_active(index)
-        
-    def read_combobox(self, combobox):
-        '''
-        A short-cut for reading from simple comboboxes.
-        '''
-        liststore = combobox.get_model()
-        active = combobox.get_active()
-        
-        if active < 0:
-            return None
-            
-        return liststore[active][0]
     
     def error_box(self, parent, text):
         '''
@@ -504,17 +470,17 @@ class GtkGUI():
     def _on_preferences_menu_item_activate(self, menu_item):
         self.app.show_preferences()
         
-    def _on_show_toolbar_menu_item_toggled(self, checkMenuItem):
-        self.app.state_engine.set_state(
-            'show_toolbar', checkMenuItem.get_active())
+    def _on_show_toolbar_menu_item_toggled(self, check_menu_item):
+        self.app.state_manager['show_toolbar'] = \
+            check_menu_item.get_active()
         
-    def _on_show_statusbar_menu_item_toggled(self, checkMenuItem):
-        self.app.state_engine.set_state(
-            'show_statusbar', checkMenuItem.get_active())
+    def _on_show_statusbar_menu_item_toggled(self, check_menu_item):
+        self.app.state_manager['show_statusbar'] = \
+            check_menu_item.get_active()
         
-    def _on_show_thumbnails_menu_item_toggled(self, checkMenuItem):
-        self.app.state_engine.set_state(
-            'show_thumbnails', checkMenuItem.get_active())
+    def _on_show_thumbnails_menu_item_toggled(self, check_menu_item):
+        self.app.state_manager['show_thumbnails'] = \
+            check_menu_item.get_active()
         
     def _on_zoom_in_menu_item_activate(self, menu_item):
         self.app.zoom_in()
@@ -534,7 +500,7 @@ class GtkGUI():
     def _on_rotate_clock_menu_item_activate(self, menu_item):
         self.app.rotate_clockwise()
         
-    def _on_adjust_colors_menu_item_toggled(self, checkMenuItem):
+    def _on_adjust_colors_menu_item_toggled(self, check_menu_item):
         self.app.adjust_colors_toggle()
         
     def _on_go_first_menu_item_activate(self, menu_item):
@@ -636,3 +602,38 @@ class GtkGUI():
         
     def _on_thumbnails_tree_selection_changed(self, tree_selection):
         self.app.thumbnail_selected(tree_selection)
+        
+# Utility functions
+
+def setup_combobox(combobox, item_list, selection):
+    '''
+    A short-cut for setting up simple comboboxes.
+    '''
+    liststore = gtk.ListStore(gobject.TYPE_STRING)
+    combobox.clear()
+    combobox.set_model(liststore)
+    cell = gtk.CellRendererText()
+    combobox.pack_start(cell, True)
+    combobox.add_attribute(cell, 'text', 0)  
+
+    for item in item_list:
+        liststore.append([item])
+        
+    try:
+        index = item_list.index(selection)
+    except ValueError:
+        index = 0
+
+    combobox.set_active(index)
+    
+def read_combobox(combobox):
+    '''
+    A short-cut for reading from simple comboboxes.
+    '''
+    liststore = combobox.get_model()
+    active = combobox.get_active()
+    
+    if active < 0:
+        return None
+        
+    return liststore[active][0]

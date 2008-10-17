@@ -20,6 +20,8 @@ This module contains global configuration constants that are not likely to
 change often as well as enumeration-like state constants.
 '''
 
+import os
+
 from reportlab.lib.pagesizes import A0, A1, A2, A3, A4, A5, A6, \
     B0, B1, B2, B3, B4, B5, B6, LETTER, LEGAL, ELEVENSEVENTEEN
 
@@ -41,9 +43,9 @@ PAGESIZES = {'A0' : A0,
                         'LEGAL' : LEGAL, 
                         'ELEVENSEVENTEEN' : ELEVENSEVENTEEN}
                         
-DEFAULT_ACTIVE_SCANNER = None
-DEFAULT_SCAN_MODE = "Color"
-DEFAULT_SCAN_RESOLUTION = 75
+DEFAULT_ACTIVE_SCANNER = ''
+DEFAULT_SCAN_MODE = 'Color'
+DEFAULT_SCAN_RESOLUTION = '75'
 
 DEFAULT_THUMBNAIL_SIZE = 128
 
@@ -51,3 +53,12 @@ STATUSBAR_BASE_CONTEXT_ID = 0
 STATUSBAR_PREVIEW_CONTEXT_ID = 1
 STATUSBAR_SCAN_CONTEXT_ID = 2
 STATUSBAR_SCANNER_STATUS_CONTEXT_ID = 3
+
+LOG_PATH = os.path.expanduser('~/.nostaples')
+LOG_NAME = 'nostaples.log'
+
+SCAN_CANCELLED = -1
+SCAN_FAILURE = 0
+SCAN_SUCCESS = 1
+
+GCONF_FOLDER = "/apps/nostaples"

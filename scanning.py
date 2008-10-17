@@ -15,18 +15,21 @@
 #~ You should have received a copy of the GNU General Public License
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import os
 import commands
 import re
 
-SCAN_CANCELLED = -1
-SCAN_FAILURE = 0
-SCAN_SUCCESS = 1
+import constants
 
 def get_available_scanners():
+    '''
+    Retrieves a list of available scanners from SANE using scanimage.
+    '''
     update_command = 'scanimage -f "%d=%v %m;"'
-    print 'Updating available scanners with command: "%s".' % \
-        update_command
+    logging.getLogger().debug(
+        'Updating available scanners with command: "%s".' % \
+        update_command)
     output = commands.getoutput(update_command)
 
     scanner_dict = {}
@@ -38,28 +41,37 @@ def get_available_scanners():
     return scanner_dict
     
 def get_scanner_options(scanner):
+    '''
+    Retrieves a list of valid scanner options from SANE using scanimage.
+    '''
     update_command = ' '.join(['scanimage --help -d',  scanner])
-    print 'Updating scanner options with command: "%s".' % \
-        update_command
+    logging.getLogger().debug(
+        'Updating scanner options with command: "%s".' % \
+        update_command)
     output = commands.getoutput(update_command)
 
     try:
         mode_list = re.findall('--mode (.*) ', output)[0].split('|')
     except IndexError:
-        print 'Could not parse scan modes or no modes available for \
-            device "%s".' % scanner
+        logging.getLogger().warn(
+            'Could not parse scan modes or no modes available for \
+            device "%s".' % scanner)
         mode_list = None
         
     try:
         resolution_list = re.findall('--resolution (.*)dpi ', output)[0].split('|')
     except IndexError:
-        print 'Could not parse resolutions or no resolutions available for \
-            device "%s".' % scanner
+        logging.getLogger().warn(
+            'Could not parse resolutions or no resolutions available for \
+            device "%s".' % scanner)
         resolution_list = None
     
     return (mode_list, resolution_list)
 
-def scan_to_file(scanner, mode, resolution, filename):    
+def scan_to_file(scanner, mode, resolution, filename):
+    '''
+    Scans an image to a file using SANE's scanimage utility.
+    '''
     scan_program = 'scanimage --format=pnm'
     mode_flag = ' '.join(['--mode', mode])
     resolution_flag = ' '.join(['--resolution', resolution])
@@ -68,17 +80,21 @@ def scan_to_file(scanner, mode, resolution, filename):
     scan_command = ' '.join(
         [scan_program, mode_flag, resolution_flag, scanner_flag, output_file])
     
-    print 'Scanning with command: "%s".' % scan_command
+    logging.getLogger().info(
+        'Scanning with command: "%s".' % scan_command)
     output = commands.getoutput(scan_command)
     
+    # TODO: check output for errors?
+    
     if not os.path.exists(filename):
-        print 'Scan failed: file %s not created.' % filename
-        return SCAN_FAILURE
+        logging.getLogger().error(
+            'Scan failed: file %s not created.' % filename)
+        return constants.SCAN_FAILURE
     
     if os.stat(filename).st_size <= 0:
-        print 'Scan failed: file %s is empty.' % filename
+        logging.getLogger().error(
+            'Scan failed: file %s is empty.' % filename)
         os.remove(filename)
-        return SCAN_FAILURE
-            
-    print 'Scan complete'
-    return SCAN_SUCCESS
+        return constants.SCAN_FAILURE
+
+    return constants.SCAN_SUCCESS

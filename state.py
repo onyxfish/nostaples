@@ -15,117 +15,253 @@
 #~ You should have received a copy of the GNU General Public License
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
-'''
-This module handles persisting states to and from a GConf backened.
-'''
-
+import logging
 from types import IntType, StringType, FloatType, BooleanType
+
 import gconf
 
-GCONF_FOLDER = "/apps/nostaples"
+import constants
 
-class GConfStateEngine():
+class GConfState():
     '''
-    An engine to persist program settings using GNOME's gconf.
+    A simple class to hold the data for a state that is managed
+    by the L{GConfStateManager}.
+    '''
+
+    def __init__(self, name, value, callback):
+        '''
+        Initializes a managed state with the specified settings.
+        '''
+        self.name = name
+        self.path = '/'.join([constants.GCONF_FOLDER, self.name])
+        self.value = value
+        self.callback = callback
+        self.python_type = type(value)
+        
+        # Store both the Python type and the GConf type to save converting
+        # later on.
+        if self.python_type is IntType:
+            self.gconf_type = gconf.VALUE_INT
+        elif self.python_type is StringType:
+            self.gconf_type = gconf.VALUE_STRING
+        elif self.python_type is FloatType:
+            self.gconf_type = gconf.VALUE_FLOAT
+        elif self.python_type is BooleanType:
+            self.gconf_type = gconf.VALUE_BOOL
+        else:
+            # TODO: lists?
+            logging.getLogger().error(
+                'Type %s is not supported GConf.' % str(self.python_type))
+            raise TypeError
+
+class GConfStateManager(dict):
+    '''
+    Persists application settings using GNOME's GConf configuration
+    system.  Handles most validation of values automatically.
     '''
     
     def __init__(self):
         '''
-        Gets a reference to GConf and preps the NoStaples directory.
+        Grabs a reference to the default GConf client and 
+        initializes a dictionary of states that will be managed.
         '''
+        # states["state_name"] = State()
         self.states = {}
-        self.callbacks = {}
+        
         self.gconf_client = gconf.client_get_default()
         self.gconf_client.add_dir(
-            GCONF_FOLDER, gconf.CLIENT_PRELOAD_NONE)
+            constants.GCONF_FOLDER, gconf.CLIENT_PRELOAD_ONELEVEL)
         
-    def __get_gconf_path(self, state):
+    def init_state(self, state_name, default_value, callback=None):
         '''
-        Helper function to get a GConf path for a particular state variable.
+        Sets up a managed copy of a state.  Checks if a value is already
+        stored in GConf and if so loads it into the managed copy, otherwise
+        sets a default value in both places.  Also sets a reference to a 
+        default callback, which will do basic validation before calling 
+        the state callback.
         '''
-        return '/'.join([GCONF_FOLDER, state])
+        dict.__init__(self)
         
-    def __get_state_from_path(self, path):
-        '''
-        Helper function to determine get the name of a state variable given
-        a GConf path.
-        '''
-        return path.split('/')[-1]
+        # Check that a state is not initialized twice
+        if state_name in self.states.keys():
+            logging.getLogger().error(
+                'State %s already exists in state manager.' % state_name)
+            return
         
-    def init_state(self, state, default, callback=None):
-        '''
-        Checks that a state exists.  If not, creates it with a default value
-        and notification callback.
-        '''
-        path = self.__get_gconf_path(state)
-        value = self.gconf_client.get(path)
-        
-        if not value:
-            self.states[state] = default
-            self.set_state(state, default)
-        else:
-            if value.type == gconf.VALUE_INT:
-                self.states[state] = value.get_int()
-            elif value.type == gconf.VALUE_STRING:
-                self.states[state] = value.get_string()
-            elif value.type == gconf.VALUE_FLOAT:
-                self.states[state] = value.get_float()
-            elif value.type == gconf.VALUE_BOOL:
-                self.states[state] = value.get_bool()
-            else:
-                raise TypeError, 'Variable type not supported.'
-                
-        self.callbacks[state] = callback
-        self.gconf_client.notify_add(path, self.__notify_state)
+        # Create a new managed state
+        try:
+            state = GConfState(state_name, default_value, callback)
+            self.states[state_name] = state
+        except TypeError:
+            # This error is rethrown so it can be handled at the interface level
+            # as it is probably breaking and should absolutely never happen
+            raise            
     
-    def get_state(self, state):
-        '''
-        Gets a state from the GConf database.
-        '''
-        assert state in self.states, \
-            'State "%s" has not been initialized with \
-            a call to init_state()' % state
-        return self.states[state]
+        # Load any value already stored in GConf
+        stored_value = self.gconf_client.get(state.path)
         
-    def set_state(self, state, value):
-        '''
-        Sets a state in the GConf database.
-        '''
-        assert state in self.states, \
-            'State "%s" has not been initialized with \
-            a call to init_state()' % state
-        
-        if type(value) is IntType:
-            self.gconf_client.set_int(self.__get_gconf_path(state), value)
-        elif type(value) is StringType:
-            self.gconf_client.set_string(self.__get_gconf_path(state), value)
-        elif type(value) is FloatType:
-            self.gconf_client.set_float(self.__get_gconf_path(state), value)
-        elif type(value) is BooleanType:
-            self.gconf_client.set_bool(self.__get_gconf_path(state), value)
+        if stored_value:
+            if state.python_type is IntType:
+                state.value = stored_value.get_int()
+            elif state.python_type is StringType:
+                state.value = stored_value.get_string()
+            elif state.python_type is FloatType:
+                state.value = stored_value.get_float()
+            elif state.python_type is BooleanType:
+                state.value = stored_value.get_bool()
+            else:
+                # It should not be possible to get here due to previous
+                # error-checking.
+                logging.getLogger().error(
+                    'Type %s is not supported GConf.' % str(state.python_type))
+                raise TypeError
+        # If there was not a state stored, then set the default
         else:
-            raise TypeError, 'Variable type not supported by gconf.'
-            
-        self.states[state] = value
+            if state.python_type is IntType:
+                self.gconf_client.set_int(state.path, default_value)
+            elif state.python_type is StringType:
+                self.gconf_client.set_string(state.path, default_value)
+            elif state.python_type is FloatType:
+                self.gconf_client.set_float(state.path, default_value)
+            elif state.python_type is BooleanType:
+                self.gconf_client.set_bool(state.path, default_value)
+            else:
+                # It should not be possible to get here due to previous
+                # error-checking.
+                logging.getLogger().error(
+                    'Type %s is not supported GConf.' % str(state.python_type))
+                raise TypeError
         
-    def __notify_state(self, client, connection_id, entry, error):
+        # Add generic state callback
+        self.gconf_client.notify_add(state.path, self.__gconf_value_changed)
+    
+    def __getitem__(self, state_name):
         '''
-        Handles updating the local copy of a state when notification is
-        received that it has been modified in GConf.
-        '''       
-        state = self.__get_state_from_path(entry.get_key())
-        value = entry.get_value()
-        
-        if value.type == gconf.VALUE_INT:
-            self.states[state] = value.get_int()
-        elif value.type == gconf.VALUE_STRING:
-            self.states[state] = value.get_string()
-        elif value.type == gconf.VALUE_FLOAT:
-            self.states[state] = value.get_float()
-        elif value.type == gconf.VALUE_BOOL:
-            self.states[state] = value.get_bool()
-        else:
-            raise TypeError, 'Variable type not supported.'
+        Retrieves the value from the managed copy of a state.  This
+        managed copy is kept updated with every call to L{__setitem__}
+        and L{__gconf_value_changed} so it should always be in sync 
+        with the GConf database.
+        '''
+        try:
+            state = self.states[state_name]
+        except IndexError:
+            # When a state has not been initialized raise a breaking error
+            logging.getLogger().error(
+                'State %s does not exist in the state manager.' % state_name)
+            raise KeyError
+
+        return state.value
+    
+    def __setitem__(self, state_name, new_value):
+        '''
+        Sets a value in both the managed copy of a state and the GConf
+        database.
+        '''
+        try:
+            state = self.states[state_name]
+        except IndexError:
+            # When a state has not been initialized raise a breaking error
+            logging.getLogger().error(
+                'State %s does not exist in the state manager.' % state_name)
+            raise KeyError
             
-        if self.callbacks[state]:
-            self.callbacks[state]()
+        # If the value has not changed then don't bother updating GConf
+        if new_value == state.value:
+            return
+        
+        # Validate that the new value matches the type of the value
+        # originally specified for this state.
+        if type(new_value) != state.python_type:
+            logging.getLogger().error(
+                'Type %s is not the correct type for state %s. \
+                It should be %s.' % 
+                    str(type(new_value)), state_name, str(state.python_type))
+            # When a wrong type is assigned raise a breaking error
+            raise TypeError
+        
+        logging.getLogger().debug(
+            'Updating state %s with new value %s.' %
+                (state_name, str(new_value)))
+            
+        state.value = new_value
+                    
+        if state.python_type is IntType:
+            self.gconf_client.set_int(state.path, new_value)
+        elif state.python_type is StringType:
+            self.gconf_client.set_string(state.path, new_value)
+        elif state.python_type is FloatType:
+            self.gconf_client.set_float(state.path, new_value)
+        elif state.python_type is BooleanType:
+            self.gconf_client.set_bool(state.path, new_value)
+        else:
+            # It should not be possible to get here due to error-checking
+            # when the state was initialized.
+            logging.getLogger().error(
+                'Type %s is not supported GConf.' % str(state.python_type))
+            raise TypeError
+        
+    def __gconf_value_changed(self, client, connection_id, entry, error):
+        '''
+        Generic callback that handles updates made to the GConf
+        database.  After checking, calls the state callback if one
+        has been specified.
+        '''
+        state_name = entry.get_key().split('/')[-1]
+        
+        # Get the referenced state
+        try:
+            state = self.states[state_name]
+        except IndexError:
+            # Treat this as a non-breaking error since it should be impossible
+            # anyway.
+            logging.getLogger().error(
+                'A callback was handled for non-initialized state %s.  \
+                (How could this ever happen?)' % state_name)
+            return
+        
+        # Get the modified value (in GConfValue format at this point)
+        new_value = entry.get_value()
+        
+        # Verify that the GConf value is of the expected type, if not then
+        # a third-party was mucking with our config settings and we need
+        # to revert to the previous setting.
+        if new_value.type is not state.gconf_type:
+            # ERROR: not the correct type, reset old value
+            logging.getLogger().error(
+                'An invalid value was set for state %s.  \
+                The state has been reset to its previous value.' % state_name)
+            self[state_name] = state.value
+            return
+        
+        # Get a proper, Python-typed version of the GConfValue
+        if state.python_type is IntType:
+            new_value_typed = new_value.get_int()
+        elif state.python_type is StringType:
+            new_value_typed = new_value.get_string()
+        elif state.python_type is FloatType:
+            new_value_typed = new_value.get_float()
+        elif state.python_type is BooleanType:
+            new_value_typed = new_value.get_bool()
+        else:
+            # It should not be possible to get here due to prior error-checking
+            logging.getLogger().error(
+                'Type %s is not supported GConf.' % str(state.python_type))
+            raise TypeError   
+            
+        # If the value has not changed then the callback was triggered
+        # by a call to L{__setitem__} in this application.  That method
+        # should have updated the managed copy, so we should be safe
+        # to exit without updating.  (Updating again could lead to an
+        # endless loop.)
+        if new_value_typed == state.value:
+            return
+        
+        state.value = new_value_typed
+        
+        logging.getLogger().debug(
+            'An external operation has updated state %s with value %s.' %
+                (state_name, str(new_value_typed)))
+        
+        # Call the state callback if one was specified during init_state()
+        if state.callback != None:
+            state.callback()
