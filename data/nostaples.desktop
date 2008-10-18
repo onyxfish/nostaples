@@ -1,0 +1,15 @@
+[Desktop Entry]
+Name=NoStaples
+Comment=GNOME Scanning Application
+TryExec=nostaples
+Exec=nostaples
+Icon=scanner
+Type=Application
+X-GNOME-DocPath=
+X-GNOME-Bugzilla-Bugzilla=
+X-GNOME-Bugzilla-Product=
+X-GNOME-Bugzilla-Component=
+X-GNOME-Bugzilla-Version=
+Categories=GNOME;GTK;Utility;Graphics;
+StartupNotify=true
+X-Ubuntu-Gettext-Domain=nostaples

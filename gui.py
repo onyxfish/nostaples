@@ -1,4 +1,4 @@
-#!/usr/env/python
+#!/usr/bin/python
 
 #~ This file is part of NoStaples.
 
@@ -16,7 +16,7 @@
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
 '''
-This module holds the GTKGui implemenation of the NoStaples interface.
+This module holds the GtkGUI implemenation of the NoStaples interface.
 '''
 
 # Disable pylint checks that do not apply to this module
@@ -486,7 +486,6 @@ class GtkGUI():
     
     @breaking_exception_handler
     def _on_scan_window_destroy(self, window):
-        raise Exception
         self.app.quit()
         
     @breaking_exception_handler

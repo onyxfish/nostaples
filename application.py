@@ -1,4 +1,4 @@
-#!/usr/env/python
+#!/usr/bin/python
 
 #~ This file is part of NoStaples.
 
@@ -47,6 +47,12 @@ def threaded(func):
         new_thread.start()
         return new_thread
     return proxy
+
+def main():
+    app = NoStaples()
+    gtk.gdk.threads_enter()
+    gtk.main()
+    gtk.gdk.threads_leave()
     
 class NoStaples:
     '''
