@@ -112,7 +112,8 @@ class NoStaples:
         default values and callbacks.
         '''
         self.state_manager.init_state(
-            'active_scanner', constants.DEFAULT_ACTIVE_SCANNER)
+            'active_scanner', constants.DEFAULT_ACTIVE_SCANNER,
+            self._active_scanner_changed)
         self.state_manager.init_state(
             'scan_mode', constants.DEFAULT_SCAN_MODE, 
             self._scan_mode_changed)
@@ -120,7 +121,8 @@ class NoStaples:
             'scan_resolution', constants.DEFAULT_SCAN_RESOLUTION,
             self._scan_resolution_changed)
         self.state_manager.init_state(
-            'thumbnail_size', constants.DEFAULT_THUMBNAIL_SIZE)
+            'thumbnail_size', constants.DEFAULT_THUMBNAIL_SIZE,
+            self._thumbnail_size_changed)
         self.state_manager.init_state(
             'show_toolbar', True, 
             self._show_toolbar_changed)
@@ -131,9 +133,11 @@ class NoStaples:
             'show_statusbar', True, 
             self._show_statusbar_changed)
         self.state_manager.init_state(
-            'save_path', os.path.expanduser('~'))        
+            'save_path', os.path.expanduser('~'),
+            self._save_path_changed)        
         self.state_manager.init_state(
-            'pdf_author', 'Author')
+            'pdf_author', 'Author',
+            self._pdf_author_changed)
             
     # State-change callbacks
     
@@ -204,57 +208,44 @@ class NoStaples:
             menu_items[0].get_children()[0].get_text()
     
     def _thumbnail_size_changed(self):
-        # TODO
+        # TODO: update preferences dialogue and visible size
         pass
     
     def _show_toolbar_changed(self):
         '''
         Shows or hides the toolbar based on changes made to the 
         'show_toolbar' state.
-        
-        May be called as a callback by the state_manager.
         '''
-        if self.state_manager['show_toolbar']:
-            self.gui.show_toolbar_menu_item.set_active(True)
-            self.gui.toolbar.show()
-        else:
-            self.gui.show_toolbar_menu_item.set_active(False)
-            self.gui.toolbar.hide()
+        self.update_toolbar_visibility()
     
     def _show_thumbnails_changed(self):
         '''
         Shows or hides the thumbnails based on changes made to the 
         'show_thumbnails' state.
-        
-        May be called as a callback by the state_manager.
         '''
-        if self.state_manager['show_thumbnails']:
-            self.gui.show_thumbnails_menu_item.set_active(True)
-            self.gui.thumbnails_scrolled_window.show()
-        else:
-            self.gui.show_thumbnails_menu_item.set_active(False)
-            self.gui.thumbnails_scrolled_window.hide()
+        self.update_thumbnails_visibility()
     
     def _show_statusbar_changed(self):
         '''
         Shows or hides the statusbar based on changes made to the 
         'show_statusbar' state.
-        
-        May be called as a callback by the state_manager.
         '''
-        if self.state_manager['show_statusbar']:
-            self.gui.show_statusbar_menu_item.set_active(True)
-            self.gui.statusbar.show()
-        else:
-            self.gui.show_statusbar_menu_item.set_active(False)
-            self.gui.statusbar.hide()
+        self.update_statusbar_visibility()
     
     def _save_path_changed(self):
-        # TODO
+        '''
+        The save_path does not cause any updates as it is only
+        visible in the save dialog, which is refreshed on
+        each run.
+        '''
         pass
     
     def _pdf_author_changed(self):
-        # TODO
+        '''
+        The pdf_author does not cause any updates as it is only
+        visible in the metadata_dialog, which is refreshed on
+        each run.
+        '''
         pass
 
     # Functions called by gui signal handlers
@@ -508,9 +499,45 @@ class NoStaples:
         Show the preferences dialog.
         '''
         assert not self.scan_event.isSet(), 'Scanning in progress.'
-            
+        
         self.gui.preferences_dialog.run()
         self.gui.preferences_dialog.hide()
+        
+    def update_toolbar_visibility(self):
+        '''
+        Updates the visiblity of the toolbar based on the state
+        in the state_manager.
+        '''
+        if self.state_manager['show_toolbar']:
+            self.gui.show_toolbar_menu_item.set_active(True)
+            self.gui.toolbar.show()
+        else:
+            self.gui.show_toolbar_menu_item.set_active(False)
+            self.gui.toolbar.hide()
+    
+    def update_statusbar_visibility(self):
+        '''
+        Updates the visiblity of the statusbar based on the state
+        in the state_manager.
+        '''
+        if self.state_manager['show_statusbar']:
+            self.gui.show_statusbar_menu_item.set_active(True)
+            self.gui.statusbar.show()
+        else:
+            self.gui.show_statusbar_menu_item.set_active(False)
+            self.gui.statusbar.hide()
+    
+    def update_thumbnails_visibility(self):
+        '''
+        Updates the visiblity of the thumbnails based on the state
+        in the state_manager.
+        '''
+        if self.state_manager['show_thumbnails']:
+            self.gui.show_thumbnails_menu_item.set_active(True)
+            self.gui.thumbnails_scrolled_window.show()
+        else:
+            self.gui.show_thumbnails_menu_item.set_active(False)
+            self.gui.thumbnails_scrolled_window.hide()
         
     def zoom_in(self):
         '''

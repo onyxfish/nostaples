@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Tue May 27 07:58:56 2008 -->
+<!--Generated with glade3 3.4.5 on Fri Oct 17 21:31:47 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="ScanWindow">
     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
@@ -33,6 +33,7 @@
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">S_can</property>
                         <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_ScanMenuItem_activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="menu-item-image2">
                             <property name="visible">True</property>
@@ -287,7 +288,7 @@
                             <child>
                               <widget class="GtkMenuItem" id="menuitem5">
                                 <property name="visible">True</property>
-                                <property name="label" translatable="yes">menuitem5</property>
+                                <property name="label" translatable="yes">Placeholder</property>
                                 <property name="use_underline">True</property>
                               </widget>
                             </child>
@@ -306,7 +307,7 @@
                             <child>
                               <widget class="GtkMenuItem" id="menuitem6">
                                 <property name="visible">True</property>
-                                <property name="label" translatable="yes">menuitem6</property>
+                                <property name="label" translatable="yes">Placeholder</property>
                                 <property name="use_underline">True</property>
                               </widget>
                             </child>
@@ -325,7 +326,7 @@
                             <child>
                               <widget class="GtkMenuItem" id="menuitem7">
                                 <property name="visible">True</property>
-                                <property name="label" translatable="yes">menuitem7</property>
+                                <property name="label" translatable="yes">Placeholder</property>
                                 <property name="use_underline">True</property>
                               </widget>
                             </child>
@@ -869,99 +870,6 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
                 <property name="label" translatable="yes">gtk-apply</property>
                 <property name="use_stock">True</property>
                 <property name="response_id">-10</property>
-              </widget>
-              <packing>
-                <property name="position">1</property>
-              </packing>
-            </child>
-          </widget>
-          <packing>
-            <property name="expand">False</property>
-            <property name="pack_type">GTK_PACK_END</property>
-          </packing>
-        </child>
-      </widget>
-    </child>
-  </widget>
-  <widget class="GtkDialog" id="ErrorDialog">
-    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-    <property name="border_width">5</property>
-    <property name="modal">True</property>
-    <property name="window_position">GTK_WIN_POS_CENTER_ON_PARENT</property>
-    <property name="destroy_with_parent">True</property>
-    <property name="type_hint">GDK_WINDOW_TYPE_HINT_DIALOG</property>
-    <property name="skip_taskbar_hint">True</property>
-    <property name="skip_pager_hint">True</property>
-    <property name="has_separator">False</property>
-    <child internal-child="vbox">
-      <widget class="GtkVBox" id="dialog-vbox4">
-        <property name="visible">True</property>
-        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-        <property name="spacing">24</property>
-        <child>
-          <widget class="GtkAlignment" id="alignment5">
-            <property name="visible">True</property>
-            <property name="top_padding">6</property>
-            <property name="bottom_padding">6</property>
-            <property name="left_padding">6</property>
-            <property name="right_padding">6</property>
-            <child>
-              <widget class="GtkHBox" id="hbox8">
-                <property name="visible">True</property>
-                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                <property name="spacing">12</property>
-                <child>
-                  <widget class="GtkImage" id="image1">
-                    <property name="visible">True</property>
-                    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                    <property name="stock">gtk-dialog-error</property>
-                    <property name="icon_size">6</property>
-                  </widget>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">False</property>
-                  </packing>
-                </child>
-                <child>
-                  <widget class="GtkLabel" id="ErrorLabel">
-                    <property name="visible">True</property>
-                    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                    <property name="label" translatable="yes">&lt;b&gt;Error&lt;/b&gt;
-
-Subtext</property>
-                    <property name="use_markup">True</property>
-                  </widget>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">False</property>
-                    <property name="position">1</property>
-                  </packing>
-                </child>
-              </widget>
-            </child>
-          </widget>
-          <packing>
-            <property name="expand">False</property>
-            <property name="position">1</property>
-          </packing>
-        </child>
-        <child internal-child="action_area">
-          <widget class="GtkHButtonBox" id="dialog-action_area4">
-            <property name="visible">True</property>
-            <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-            <property name="layout_style">GTK_BUTTONBOX_END</property>
-            <child>
-              <placeholder/>
-            </child>
-            <child>
-              <widget class="GtkButton" id="ErrorOkButton">
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                <property name="label" translatable="yes">gtk-ok</property>
-                <property name="use_stock">True</property>
-                <property name="response_id">0</property>
               </widget>
               <packing>
                 <property name="position">1</property>

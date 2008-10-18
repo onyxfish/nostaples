@@ -25,11 +25,52 @@ This module holds the GTKGui implemenation of the NoStaples interface.
 # pylint: disable-msg=W0613
 # pylint: disable-msg=C0103
 
+import logging
+
 import gtk
 import gtk.glade
 import gobject
 
 import constants
+
+def breaking_exception_handler(func):
+    '''
+    A decorator that wraps top-level UI signal handlers in a
+    last-resort exception handling block.  If an exception makes it
+    to the surface via any of these functions then it is
+    assumed to be fatal.  The exception is logged, a message
+    is presented to the user, and the application is killed.
+    '''
+    def proxy(*args, **kwargs):
+        '''Wraps the specified function in a try block'''
+        try:
+            return func(*args, **kwargs)
+        except Exception:
+            logging.getLogger().fatal(
+               'Unhandled exception.', exc_info=True)
+            
+            primary_markup = (
+                '<b>An unhandled exception has been logged.</b>')
+            
+            secondary_markup = (
+                'NoStaples has encountered an unexpected error and must '
+                'close.  Please take a moment to file a bug report so '
+                'we can prevent this from happening in the future.  '
+                'Instructions can be found at http://www.etlafins.com/'
+                'nostaples.')
+            
+            msg = gtk.MessageDialog(
+                type=gtk.MESSAGE_ERROR, 
+                buttons=gtk.BUTTONS_OK)
+            msg.set_title('')
+            msg.set_markup(primary_markup)
+            msg.format_secondary_markup(secondary_markup)
+            msg.run()
+            msg.destroy()
+
+            gtk.main_quit()
+        
+    return proxy
 
 class GtkGUI():
     '''
@@ -242,13 +283,6 @@ class GtkGUI():
         self.save_dialog = self.glade_xml.get_widget(
             'SaveDialog')
         
-        # Error dialog
-           
-        self.error_dialog = self.glade_xml.get_widget(
-            'ErrorDialog')
-        self.error_label = self.glade_xml.get_widget(
-            'ErrorLabel')
-        
         # About dialog
          
         self.about_dialog = self.glade_xml.get_widget(
@@ -358,14 +392,22 @@ class GtkGUI():
         
         self.glade_xml.signal_autoconnect(signals)
     
-    def error_box(self, parent, text):
+    def error_box(self, parent, primary_markup, secondary_markup=None):
         '''
         Utility function to display simple error dialog.
-        '''
-        self.error_dialog.set_transient_for(parent)
-        self.error_label.set_markup(text)
-        self.error_dialog.run()
-        self.error_dialog.hide()
+        '''        
+        msg = gtk.MessageDialog(
+            parent=parent,
+            type=gtk.MESSAGE_ERROR, 
+            buttons=gtk.BUTTONS_OK)
+        msg.set_title('')
+        msg.set_markup(primary_markup)
+        
+        if secondary_markup:
+            msg.format_secondary_markup(secondary_markup)
+            
+        msg.run()
+        msg.destroy()
         
     # Sensitivity functions
     
@@ -439,170 +481,220 @@ class GtkGUI():
         self.go_previous_button.set_sensitive(sensitive)
         self.go_next_button.set_sensitive(sensitive)
         self.go_last_button.set_sensitive(sensitive)
-        
+    
     # Window destruction signal handlers
-        
+    
+    @breaking_exception_handler
     def _on_scan_window_destroy(self, window):
+        raise Exception
         self.app.quit()
         
+    @breaking_exception_handler
     def _on_adjust_colors_window_delete_event(self, widget, event):
         self.adjust_colors_window.hide()
         self.adjust_colors_menu_item.set_active(False)
         return True
         
     # Menu signal handlers
-        
+            
+    @breaking_exception_handler
     def _on_scan_menu_item_activate(self, menu_item):
         self.app.scan_page()
         
+    @breaking_exception_handler
     def _on_save_as_menu_item_activate(self, menu_item):
         self.app.save_as()
         
+    @breaking_exception_handler
     def _on_quit_menu_item_activate(self, menu_item):
         self.app.quit()
         
+    @breaking_exception_handler
     def _on_delete_menu_item_activate(self, menu_item):
         self.app.delete_selected_page()
         
+    @breaking_exception_handler
     def _on_insert_scan_menu_item_activate(self, menu_item):
         self.app.insert_scan()
         
+    @breaking_exception_handler
     def _on_preferences_menu_item_activate(self, menu_item):
         self.app.show_preferences()
         
+    @breaking_exception_handler
     def _on_show_toolbar_menu_item_toggled(self, check_menu_item):
         self.app.state_manager['show_toolbar'] = \
             check_menu_item.get_active()
-        self.app._show_toolbar_changed()
+        self.app.update_toolbar_visibility()
         
+    @breaking_exception_handler
     def _on_show_statusbar_menu_item_toggled(self, check_menu_item):
         self.app.state_manager['show_statusbar'] = \
             check_menu_item.get_active()
-        self.app._show_statusbar_changed()
+        self.app.update_statusbar_visibility()
         
+    @breaking_exception_handler
     def _on_show_thumbnails_menu_item_toggled(self, check_menu_item):
         self.app.state_manager['show_thumbnails'] = \
             check_menu_item.get_active()
-        self.app._show_thumbnails_changed()
+        self.app.update_thumbnails_visibility()
         
+    @breaking_exception_handler
     def _on_zoom_in_menu_item_activate(self, menu_item):
         self.app.zoom_in()
         
+    @breaking_exception_handler
     def _on_zoom_out_menu_item_activate(self, menu_item):
         self.app.zoom_out()
         
+    @breaking_exception_handler
     def _on_zoom_one_to_one_menu_item_activate(self, menu_item):
         self.app.zoom_one_to_one()
         
+    @breaking_exception_handler
     def _on_zoom_best_fit_menu_item_activate(self, menu_item):
         self.app.zoom_best_fit()
         
+    @breaking_exception_handler
     def _on_rotate_counter_clock_menu_item_activate(self, menu_item):
         self.app.rotate_counter_clockwise()
         
+    @breaking_exception_handler
     def _on_rotate_clock_menu_item_activate(self, menu_item):
         self.app.rotate_clockwise()
         
+    @breaking_exception_handler
     def _on_adjust_colors_menu_item_toggled(self, check_menu_item):
         self.app.adjust_colors_toggle()
         
+    @breaking_exception_handler
     def _on_go_first_menu_item_activate(self, menu_item):
         self.app.goto_first_page()
         
+    @breaking_exception_handler
     def _on_go_previous_menu_item_activate(self, menu_item):
         self.app.goto_previous_page()
         
+    @breaking_exception_handler
     def _on_go_next_menu_item_activate(self, menu_item):
         self.app.goto_next_page()
         
+    @breaking_exception_handler
     def _on_go_last_menu_item_activate(self, menu_item):
         self.app.goto_last_page()
         
+    @breaking_exception_handler
     def _on_about_menu_item_activate(self, menu_item):
         self.app.show_about()
         
     # Toolbar signal handlers
         
+    @breaking_exception_handler
     def _on_scan_button_clicked(self, button):
         self.app.scan_page()
         
+    @breaking_exception_handler
     def _on_save_as_button_clicked(self, button):
         self.app.save_as()
         
+    @breaking_exception_handler
     def _on_zoom_in_button_clicked(self, button):
         self.app.zoom_in()
         
+    @breaking_exception_handler
     def _on_zoom_out_button_clicked(self, button):
         self.app.zoom_out()
         
+    @breaking_exception_handler
     def _on_zoom_one_to_one_button_clicked(self, button):
         self.app.zoom_one_to_one()
         
+    @breaking_exception_handler
     def _on_zoom_best_fit_button_clicked(self, button):
         self.app.zoom_best_fit()
         
+    @breaking_exception_handler
     def _on_rotate_counter_clock_button_clicked(self, button):
         self.app.rotate_counter_clockwise()
         
+    @breaking_exception_handler
     def _on_rotate_clock_button_clicked(self, button):
         self.app.rotate_clockwise()
         
+    @breaking_exception_handler
     def _on_go_first_button_clicked(self, button):
         self.app.goto_first_page()
         
+    @breaking_exception_handler
     def _on_go_previous_button_clicked(self, button):
         self.app.goto_previous_page()
         
+    @breaking_exception_handler
     def _on_go_next_button_clicked(self, button):
         self.app.goto_next_page()
         
+    @breaking_exception_handler
     def _on_go_last_button_clicked(self, button):
         self.app.goto_last_page()
         
     # Miscellaneous signal handlers
         
+    @breaking_exception_handler
     def _on_brightness_scale_value_changed(self, scale_range):
         self.app.update_brightness()
         
+    @breaking_exception_handler
     def _on_contrast_scale_value_changed(self, scale_range):
         self.app.update_contrast()
         
+    @breaking_exception_handler
     def _on_sharpness_scale_value_changed(self, scale_range):
         self.app.update_sharpness()
         
+    @breaking_exception_handler
     def _on_color_all_pages_check_toggled(self, toggle_button):
         self.app.color_all_pages_toggled()
         
+    @breaking_exception_handler
     def _on_title_entry_activate(self, widget):
         #~ self.metadata_dialog.response(1)
         self.pdf_metadata_apply_button.clicked()
         
+    @breaking_exception_handler
     def _on_author_entry_activate(self, widget):
         #~ self.metadata_dialog.response(1)
         self.pdf_metadata_apply_button.clicked()
         
+    @breaking_exception_handler
     def _on_keywords_entry_activate(self, widget):
         #~ self.metadata_dialog.response(1)
         self.pdf_metadata_apply_button.clicked()
         
+    @breaking_exception_handler
     def _on_preview_layout_size_allocate(self, widget, allocation):
         self.app.preview_resized(allocation)
         
+    @breaking_exception_handler
     def _on_preview_layout_button_press_event(self, widget, event):
         self.app.preview_button_pressed(event)
         
+    @breaking_exception_handler
     def _on_preview_layout_button_release_event(self, widget, event):
         self.app.preview_button_released(event)
         
+    @breaking_exception_handler
     def _on_preview_layout_motion_notify_event(self, widget, event):
         self.app.preview_mouse_moved(event)
         
+    @breaking_exception_handler
     def _on_preview_layout_scroll_event(self, widget, event):
         self.app.preview_scrolled(event)
         
+    @breaking_exception_handler
     def _on_thumbnails_list_store_row_inserted(self, tree_model, path, tree_iter):
         self.app.thumbnail_inserted(tree_model, path, tree_iter)
         
+    @breaking_exception_handler
     def _on_thumbnails_tree_selection_changed(self, tree_selection):
         self.app.thumbnail_selected(tree_selection)
         
