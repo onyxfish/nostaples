@@ -88,13 +88,13 @@ def scan_to_file(scanner, mode, resolution, path):
     
     if not os.path.exists(path):
         logging.getLogger().error(
-            'Scan failed: file %s not created.' % filename)
+            'Scan failed: file %s not created.' % path)
         return constants.SCAN_FAILURE
     
     if os.stat(path).st_size <= 0:
         logging.getLogger().error(
-            'Scan failed: file %s is empty.' % filename)
-        os.remove(filename)
+            'Scan failed: file %s is empty.' % path)
+        os.remove(path)
         return constants.SCAN_FAILURE
 
     return constants.SCAN_SUCCESS
