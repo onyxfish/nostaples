@@ -11,8 +11,8 @@ setup(name='nostaples',
       license='GPL',
       packages=['nostaples'],
       package_dir={'nostaples' : ''},
+      package_data={'nostaples' : ['logging.config', 'nostaples.glade']},
       scripts = ['nostaples'],
-      data_files=[('', ['logging.config', 'nostaples.glade']),
-                  ('share/applications', ['data/nostaples.desktop'])]
+      data_files=[('share/applications', ['data/nostaples.desktop'])]
      )
 

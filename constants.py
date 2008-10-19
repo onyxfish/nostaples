@@ -61,4 +61,8 @@ SCAN_CANCELLED = -1
 SCAN_FAILURE = 0
 SCAN_SUCCESS = 1
 
-GCONF_FOLDER = "/apps/nostaples"
+GCONF_DIRECTORY = "/apps/nostaples"
+
+TEMP_IMAGES_DIRECTORY = os.path.expanduser('~/.nostaples')
+LOGGING_CONFIG = os.path.join(os.path.dirname(__file__), 'logging.config')
+GLADE_CONFIG = os.path.join(os.path.dirname(__file__), 'nostaples.glade')

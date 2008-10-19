@@ -30,22 +30,22 @@ class Page:
     abstracting away image transformations.
     '''
     
-    def __init__(self, filename, dpi):
+    def __init__(self, path, dpi):
         '''
         Constructs a Page object and pulls a local copy of the image from 
         the scan file.
         '''
-        assert os.path.exists(filename), \
-            'Image file "%s" could not be found.' % filename
+        assert os.path.exists(path), \
+            'Image file "%s" could not be found.' % path
         
-        self.filename = filename
+        self.path = path
         self.rotation = 0
         self.brightness = 1.0
         self.contrast = 1.0
         self.sharpness = 1.0
         self.dpi = dpi
         
-        self.raw_pixbuf = gtk.gdk.pixbuf_new_from_file(self.filename)
+        self.raw_pixbuf = gtk.gdk.pixbuf_new_from_file(self.path)
         
     def __convert_pil_image_to_pixbuf(self, image):
         '''

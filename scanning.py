@@ -68,7 +68,7 @@ def get_scanner_options(scanner):
     
     return (mode_list, resolution_list)
 
-def scan_to_file(scanner, mode, resolution, filename):
+def scan_to_file(scanner, mode, resolution, path):
     '''
     Scans an image to a file using SANE's scanimage utility.
     '''
@@ -76,7 +76,7 @@ def scan_to_file(scanner, mode, resolution, filename):
     mode_flag = ' '.join(['--mode', mode])
     resolution_flag = ' '.join(['--resolution', resolution])
     scanner_flag = ' '.join(['-d', scanner])
-    output_file = '>%s' % filename
+    output_file = '>%s' % path
     scan_command = ' '.join(
         [scan_program, mode_flag, resolution_flag, scanner_flag, output_file])
     
@@ -86,12 +86,12 @@ def scan_to_file(scanner, mode, resolution, filename):
     
     # TODO: check output for errors?
     
-    if not os.path.exists(filename):
+    if not os.path.exists(path):
         logging.getLogger().error(
             'Scan failed: file %s not created.' % filename)
         return constants.SCAN_FAILURE
     
-    if os.stat(filename).st_size <= 0:
+    if os.stat(path).st_size <= 0:
         logging.getLogger().error(
             'Scan failed: file %s is empty.' % filename)
         os.remove(filename)

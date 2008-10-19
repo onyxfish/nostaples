@@ -33,7 +33,7 @@ class GConfState():
         Initializes a managed state with the specified settings.
         '''
         self.name = name
-        self.path = '/'.join([constants.GCONF_FOLDER, self.name])
+        self.path = '/'.join([constants.GCONF_DIRECTORY, self.name])
         self.value = value
         self.callback = callback
         self.python_type = type(value)
@@ -70,7 +70,7 @@ class GConfStateManager(dict):
         
         self.gconf_client = gconf.client_get_default()
         self.gconf_client.add_dir(
-            constants.GCONF_FOLDER, gconf.CLIENT_PRELOAD_ONELEVEL)
+            constants.GCONF_DIRECTORY, gconf.CLIENT_PRELOAD_ONELEVEL)
         
     def init_state(self, state_name, default_value, callback=None):
         '''

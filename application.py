@@ -38,6 +38,12 @@ import scanning
 
 gtk.gdk.threads_init()
 
+def main():
+    app = NoStaples()
+    gtk.gdk.threads_enter()
+    gtk.main()
+    gtk.gdk.threads_leave()
+
 def threaded(func):
     '''Threading function decorator.'''
     def proxy(*args, **kwargs):
@@ -47,12 +53,6 @@ def threaded(func):
         new_thread.start()
         return new_thread
     return proxy
-
-def main():
-    app = NoStaples()
-    gtk.gdk.threads_enter()
-    gtk.main()
-    gtk.gdk.threads_leave()
     
 class NoStaples:
     '''
@@ -64,7 +64,7 @@ class NoStaples:
         loads the interface via glade, connects signals, and then shows the 
         scanning window.
         '''
-        logging.config.fileConfig('logging.config')
+        logging.config.fileConfig(constants.LOGGING_CONFIG)
         logging.getLogger().debug('Application started.')
         
         self.state_manager = state.GConfStateManager()
@@ -103,7 +103,7 @@ class NoStaples:
         self.cancel_scan_event = threading.Event()
         self.quit_event = threading.Event()
         
-        self.gui = gui.GtkGUI(self, 'nostaples.glade')
+        self.gui = gui.GtkGUI(self, constants.GLADE_CONFIG)
         self.gui.set_file_controls_sensitive(False)
         self.gui.set_delete_controls_sensitive(False)
         self.gui.set_zoom_controls_sensitive(False)
@@ -118,16 +118,16 @@ class NoStaples:
         default values and callbacks.
         '''
         self.state_manager.init_state(
-            'active_scanner', constants.DEFAULT_ACTIVE_SCANNER,
+            'active_scanner', constants.DEFAULT_ACTIVE_SCANNER, 
             self._active_scanner_changed)
         self.state_manager.init_state(
             'scan_mode', constants.DEFAULT_SCAN_MODE, 
             self._scan_mode_changed)
         self.state_manager.init_state(
-            'scan_resolution', constants.DEFAULT_SCAN_RESOLUTION,
+            'scan_resolution', constants.DEFAULT_SCAN_RESOLUTION, 
             self._scan_resolution_changed)
         self.state_manager.init_state(
-            'thumbnail_size', constants.DEFAULT_THUMBNAIL_SIZE,
+            'thumbnail_size', constants.DEFAULT_THUMBNAIL_SIZE, 
             self._thumbnail_size_changed)
         self.state_manager.init_state(
             'show_toolbar', True, 
@@ -139,10 +139,10 @@ class NoStaples:
             'show_statusbar', True, 
             self._show_statusbar_changed)
         self.state_manager.init_state(
-            'save_path', os.path.expanduser('~'),
+            'save_path', os.path.expanduser('~'), 
             self._save_path_changed)        
         self.state_manager.init_state(
-            'pdf_author', 'Author',
+            'pdf_author', 'Author', 
             self._pdf_author_changed)
             
     # State-change callbacks
@@ -264,7 +264,7 @@ class NoStaples:
         
         try:
             for scanned_page in self.scanned_pages:
-                os.remove(scanned_page.filename)
+                os.remove(scanned_page.path)
         finally:
             logging.getLogger().debug('Application quit.')
             gtk.main_quit()
@@ -356,11 +356,13 @@ class NoStaples:
         # Generate pages
         for i in range(len(self.scanned_pages)):    
             pil_image = self.scanned_pages[i].get_transformed_pil_image()
-                    
-            temp_filename = 'temp%i.bmp' % i
-            pil_image.save(temp_filename)
+            
+            # Write transformed image
+            temp_file_path = os.path.join(
+                constants.TEMP_IMAGES_DIRECTORY, 'temp%i.bmp' % i)
+            pil_image.save(temp_file_path)
         
-            assert os.path.exists(temp_filename), \
+            assert os.path.exists(temp_file_path), \
                 'Temporary bitmap file was not created by PIL.'
             
             image_width_in_inches = \
@@ -378,7 +380,7 @@ class NoStaples:
                 
             pdf.setPageSize((pdf_width, pdf_height))
             pdf.drawImage(
-                temp_filename, 
+                temp_file_path, 
                 0, 0, width=pdf_width, height=pdf_height, 
                 preserveAspectRatio=True)
             pdf.showPage()
@@ -392,8 +394,9 @@ class NoStaples:
         # Clean up
         # TODO - try block
         for i in range(len(self.scanned_pages)):
-            os.remove(self.scanned_pages[i].filename)
-            os.remove('temp%i.bmp' % i)
+            os.remove(self.scanned_pages[i].path)
+            os.remove(os.path.join(
+                constants.TEMP_IMAGES_DIRECTORY, 'temp%i.bmp' % i))
         
         self.state_manager['save_path'] = \
             self.gui.save_dialog.get_current_folder()
@@ -463,6 +466,8 @@ class NoStaples:
         if len(self.scanned_pages) < 1 or self.thumbnail_selection is None:
             return
     
+        # TODO: catch exception when file does not exist
+        os.remove(scanned_page.path)
         del self.scanned_pages[self.thumbnail_selection]
         
         delete_iter = self.gui.thumbnails_list_store.get_iter(
@@ -1285,7 +1290,7 @@ class NoStaples:
         # Notify user if no scanners are connected
         if selected_item == None:
             self.gui.statusbar.push(
-                constants.STATUSBAR_SCANNER_STATUS_CONTEXT_ID,
+                constants.STATUSBAR_SCANNER_STATUS_CONTEXT_ID, 
                 'No scanners available')
         else:
             self.gui.statusbar.pop(
@@ -1413,7 +1418,7 @@ class NoStaples:
         self.gui.set_file_controls_sensitive(False)
         self.gui.set_scan_controls_sensitive(False)
         self.gui.statusbar.push(
-            constants.STATUSBAR_SCAN_CONTEXT_ID,'Scanning...')
+            constants.STATUSBAR_SCAN_CONTEXT_ID, 'Scanning...')
             
         gtk.gdk.threads_leave()
         
@@ -1426,12 +1431,14 @@ class NoStaples:
         assert self.active_scanner != \
             None, 'Attempting to scan with no scanner selected.'
         
-        scan_filename = 'scan%i.pnm' % self.next_scan_file_index
+        scan_path = os.path.join(
+             constants.TEMP_IMAGES_DIRECTORY, 
+             'scan%i.pnm' % self.next_scan_file_index)
         result = scanning.scan_to_file(
             self.scanner_dict[self.active_scanner], 
             self.state_manager['scan_mode'], 
-            self.state_manager['scan_resolution'],
-            scan_filename)
+            self.state_manager['scan_resolution'], 
+            scan_path)
         
         if result == constants.SCAN_FAILURE:
             gtk.gdk.threads_enter()
@@ -1473,7 +1480,7 @@ class NoStaples:
         self.next_scan_file_index += 1
         
         scan_page = page.Page(
-            scan_filename, float(self.state_manager['scan_resolution']))
+            scan_path, float(self.state_manager['scan_resolution']))
         
         gtk.gdk.threads_enter()
         

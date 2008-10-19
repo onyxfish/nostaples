@@ -1,0 +1,5 @@
+include *.py
+include README
+include COPYING
+include logging.config
+include nostaples.glade
