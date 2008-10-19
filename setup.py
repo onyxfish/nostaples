@@ -8,8 +8,11 @@ setup(name='nostaples',
       author='Christopher Groskopf',
       author_email='staringmonkey@gmail.com',
       url='http://www.etlafins.com/nostaples',
+      license='GPL',
       packages=['nostaples'],
       package_dir={'nostaples' : ''},
-      data_files=[('', ['logging.config', 'nostaples.glade'])]
+      scripts = ['nostaples'],
+      data_files=[('', ['logging.config', 'nostaples.glade']),
+                  ('share/applications', ['data/nostaples.desktop'])]
      )
 
