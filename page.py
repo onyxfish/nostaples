@@ -30,7 +30,7 @@ class Page:
     abstracting away image transformations.
     '''
     
-    def __init__(self, path, dpi):
+    def __init__(self, path, resolution):
         '''
         Constructs a Page object and pulls a local copy of the image from 
         the scan file.
@@ -43,46 +43,22 @@ class Page:
         self.brightness = 1.0
         self.contrast = 1.0
         self.sharpness = 1.0
-        self.dpi = dpi
+        self.resolution = resolution
         
-        self.raw_pixbuf = gtk.gdk.pixbuf_new_from_file(self.path)
+        self._raw_pixbuf = gtk.gdk.pixbuf_new_from_file(self.path)
         
-    def __convert_pil_image_to_pixbuf(self, image):
-        '''
-        Utility function to quickly convert a PIL Image to a GTK Pixbuf.
-        Adapted from Comix by Pontus Ekberg. (http://comix.sourceforge.net/)
-        '''
-            
-        image_string = image.tostring()            
-        pixbuf = gtk.gdk.pixbuf_new_from_data(
-            image_string, gtk.gdk.COLORSPACE_RGB, 
-            False, 8, image.size[0], image.size[1], 3 * image.size[0])
+    @property
+    def width(self):
+        '''Gets the width of the page.'''
+        return self._raw_pixbuf.get_width()
         
-        return pixbuf
-
-    def __convert_pixbuf_to_pil_image(self, pixbuf):
-        '''
-        Utility function to quickly convert a GTK Pixbuf to a PIL Image.
-        Adapted from Comix by Pontus Ekberg. (http://comix.sourceforge.net/)
-        '''
-
-        dimensions = pixbuf.get_width(), pixbuf.get_height()
-        stride = pixbuf.get_rowstride()
-        pixels = pixbuf.get_pixels()
-        image =  Image.frombuffer(
-            'RGB', dimensions, pixels, 'raw', 'RGB', stride, 1)
-        
-        return image
-        
-    def get_raw_pixbuf(self):
-        '''Returns an unmodified pixbuf for this page.'''
-        return self.raw_pixbuf
-        
-    def get_raw_pil_image(self):
-        '''Returns a PIL version of the unmodified pixbuf for this page.'''
-        return self.__convert_pixbuf_to_pil_image(self.raw_pixbuf)
-        
-    def get_transformed_pixbuf(self):
+    @property
+    def height(self):
+        '''Gets the height of the page.'''
+        return self._raw_pixbuf.get_height() 
+                
+    @property
+    def pixbuf(self):
         '''
         Generates a GTK Pixbuf that has had rotation and color adjustments 
         applied to it (i.e. a working copy).
@@ -90,7 +66,7 @@ class Page:
         if self.brightness != 1.0 or \
            self.contrast != 1.0 or \
            self.sharpness != 1.0:
-            image = self.__convert_pixbuf_to_pil_image(self.raw_pixbuf)
+            image = convert_pixbuf_to_pil_image(self._raw_pixbuf)
             
             if self.brightness != 1.0:
                 image = ImageEnhance.Brightness(image).enhance(
@@ -104,7 +80,7 @@ class Page:
                 
             pixbuf = self.__convert_pil_image_to_pixbuf(image)
         else:
-            pixbuf = self.raw_pixbuf
+            pixbuf = self._raw_pixbuf
         
         if abs(self.rotation % 360) == 90:
             pixbuf = pixbuf.rotate_simple(
@@ -117,23 +93,27 @@ class Page:
                 gtk.gdk.PIXBUF_ROTATE_CLOCKWISE)
             
         return pixbuf
+                
+    @property
+    def pil_image(self):
+        '''
+        Returns a PIL version of the transformed pixbuf for this page.
         
-    def get_transformed_pil_image(self):
-        '''Returns a PIL version of the transformed pixbuf for this page.'''
-        # TODO
-        # Speed this up by bypassing all the conversion in 
-        # get_transformed_pixbuf().
-        return self.__convert_pixbuf_to_pil_image(self.get_transformed_pixbuf())
+        This could be sped up by bypassing the conversion to and from
+        a PIL image in L{pixbuf}, but this is not a speed intensive 
+        routine and requires less maintenance this way.
+        '''
+        return convert_pixbuf_to_pil_image(self.pixbuf)
         
     def get_thumbnail_pixbuf(self, size):
         '''
-        Generates a GTK Pixbuf that hashad rotation and color adjustments 
+        Generates a GTK Pixbuf that has had rotation and color adjustments 
         applied to it and has been scaled down to fit the thumbnail pager.
         '''
         if self.brightness != 1.0 or \
            self.contrast != 1.0 or \
            self.sharpness != 1.0:
-            image = self.__convert_pixbuf_to_pil_image(self.raw_pixbuf)
+            image = convert_pixbuf_to_pil_image(self._raw_pixbuf)
             
             if self.brightness != 1.0:
                 image = ImageEnhance.Brightness(image).enhance(
@@ -145,9 +125,9 @@ class Page:
                 image = ImageEnhance.Sharpness(image).enhance(
                     self.sharpness)
                 
-            pixbuf = self.__convert_pil_image_to_pixbuf(image)
+            pixbuf = convert_pil_image_to_pixbuf(image)
         else:
-            pixbuf = self.raw_pixbuf
+            pixbuf = self._raw_pixbuf
         
         if abs(self.rotation % 360) == 90:
             pixbuf = pixbuf.rotate_simple(
@@ -177,8 +157,34 @@ class Page:
             target_width, target_height, gtk.gdk.INTERP_BILINEAR)
         
         return pixbuf
-        
-    def get_thumbnail_pil_image(self, size):
-        '''Returns a PIL version of the thumbnail pixbuf for this page.'''
-        return self.__convert_pixbuf_to_pil_image(
-            self.get_thumbnail_pixbuf(size))
+    
+    def save(self, file_path):
+        '''Saves the transformed image to a file.'''
+        self.pil_image.save(file_path)
+
+# Utility functions
+
+def convert_pil_image_to_pixbuf(image):
+    '''
+    Utility function to quickly convert a PIL Image to a GTK Pixbuf.
+    Adapted from Comix by Pontus Ekberg. (http://comix.sourceforge.net/)
+    '''
+    image_string = image.tostring()            
+    pixbuf = gtk.gdk.pixbuf_new_from_data(
+        image_string, gtk.gdk.COLORSPACE_RGB, 
+        False, 8, image.size[0], image.size[1], 3 * image.size[0])
+    
+    return pixbuf
+
+def convert_pixbuf_to_pil_image(pixbuf):
+    '''
+    Utility function to quickly convert a GTK Pixbuf to a PIL Image.
+    Adapted from Comix by Pontus Ekberg. (http://comix.sourceforge.net/)
+    '''
+    dimensions = pixbuf.get_width(), pixbuf.get_height()
+    stride = pixbuf.get_rowstride()
+    pixels = pixbuf.get_pixels()
+    image =  Image.frombuffer(
+        'RGB', dimensions, pixels, 'raw', 'RGB', stride, 1)
+    
+    return image

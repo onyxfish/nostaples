@@ -346,6 +346,12 @@ class NoStaples:
             gtk.gdk.Cursor(gtk.gdk.WATCH))
         gtk.gdk.flush()
         self.state_manager['pdf_author'] =  str(author)
+        
+        self.gui.statusbar.push(
+            constants.STATUSBAR_SAVE_CONTEXT_ID, 'Saving...')
+        
+        # Force refresh so that statusbar is updated
+        while gtk.events_pending(): gtk.main_iteration()
 
         # Setup output pdf
         pdf = PdfCanvas(filename)
@@ -354,21 +360,22 @@ class NoStaples:
         pdf.setKeywords(keywords)
             
         # Generate pages
-        for i in range(len(self.scanned_pages)):    
-            pil_image = self.scanned_pages[i].get_transformed_pil_image()
+        for i in range(len(self.scanned_pages)):  
+            #pil_image = self.scanned_pages[i].get_transformed_pil_image()
+            current_page = self.scanned_pages[i]
             
             # Write transformed image
             temp_file_path = os.path.join(
                 constants.TEMP_IMAGES_DIRECTORY, 'temp%i.bmp' % i)
-            pil_image.save(temp_file_path)
+            current_page.save(temp_file_path)
         
             assert os.path.exists(temp_file_path), \
                 'Temporary bitmap file was not created by PIL.'
             
-            image_width_in_inches = \
-                pil_image.size[0] / int(self.state_manager['scan_resolution'])
-            image_height_in_inches = \
-                pil_image.size[1] / int(self.state_manager['scan_resolution'])
+            width_in_inches = \
+                int(current_page.width / current_page.resolution)
+            height_in_inches = \
+                int(current_page.height / current_page.resolution)
             
             # NB: Because not all SANE backends support specifying the size
             # of the scan area, the best we can do is scan at the default
@@ -376,7 +383,7 @@ class NoStaples:
             # vast majority of scanners we hope that this would be either
             # letter or A4.
             pdf_width, pdf_height = self.find_best_fitting_pagesize(
-                image_width_in_inches, image_height_in_inches)
+                width_in_inches, height_in_inches)
                 
             pdf.setPageSize((pdf_width, pdf_height))
             pdf.drawImage(
@@ -414,6 +421,8 @@ class NoStaples:
         self.next_scan_file_index = 1
         self.preview_index = 0
         self.update_status()
+                
+        self.gui.statusbar.pop(constants.STATUSBAR_SAVE_CONTEXT_ID)
         
         self.gui.scan_window.window.set_cursor(None)
         
@@ -642,7 +651,7 @@ class NoStaples:
             self.scanned_pages[self.preview_index].rotation += 90
             
         self.preview_pixbuf = \
-            self.scanned_pages[self.preview_index].get_transformed_pixbuf()
+            self.scanned_pages[self.preview_index].pixbuf
         
         if self.preview_is_best_fit:
             self.zoom_best_fit()
@@ -671,7 +680,7 @@ class NoStaples:
             self.scanned_pages[self.preview_index].rotation -= 90
             
         self.preview_pixbuf = \
-            self.scanned_pages[self.preview_index].get_transformed_pixbuf()
+            self.scanned_pages[self.preview_index].pixbuf
         
         if self.preview_is_best_fit:
             self.zoom_best_fit()
@@ -797,7 +806,7 @@ class NoStaples:
         self.scanned_pages[self.preview_index].brightness = \
             self.gui.brightness_scale.get_value()
         self.preview_pixbuf = \
-             self.scanned_pages[self.preview_index].get_transformed_pixbuf()
+             self.scanned_pages[self.preview_index].pixbuf
         self.render_preview()
         self.update_thumbnail(self.preview_index)
         
@@ -822,7 +831,7 @@ class NoStaples:
         self.scanned_pages[self.preview_index].contrast = \
             self.gui.contrast_scale.get_value()
         self.preview_pixbuf = \
-            self.scanned_pages[self.preview_index].get_transformed_pixbuf()
+            self.scanned_pages[self.preview_index].pixbuf
         self.render_preview()
         self.update_thumbnail(self.preview_index)
         
@@ -845,7 +854,7 @@ class NoStaples:
         self.scanned_pages[self.preview_index].sharpness = \
             self.gui.sharpness_scale.get_value()
         self.preview_pixbuf = \
-            self.scanned_pages[self.preview_index].get_transformed_pixbuf()
+            self.scanned_pages[self.preview_index].pixbuf
         self.render_preview()
         self.update_thumbnail(self.preview_index)
         
@@ -1165,7 +1174,7 @@ class NoStaples:
             self.scanned_pages[self.preview_index].sharpness)
         
         self.preview_pixbuf = \
-            self.scanned_pages[self.preview_index].get_transformed_pixbuf()
+            self.scanned_pages[self.preview_index].pixbuf
         
         if self.preview_is_best_fit:
             self.zoom_best_fit()
