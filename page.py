@@ -49,13 +49,27 @@ class Page:
         
     @property
     def width(self):
-        '''Gets the width of the page.'''
-        return self._raw_pixbuf.get_width()
+        '''
+        Gets the width of the page correctly adjusting if the page
+        has been rotated.
+        '''
+        if abs(self.rotation % 360) == 90 or \
+           abs(self.rotation % 360) == 270:
+            return self._raw_pixbuf.get_height()
+        else:
+            return self._raw_pixbuf.get_width()
         
     @property
     def height(self):
-        '''Gets the height of the page.'''
-        return self._raw_pixbuf.get_height() 
+        '''
+        Gets the height of the page correctly adjusting if the page
+        has been rotated.
+        '''
+        if abs(self.rotation % 360) == 90 or \
+           abs(self.rotation % 360) == 270:
+            return self._raw_pixbuf.get_width()
+        else:
+            return self._raw_pixbuf.get_height()
                 
     @property
     def pixbuf(self):
