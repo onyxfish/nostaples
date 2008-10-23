@@ -10,6 +10,6 @@ X-GNOME-Bugzilla-Bugzilla=
 X-GNOME-Bugzilla-Product=
 X-GNOME-Bugzilla-Component=
 X-GNOME-Bugzilla-Version=
-Categories=GNOME;GTK;Utility;Graphics;
+Categories=GNOME;GTK;Graphics;
 StartupNotify=true
 X-Ubuntu-Gettext-Domain=nostaples
