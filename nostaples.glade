@@ -2,14 +2,14 @@
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
 <!--Generated with glade3 3.4.5 on Fri Oct 17 21:31:47 2008 -->
 <glade-interface>
-  <widget class="GtkWindow" id="ScanWindow">
+  <widget class="GtkWindow" id="scan_window">
     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
     <property name="title" translatable="yes">NoStaples</property>
     <property name="window_position">GTK_WIN_POS_CENTER</property>
     <property name="default_width">600</property>
     <property name="default_height">400</property>
-    <signal name="destroy" handler="on_ScanWindow_destroy"/>
-    <signal name="size_allocate" handler="on_ScanWindow_size_allocate"/>
+    <signal name="destroy" handler="on_scan_window_destroy"/>
+    <signal name="size_allocate" handler="on_scan_window_size_allocate"/>
     <child>
       <widget class="GtkVBox" id="vbox1">
         <property name="visible">True</property>
@@ -29,11 +29,11 @@
                     <property name="visible">True</property>
                     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
                     <child>
-                      <widget class="GtkImageMenuItem" id="ScanMenuItem">
+                      <widget class="GtkImageMenuItem" id="scan_menu_item">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">S_can</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_ScanMenuItem_activate"/>
+                        <signal name="activate" handler="on_scan_menu_item_activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="menu-item-image2">
                             <property name="visible">True</property>
@@ -49,11 +49,11 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkImageMenuItem" id="SaveAsMenuItem">
+                      <widget class="GtkImageMenuItem" id="save_as_menu_item">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Save _As...</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_SaveAsMenuItem_activate"/>
+                        <signal name="activate" handler="on_save_as_menu_item_activate"/>
                         <accelerator key="S" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="menu-item-image1">
@@ -69,13 +69,13 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkImageMenuItem" id="QuitMenuItem">
+                      <widget class="GtkImageMenuItem" id="quit_menu_item">
                         <property name="visible">True</property>
                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
                         <property name="label" translatable="yes">gtk-quit</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_QuitMenuItem_activate"/>
+                        <signal name="activate" handler="on_quit_menu_item_activate"/>
                       </widget>
                     </child>
                   </widget>
@@ -91,12 +91,12 @@
                   <widget class="GtkMenu" id="menu4">
                     <property name="visible">True</property>
                     <child>
-                      <widget class="GtkImageMenuItem" id="DeleteMenuItem">
+                      <widget class="GtkImageMenuItem" id="delete_menu_item">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">gtk-delete</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_DeleteMenuItem_activate"/>
+                        <signal name="activate" handler="on_delete_menu_item_activate"/>
                         <accelerator key="Delete" modifiers="" signal="activate"/>
                       </widget>
                     </child>
@@ -107,11 +107,11 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkMenuItem" id="InsertScanMenuItem">
+                      <widget class="GtkMenuItem" id="insert_scan_menu_item">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Insert Scan</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_InsertScanMenuItem_activate"/>
+                        <signal name="activate" handler="on_insert_scan_menu_item_activate"/>
                       </widget>
                     </child>
                     <child>
@@ -121,13 +121,13 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkImageMenuItem" id="PreferencesMenuItem">
+                      <widget class="GtkImageMenuItem" id="preferences_menu_item">
                         <property name="visible">True</property>
                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
                         <property name="label" translatable="yes">gtk-preferences</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_PreferencesMenuItem_activate"/>
+                        <signal name="activate" handler="on_preferences_menu_item_activate"/>
                       </widget>
                     </child>
                   </widget>
@@ -135,7 +135,7 @@
               </widget>
             </child>
             <child>
-              <widget class="GtkMenuItem" id="ViewMenu">
+              <widget class="GtkMenuItem" id="view_menu">
                 <property name="visible">True</property>
                 <property name="label" translatable="yes">_View</property>
                 <property name="use_underline">True</property>
@@ -143,16 +143,16 @@
                   <widget class="GtkMenu" id="menu2">
                     <property name="visible">True</property>
                     <child>
-                      <widget class="GtkCheckMenuItem" id="ShowToolbarMenuItem">
+                      <widget class="GtkCheckMenuItem" id="show_toolbar_menu_item">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Toolbar</property>
                         <property name="use_underline">True</property>
                         <property name="active">True</property>
-                        <signal name="toggled" handler="on_ShowToolbarMenuItem_toggled"/>
+                        <signal name="toggled" handler="on_show_toolbar_menu_item_toggled"/>
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkCheckMenuItem" id="ShowStatusbarMenuItem">
+                      <widget class="GtkCheckMenuItem" id="show_statusbar_menu_item">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Statusbar</property>
                         <property name="use_underline">True</property>
@@ -161,12 +161,12 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkCheckMenuItem" id="ShowThumbnailsMenuItem">
+                      <widget class="GtkCheckMenuItem" id="show_thumbnails_menu_item">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Thumb_nails</property>
                         <property name="use_underline">True</property>
                         <property name="active">True</property>
-                        <signal name="toggled" handler="on_ShowThumbnailsMenuItem_toggled"/>
+                        <signal name="toggled" handler="on_show_thumbnails_menu_item_toggled"/>
                       </widget>
                     </child>
                     <child>
@@ -176,42 +176,42 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkImageMenuItem" id="ZoomInMenuItem">
+                      <widget class="GtkImageMenuItem" id="zoom_in_menu_item">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">gtk-zoom-in</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_ZoomInMenuItem_activate"/>
+                        <signal name="activate" handler="on_zoom_in_menu_item_activate"/>
                         <accelerator key="plus" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkImageMenuItem" id="ZoomOutMenuItem">
+                      <widget class="GtkImageMenuItem" id="zoom_out_menu_item">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">gtk-zoom-out</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_ZoomOutMenuItem_activate"/>
+                        <signal name="activate" handler="on_zoom_out_menu_item_activate"/>
                         <accelerator key="minus" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkImageMenuItem" id="ZoomOneToOneMenuItem">
+                      <widget class="GtkImageMenuItem" id="zoom_one_to_one_menu_item">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">gtk-zoom-100</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_ZoomOneToOneMenuItem_activate"/>
+                        <signal name="activate" handler="on_zoom_one_to_one_menu_item_activate"/>
                         <accelerator key="1" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkImageMenuItem" id="ZoomBestFitMenuItem">
+                      <widget class="GtkImageMenuItem" id="zoom_best_fit_menu_item">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">gtk-zoom-fit</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_ZoomBestFitMenuItem_activate"/>
+                        <signal name="activate" handler="on_zoom_best_fit_menu_item_activate"/>
                         <accelerator key="F" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                       </widget>
                     </child>
@@ -228,23 +228,23 @@
                   <widget class="GtkMenu" id="menu6">
                     <property name="visible">True</property>
                     <child>
-                      <widget class="GtkMenuItem" id="RotateClockMenuItem">
+                      <widget class="GtkMenuItem" id="rotate_clockwise_menu_item">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Rotate Clockwise</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_RotateClockMenuItem_activate"/>
+                        <signal name="activate" handler="on_rotate_clockwise_menu_item_activate"/>
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkMenuItem" id="RotateCounterClockMenuItem">
+                      <widget class="GtkMenuItem" id="rotate_counter_clockwise_menu_item">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Rotate _Counterclockwise</property>
                         <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_RotateCounterClockMenuItem_activate"/>
+                        <signal name="activate" handler="on_rotate_counter_clockwise_menu_item_activate"/>
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkCheckMenuItem" id="RotateAllPagesMenuItem">
+                      <widget class="GtkCheckMenuItem" id="rotate_all_pages_menu_item">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Apply rotation to all _pages?</property>
                         <property name="use_underline">True</property>
@@ -257,12 +257,11 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkCheckMenuItem" id="AdjustColorsMenuItem">
+                      <widget class="GtkCheckMenuItem" id="adjust_colors_menu_item">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Adjust Colors</property>
                         <property name="use_underline">True</property>
-                        <signal name="toggled" handler="on_AdjustColorsMenuItem_toggled"/>
-                        <signal name="toggled" handler="on_AdjustColorsMenuItem_toggled"/>
+                        <signal name="toggled" handler="on_adjust_colors_menu_item_toggled"/>
                       </widget>
                     </child>
                   </widget>
@@ -270,7 +269,7 @@
               </widget>
             </child>
             <child>
-              <widget class="GtkMenuItem" id="OptionsMenu">
+              <widget class="GtkMenuItem" id="options_menu">
                 <property name="visible">True</property>
                 <property name="label" translatable="yes">_Options</property>
                 <property name="use_underline">True</property>
@@ -278,12 +277,12 @@
                   <widget class="GtkMenu" id="menu7">
                     <property name="visible">True</property>
                     <child>
-                      <widget class="GtkMenuItem" id="ScannerMenuItem">
+                      <widget class="GtkMenuItem" id="scanner_menu_item">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Scanner</property>
                         <property name="use_underline">True</property>
                         <child>
-                          <widget class="GtkMenu" id="ScannerSubMenu">
+                          <widget class="GtkMenu" id="scanner_sub_menu">
                             <property name="visible">True</property>
                             <child>
                               <widget class="GtkMenuItem" id="menuitem5">
@@ -297,12 +296,12 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkMenuItem" id="ScanModeMenuItem">
+                      <widget class="GtkMenuItem" id="scan_mode_menu_item">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Mode</property>
                         <property name="use_underline">True</property>
                         <child>
-                          <widget class="GtkMenu" id="ScanModeSubMenu">
+                          <widget class="GtkMenu" id="scan_mode_sub_menu">
                             <property name="visible">True</property>
                             <child>
                               <widget class="GtkMenuItem" id="menuitem6">
@@ -316,12 +315,12 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkMenuItem" id="ScanResolutionMenuItem">
+                      <widget class="GtkMenuItem" id="scan_resolution_menu_item">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Resolution</property>
                         <property name="use_underline">True</property>
                         <child>
-                          <widget class="GtkMenu" id="ScanResolutionSubMenu">
+                          <widget class="GtkMenu" id="scan_resolution_sub_menu">
                             <property name="visible">True</property>
                             <child>
                               <widget class="GtkMenuItem" id="menuitem7">
@@ -347,42 +346,42 @@
                   <widget class="GtkMenu" id="menu5">
                     <property name="visible">True</property>
                     <child>
-                      <widget class="GtkImageMenuItem" id="GoFirstMenuItem">
+                      <widget class="GtkImageMenuItem" id="go_first_menu_item">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">gtk-goto-first</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_GoFirstMenuItem_activate"/>
+                        <signal name="activate" handler="on_go_first_menu_item_activate"/>
                         <accelerator key="Home" modifiers="" signal="activate"/>
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkImageMenuItem" id="GoPreviousMenuItem">
+                      <widget class="GtkImageMenuItem" id="go_previous_menu_item">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">gtk-go-back</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_GoPreviousMenuItem_activate"/>
+                        <signal name="activate" handler="on_go_previous_menu_item_activate"/>
                         <accelerator key="Left" modifiers="GDK_MOD1_MASK" signal="activate"/>
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkImageMenuItem" id="GoNextMenuItem">
+                      <widget class="GtkImageMenuItem" id="go_next_menu_item">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">gtk-go-forward</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_GoNextMenuItem_activate"/>
+                        <signal name="activate" handler="on_go_next_menu_item_activate"/>
                         <accelerator key="Right" modifiers="GDK_MOD1_MASK" signal="activate"/>
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkImageMenuItem" id="GoLastMenuItem">
+                      <widget class="GtkImageMenuItem" id="go_last_menu_item">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">gtk-goto-last</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_GoLastMenuItem_activate"/>
+                        <signal name="activate" handler="on_go_last_menu_item_activate"/>
                         <accelerator key="End" modifiers="" signal="activate"/>
                       </widget>
                     </child>
@@ -401,7 +400,7 @@
                     <property name="visible">True</property>
                     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
                     <child>
-                      <widget class="GtkImageMenuItem" id="ContentsMenuItem">
+                      <widget class="GtkImageMenuItem" id="contents_menu_item">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Contents</property>
                         <property name="use_underline">True</property>
@@ -415,13 +414,13 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkImageMenuItem" id="AboutMenuItem">
+                      <widget class="GtkImageMenuItem" id="about_menu_item">
                         <property name="visible">True</property>
                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
                         <property name="label" translatable="yes">gtk-about</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_AboutMenuItem_activate"/>
+                        <signal name="activate" handler="on_about_menu_item_activate"/>
                       </widget>
                     </child>
                   </widget>
@@ -434,28 +433,28 @@
           </packing>
         </child>
         <child>
-          <widget class="GtkToolbar" id="MainToolbar">
+          <widget class="GtkToolbar" id="main_toolbar">
             <property name="visible">True</property>
             <property name="toolbar_style">GTK_TOOLBAR_BOTH_HORIZ</property>
             <property name="icon_size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
             <child>
-              <widget class="GtkToolButton" id="ScanButton">
+              <widget class="GtkToolButton" id="scan_button">
                 <property name="visible">True</property>
                 <property name="tooltip" translatable="yes">Scan</property>
                 <property name="label" translatable="yes">Scan</property>
                 <property name="icon_name">scanner</property>
-                <signal name="clicked" handler="on_ScanButton_clicked"/>
+                <signal name="clicked" handler="on_scan_button_clicked"/>
               </widget>
               <packing>
                 <property name="expand">False</property>
               </packing>
             </child>
             <child>
-              <widget class="GtkToolButton" id="SaveAsButton">
+              <widget class="GtkToolButton" id="save_as_button">
                 <property name="visible">True</property>
                 <property name="tooltip" translatable="yes">Save As...</property>
                 <property name="icon_name">document-save-as</property>
-                <signal name="clicked" handler="on_SaveAsButton_clicked"/>
+                <signal name="clicked" handler="on_save_as_button_clicked"/>
               </widget>
               <packing>
                 <property name="expand">False</property>
@@ -471,44 +470,44 @@
               </packing>
             </child>
             <child>
-              <widget class="GtkToolButton" id="ZoomInButton">
+              <widget class="GtkToolButton" id="zoom_in_button">
                 <property name="visible">True</property>
                 <property name="tooltip" translatable="yes">Zoom In</property>
                 <property name="icon_name">zoom-in</property>
-                <signal name="clicked" handler="on_ZoomInButton_clicked"/>
+                <signal name="clicked" handler="on_zoom_in_button_clicked"/>
               </widget>
               <packing>
                 <property name="expand">False</property>
               </packing>
             </child>
             <child>
-              <widget class="GtkToolButton" id="ZoomOutButton">
+              <widget class="GtkToolButton" id="zoom_out_button">
                 <property name="visible">True</property>
                 <property name="tooltip" translatable="yes">Zoom Out</property>
                 <property name="icon_name">zoom-out</property>
-                <signal name="clicked" handler="on_ZoomOutButton_clicked"/>
+                <signal name="clicked" handler="on_zoom_out_button_clicked"/>
               </widget>
               <packing>
                 <property name="expand">False</property>
               </packing>
             </child>
             <child>
-              <widget class="GtkToolButton" id="ZoomOneToOneButton">
+              <widget class="GtkToolButton" id="zoom_one_to_one_button">
                 <property name="visible">True</property>
                 <property name="tooltip" translatable="yes">Normal Size</property>
                 <property name="icon_name">zoom-original</property>
-                <signal name="clicked" handler="on_ZoomOneToOneButton_clicked"/>
+                <signal name="clicked" handler="on_zoom_one_to_one_button_clicked"/>
               </widget>
               <packing>
                 <property name="expand">False</property>
               </packing>
             </child>
             <child>
-              <widget class="GtkToolButton" id="ZoomBestFitButton">
+              <widget class="GtkToolButton" id="zoom_best_fit_button">
                 <property name="visible">True</property>
                 <property name="tooltip" translatable="yes">Best Fit</property>
                 <property name="icon_name">zoom-fit-best</property>
-                <signal name="clicked" handler="on_ZoomBestFitButton_clicked"/>
+                <signal name="clicked" handler="on_zoom_best_fit_button_clicked"/>
               </widget>
               <packing>
                 <property name="expand">False</property>
@@ -524,22 +523,22 @@
               </packing>
             </child>
             <child>
-              <widget class="GtkToolButton" id="RotateCounterClockButton">
+              <widget class="GtkToolButton" id="rotate_counter_clockwise_button">
                 <property name="visible">True</property>
                 <property name="tooltip" translatable="yes">Rotate Counterclockwise</property>
                 <property name="icon_name">object-rotate-left</property>
-                <signal name="clicked" handler="on_RotateCounterClockButton_clicked"/>
+                <signal name="clicked" handler="on_rotate_counter_clockwise_button_clicked"/>
               </widget>
               <packing>
                 <property name="expand">False</property>
               </packing>
             </child>
             <child>
-              <widget class="GtkToolButton" id="RotateClockButton">
+              <widget class="GtkToolButton" id="rotate_clockwise_button">
                 <property name="visible">True</property>
                 <property name="tooltip" translatable="yes">Rotate Clockwise</property>
                 <property name="icon_name">object-rotate-right</property>
-                <signal name="clicked" handler="on_RotateClockButton_clicked"/>
+                <signal name="clicked" handler="on_rotate_clockwise_button_clicked"/>
               </widget>
               <packing>
                 <property name="expand">False</property>
@@ -555,44 +554,44 @@
               </packing>
             </child>
             <child>
-              <widget class="GtkToolButton" id="GoFirstButton">
+              <widget class="GtkToolButton" id="go_first_button">
                 <property name="visible">True</property>
                 <property name="tooltip" translatable="yes">First</property>
                 <property name="stock_id">gtk-goto-first</property>
-                <signal name="clicked" handler="on_GoFirstButton_clicked"/>
+                <signal name="clicked" handler="on_go_first_button_clicked"/>
               </widget>
               <packing>
                 <property name="expand">False</property>
               </packing>
             </child>
             <child>
-              <widget class="GtkToolButton" id="GoPreviousButton">
+              <widget class="GtkToolButton" id="go_previous_button">
                 <property name="visible">True</property>
                 <property name="tooltip" translatable="yes">Back</property>
                 <property name="stock_id">gtk-go-back</property>
-                <signal name="clicked" handler="on_GoPreviousButton_clicked"/>
+                <signal name="clicked" handler="on_go_previous_button_clicked"/>
               </widget>
               <packing>
                 <property name="expand">False</property>
               </packing>
             </child>
             <child>
-              <widget class="GtkToolButton" id="GoNextButton">
+              <widget class="GtkToolButton" id="go_next_button">
                 <property name="visible">True</property>
                 <property name="tooltip" translatable="yes">Forward</property>
                 <property name="stock_id">gtk-go-forward</property>
-                <signal name="clicked" handler="on_GoNextButton_clicked"/>
+                <signal name="clicked" handler="on_go_next_button_clicked"/>
               </widget>
               <packing>
                 <property name="expand">False</property>
               </packing>
             </child>
             <child>
-              <widget class="GtkToolButton" id="GoLastButton">
+              <widget class="GtkToolButton" id="go_last_button">
                 <property name="visible">True</property>
                 <property name="tooltip" translatable="yes">Last</property>
                 <property name="stock_id">gtk-goto-last</property>
-                <signal name="clicked" handler="on_GoLastButton_clicked"/>
+                <signal name="clicked" handler="on_go_last_button_clicked"/>
               </widget>
               <packing>
                 <property name="expand">False</property>
@@ -608,7 +607,7 @@
           <widget class="GtkHBox" id="hbox1">
             <property name="visible">True</property>
             <child>
-              <widget class="GtkScrolledWindow" id="ThumbnailsScrolledWindow">
+              <widget class="GtkScrolledWindow" id="thumbnails_scrolled_window">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="hscrollbar_policy">GTK_POLICY_NEVER</property>
@@ -621,7 +620,7 @@
               </packing>
             </child>
             <child>
-              <widget class="GtkTable" id="PreviewTable">
+              <widget class="GtkTable" id="preview_table">
                 <property name="visible">True</property>
                 <property name="n_rows">2</property>
                 <property name="n_columns">2</property>
@@ -629,7 +628,7 @@
                   <placeholder/>
                 </child>
                 <child>
-                  <widget class="GtkVScrollbar" id="PreviewVScroll">
+                  <widget class="GtkVScrollbar" id="preview_vertical_scrollbar">
                     <property name="no_show_all">True</property>
                     <property name="adjustment">0 0 100 1 10 10</property>
                   </widget>
@@ -641,7 +640,7 @@
                   </packing>
                 </child>
                 <child>
-                  <widget class="GtkHScrollbar" id="PreviewHScroll">
+                  <widget class="GtkHScrollbar" id="preview_horizontal_scrollbar">
                     <property name="no_show_all">True</property>
                     <property name="adjustment">10 0 100 1 10 10</property>
                   </widget>
@@ -653,14 +652,14 @@
                   </packing>
                 </child>
                 <child>
-                  <widget class="GtkLayout" id="PreviewLayout">
+                  <widget class="GtkLayout" id="preview_layout">
                     <property name="visible">True</property>
                     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_STRUCTURE_MASK | GDK_SCROLL_MASK</property>
-                    <signal name="button_press_event" handler="on_PreviewLayout_button_press_event"/>
-                    <signal name="motion_notify_event" handler="on_PreviewLayout_motion_notify_event"/>
-                    <signal name="button_release_event" handler="on_PreviewLayout_button_release_event"/>
-                    <signal name="size_allocate" handler="on_PreviewLayout_size_allocate"/>
-                    <signal name="scroll_event" handler="on_PreviewLayout_scroll_event"/>
+                    <signal name="button_press_event" handler="on_preview_layout_button_press_event"/>
+                    <signal name="motion_notify_event" handler="on_preview_layout_motion_notify_event"/>
+                    <signal name="button_release_event" handler="on_preview_layout_button_release_event"/>
+                    <signal name="size_allocate" handler="on_preview_layout_size_allocate"/>
+                    <signal name="scroll_event" handler="on_preview_layout_scroll_event"/>
                   </widget>
                 </child>
               </widget>
@@ -674,7 +673,7 @@
           </packing>
         </child>
         <child>
-          <widget class="GtkStatusbar" id="ScanStatusBar">
+          <widget class="GtkStatusbar" id="scan_window_status_bar">
             <property name="visible">True</property>
             <property name="spacing">2</property>
           </widget>
@@ -686,7 +685,7 @@
       </widget>
     </child>
   </widget>
-  <widget class="GtkAboutDialog" id="AboutDialog">
+  <widget class="GtkAboutDialog" id="about_dialog">
     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
     <property name="border_width">5</property>
     <property name="title" translatable="yes">About NoStaples</property>
@@ -697,7 +696,7 @@
     <property name="type_hint">GDK_WINDOW_TYPE_HINT_DIALOG</property>
     <property name="skip_taskbar_hint">True</property>
     <property name="skip_pager_hint">True</property>
-    <property name="transient_for">ScanWindow</property>
+    <property name="transient_for">scan_window</property>
     <property name="has_separator">False</property>
     <property name="program_name">NoStaples</property>
     <property name="copyright" translatable="yes">Copyright © 2008 Christopher Groskopf </property>
@@ -737,7 +736,7 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
       </widget>
     </child>
   </widget>
-  <widget class="GtkDialog" id="MetadataDialog">
+  <widget class="GtkDialog" id="metadata_dialog">
     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
     <property name="border_width">5</property>
     <property name="title" translatable="yes">PDF Metadata</property>
@@ -748,7 +747,7 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
     <property name="type_hint">GDK_WINDOW_TYPE_HINT_DIALOG</property>
     <property name="skip_taskbar_hint">True</property>
     <property name="skip_pager_hint">True</property>
-    <property name="transient_for">ScanWindow</property>
+    <property name="transient_for">scan_window</property>
     <property name="has_separator">False</property>
     <child internal-child="vbox">
       <widget class="GtkVBox" id="dialog-vbox2">
@@ -778,11 +777,11 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
                   </packing>
                 </child>
                 <child>
-                  <widget class="GtkEntry" id="TitleEntry">
+                  <widget class="GtkEntry" id="title_entry">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                    <signal name="activate" handler="on_TitleEntry_activate"/>
+                    <signal name="activate" handler="on_title_entry_activate"/>
                   </widget>
                   <packing>
                     <property name="expand">False</property>
@@ -801,11 +800,11 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
                   </packing>
                 </child>
                 <child>
-                  <widget class="GtkEntry" id="AuthorEntry">
+                  <widget class="GtkEntry" id="author_entry">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                    <signal name="activate" handler="on_AuthorEntry_activate"/>
+                    <signal name="activate" handler="on_author_entry_activate"/>
                   </widget>
                   <packing>
                     <property name="expand">False</property>
@@ -824,11 +823,11 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
                   </packing>
                 </child>
                 <child>
-                  <widget class="GtkEntry" id="KeywordsEntry">
+                  <widget class="GtkEntry" id="keywords_entry">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                    <signal name="activate" handler="on_KeywordsEntry_activate"/>
+                    <signal name="activate" handler="on_keywords_entry_activate"/>
                   </widget>
                   <packing>
                     <property name="expand">False</property>
@@ -849,7 +848,7 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
             <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
             <property name="layout_style">GTK_BUTTONBOX_END</property>
             <child>
-              <widget class="GtkButton" id="PdfMetadataCancelButton">
+              <widget class="GtkButton" id="pdf_metadata_cancel_button">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
@@ -860,7 +859,7 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
               </widget>
             </child>
             <child>
-              <widget class="GtkButton" id="PdfMetadataApplyButton">
+              <widget class="GtkButton" id="pdf_metadata_apply_button">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="can_default">True</property>
@@ -884,7 +883,7 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
       </widget>
     </child>
   </widget>
-  <widget class="GtkDialog" id="PreferencesDialog">
+  <widget class="GtkDialog" id="preferences_dialog">
     <property name="border_width">5</property>
     <property name="title" translatable="yes">Preferences</property>
     <property name="resizable">False</property>
@@ -894,7 +893,7 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
     <property name="type_hint">GDK_WINDOW_TYPE_HINT_DIALOG</property>
     <property name="skip_taskbar_hint">True</property>
     <property name="skip_pager_hint">True</property>
-    <property name="transient_for">ScanWindow</property>
+    <property name="transient_for">scan_window</property>
     <property name="has_separator">False</property>
     <child internal-child="vbox">
       <widget class="GtkVBox" id="dialog-vbox5">
@@ -926,7 +925,7 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkComboBox" id="PreviewModeComboBox">
+                      <widget class="GtkComboBox" id="preview_mode_combo_box">
                         <property name="visible">True</property>
                       </widget>
                       <packing>
@@ -957,14 +956,14 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
               <placeholder/>
             </child>
             <child>
-              <widget class="GtkButton" id="PreferencesCloseButton">
+              <widget class="GtkButton" id="preferences_close_button">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
                 <property name="label" translatable="yes">Close</property>
                 <property name="response_id">0</property>
-                <signal name="clicked" handler="on_PreferencesCloseButton_clicked"/>
+                <signal name="clicked" handler="on_preferences_close_button_clicked"/>
               </widget>
               <packing>
                 <property name="expand">False</property>
@@ -981,7 +980,7 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
       </widget>
     </child>
   </widget>
-  <widget class="GtkFileChooserDialog" id="SaveDialog">
+  <widget class="GtkFileChooserDialog" id="save_dialog">
     <property name="border_width">5</property>
     <property name="title" translatable="yes">Save</property>
     <property name="modal">True</property>
@@ -990,7 +989,7 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
     <property name="type_hint">GDK_WINDOW_TYPE_HINT_DIALOG</property>
     <property name="skip_taskbar_hint">True</property>
     <property name="skip_pager_hint">True</property>
-    <property name="transient_for">ScanWindow</property>
+    <property name="transient_for">scan_window</property>
     <property name="has_separator">False</property>
     <property name="do_overwrite_confirmation">True</property>
     <property name="action">GTK_FILE_CHOOSER_ACTION_SAVE</property>
@@ -1038,7 +1037,7 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
       </widget>
     </child>
   </widget>
-  <widget class="GtkWindow" id="AdjustColorsWindow">
+  <widget class="GtkWindow" id="adjust_colors_window">
     <property name="title" translatable="yes"> </property>
     <property name="resizable">False</property>
     <property name="window_position">GTK_WIN_POS_CENTER</property>
@@ -1046,8 +1045,8 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
     <property name="type_hint">GDK_WINDOW_TYPE_HINT_UTILITY</property>
     <property name="skip_taskbar_hint">True</property>
     <property name="skip_pager_hint">True</property>
-    <property name="transient_for">ScanWindow</property>
-    <signal name="delete_event" handler="on_AdjustColorsWindow_delete_event"/>
+    <property name="transient_for">scan_window</property>
+    <signal name="delete_event" handler="on_adjust_colors_window_delete_event"/>
     <child>
       <widget class="GtkAlignment" id="alignment1">
         <property name="visible">True</property>
@@ -1075,7 +1074,7 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
                   </packing>
                 </child>
                 <child>
-                  <widget class="GtkHScale" id="BrightnessScale">
+                  <widget class="GtkHScale" id="brightness_scale">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
@@ -1084,7 +1083,7 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
                     <property name="restrict_to_fill_level">False</property>
                     <property name="fill_level">0</property>
                     <property name="value_pos">GTK_POS_LEFT</property>
-                    <signal name="value_changed" handler="on_BrightnessScale_value_changed"/>
+                    <signal name="value_changed" handler="on_brightness_scale_value_changed"/>
                   </widget>
                   <packing>
                     <property name="expand">False</property>
@@ -1112,7 +1111,7 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
                   </packing>
                 </child>
                 <child>
-                  <widget class="GtkHScale" id="ContrastScale">
+                  <widget class="GtkHScale" id="contrast_scale">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
@@ -1121,7 +1120,7 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
                     <property name="restrict_to_fill_level">False</property>
                     <property name="fill_level">0</property>
                     <property name="value_pos">GTK_POS_LEFT</property>
-                    <signal name="value_changed" handler="on_ContrastScale_value_changed"/>
+                    <signal name="value_changed" handler="on_contrast_scale_value_changed"/>
                   </widget>
                   <packing>
                     <property name="expand">False</property>
@@ -1150,7 +1149,7 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
                   </packing>
                 </child>
                 <child>
-                  <widget class="GtkHScale" id="SharpnessScale">
+                  <widget class="GtkHScale" id="sharpness_scale">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
@@ -1159,7 +1158,7 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
                     <property name="restrict_to_fill_level">False</property>
                     <property name="fill_level">0</property>
                     <property name="value_pos">GTK_POS_LEFT</property>
-                    <signal name="value_changed" handler="on_SharpnessScale_value_changed"/>
+                    <signal name="value_changed" handler="on_sharpness_scale_value_changed"/>
                   </widget>
                   <packing>
                     <property name="expand">False</property>
@@ -1177,13 +1176,13 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
                 <property name="visible">True</property>
                 <property name="homogeneous">True</property>
                 <child>
-                  <widget class="GtkCheckButton" id="ColorAllPagesCheck">
+                  <widget class="GtkCheckButton" id="color_all_pages_check">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="label" translatable="yes">Apply to all pages?</property>
                     <property name="response_id">0</property>
                     <property name="draw_indicator">True</property>
-                    <signal name="toggled" handler="on_ColorAllPagesCheck_toggled"/>
+                    <signal name="toggled" handler="on_color_all_pages_check_toggled"/>
                   </widget>
                   <packing>
                     <property name="expand">False</property>
@@ -1202,7 +1201,7 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
       </widget>
     </child>
   </widget>
-  <widget class="GtkDialog" id="ScanningProgressDialog">
+  <widget class="GtkDialog" id="scanning_progress_dialog">
     <property name="border_width">5</property>
     <property name="resizable">False</property>
     <property name="window_position">GTK_WIN_POS_CENTER_ON_PARENT</property>
@@ -1230,7 +1229,7 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
                   </widget>
                 </child>
                 <child>
-                  <widget class="GtkProgressBar" id="ScanProgressBar">
+                  <widget class="GtkProgressBar" id="scan_progress_bar">
                     <property name="visible">True</property>
                     <property name="activity_mode">True</property>
                     <property name="text" translatable="yes"></property>
@@ -1267,14 +1266,14 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
               <placeholder/>
             </child>
             <child>
-              <widget class="GtkButton" id="ScanCancelButton">
+              <widget class="GtkButton" id="scan_cancel_button">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="label" translatable="yes">gtk-cancel</property>
                 <property name="use_stock">True</property>
                 <property name="response_id">0</property>
-                <signal name="clicked" handler="on_ScanCancelButton_clicked"/>
+                <signal name="clicked" handler="on_scan_cancel_button_clicked"/>
               </widget>
               <packing>
                 <property name="position">1</property>
