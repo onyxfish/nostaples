@@ -15,35 +15,38 @@
 #~ You should have received a copy of the GNU General Public License
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
-'''
-This module holds the Model for the core of the application.
-'''
+"""
+TODO
+"""
 
 import logging
 
-from gtkmvc.model import Model
-from page import PageModel
-from thumbnails import ThumbnailsModel
+import gtk
+from gtkmvc.view import View
 
-class MainModel(Model):
-    '''
-    The model for the main Model, which handles data all data not
-    specifically handled by another Model (generally this means
-    the state of the scan_window).
-    '''
-    __properties__ = \
-    {
-        'next_scan_file_index' : 0,
-    }
+import constants
 
-    def __init__(self):
-        Model.__init__(self)
-        
+class PageView(View):
+    """
+    TODO
+    """
+    def __init__(self, controller):
+        View.__init__(
+            self, controller, constants.GLADE_CONFIG, 'preview_table',
+            None, False)
+            
         self.log = logging.getLogger(self.__class__.__name__)
+
+        self['preview_horizontal_scrollbar'].set_adjustment(
+            self['preview_layout'].get_hadjustment())
+        self['preview_vertical_scrollbar'].set_adjustment(
+            self['preview_layout'].get_vadjustment())
         
-        self.scanned_pages = [] # PageModels
-        self.thumbnails_model = ThumbnailsModel()
+        self['preview_layout'].modify_bg(
+            gtk.STATE_NORMAL, 
+            gtk.gdk.colormap_get_system().alloc_color(
+                gtk.gdk.Color(0, 0, 0), False, True))
         
-        self.blank_page = PageModel()
+        controller.register_view(self)
         
         self.log.debug('Created.')

@@ -16,15 +16,31 @@
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
 '''
-This module holds the main loop which instantiates the NoStaples
-application.
+This module holds the Model for a single scanned page.
 '''
 
-import gtk
+import logging
 
-try:
-    from nostaples import application
-except ImportError:
-    import application
-    
-application.run()
+from gtkmvc.model import Model
+
+class PageModel(Model):
+    '''
+    TODO
+    '''
+    __properties__ = \
+    {
+        'path' : '',
+        'rotation' : 0,
+        'brightness' : 1.0,
+        'contrast' : 1.0,
+        'sharpness' : 1.0,
+        'resolution' : 75,
+        'pixbuf' : None,
+    }
+
+    def __init__(self):
+        Model.__init__(self)
+        
+        self.log = logging.getLogger(self.__class__.__name__)
+        
+        self.log.debug('Created.')

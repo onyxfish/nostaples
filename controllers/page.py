@@ -16,6 +16,24 @@
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
 '''
-This module holds the controller for the user preferences view and
-model.
+TODO
 '''
+
+import logging
+
+import gtk
+from gtkmvc.controller import Controller
+
+class PageController(Controller):
+    '''
+    '''
+    def __init__(self, model):
+        Controller.__init__(self, model)
+
+        self.log = logging.getLogger(self.__class__.__name__)
+        self.log.debug('Created.')
+
+    def register_view(self, view):
+        Controller.register_view(self, view)
+        
+        self.log.debug('%s registered.', view.__class__.__name__)

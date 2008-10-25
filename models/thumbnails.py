@@ -16,6 +16,21 @@
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
 '''
-This module holds Model for the user preferences component of the
-application.
+TODO
 '''
+
+import logging
+
+import gtk
+from gtkmvc.model import ListStoreModel
+
+class ThumbnailsModel(ListStoreModel):
+    '''
+    TODO
+    '''
+    def __init__(self):
+        ListStoreModel.__init__(self, gtk.gdk.Pixbuf)
+        
+        self.log = logging.getLogger(self.__class__.__name__)
+        
+        self.log.debug('Created.')
