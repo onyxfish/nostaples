@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Fri Oct 24 21:18:53 2008 -->
+<!--Generated with glade3 3.4.5 on Mon Oct 27 21:23:43 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="scan_window">
     <property name="visible">True</property>
@@ -158,7 +158,7 @@
                         <property name="label" translatable="yes">_Statusbar</property>
                         <property name="use_underline">True</property>
                         <property name="active">True</property>
-                        <signal name="toggled" handler="on_ShowStatusBarMenuItem_toggled"/>
+                        <signal name="toggled" handler="on_show_statusbar_menu_item_toggled"/>
                       </widget>
                     </child>
                     <child>
@@ -861,10 +861,12 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
     <property name="skip_pager_hint">True</property>
     <property name="transient_for">scan_window</property>
     <property name="has_separator">False</property>
+    <signal name="close" handler="on_preferences_dialog_close"/>
     <child internal-child="vbox">
       <widget class="GtkVBox" id="dialog-vbox5">
         <property name="visible">True</property>
         <property name="spacing">24</property>
+        <signal name="add" handler="on_preferences_dialog_close"/>
         <child>
           <widget class="GtkAlignment" id="alignment6">
             <property name="visible">True</property>
@@ -891,8 +893,10 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkComboBox" id="preview_mode_combo_box">
+                      <widget class="GtkComboBox" id="preview_mode_combobox">
                         <property name="visible">True</property>
+                        <property name="items" translatable="yes"></property>
+                        <signal name="changed" handler="on_preview_mode_combobox_changed"/>
                       </widget>
                       <packing>
                         <property name="position">1</property>
@@ -1305,6 +1309,7 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
                     <property name="width_request">100</property>
                     <property name="height_request">80</property>
                     <property name="visible">True</property>
+                    <property name="stock">gtk-missing-image</property>
                   </widget>
                   <packing>
                     <property name="x">61</property>

@@ -15,18 +15,21 @@
 #~ You should have received a copy of the GNU General Public License
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
-'''
+"""
 TODO
-'''
+"""
 
 import logging
 
 import gtk
 from gtkmvc.controller import Controller
 
-class ThumbnailsController(Controller):
-    '''
-    '''
+from utils.gui import read_combobox
+
+class PreferencesController(Controller):
+    """
+    TODO
+    """
     def __init__(self, model):
         Controller.__init__(self, model)
 
@@ -36,6 +39,31 @@ class ThumbnailsController(Controller):
     def register_view(self, view):
         Controller.register_view(self, view)
         
-        self.view['thumbnails_tree_view'].set_model(self.model)
-        
         self.log.debug('%s registered.', view.__class__.__name__)
+        
+    def register_adapters(self):
+        pass
+
+    def on_preferences_dialog_close(self, dialog):
+        """Exits the preferences dialog."""
+        self.close()
+        
+    def on_preview_mode_combobox_changed(self, combobox):
+        """Registers changes in the preview rendering mode."""
+        self.model.prevew_mode = read_combobox(
+            self.view['preview_mode_combobox'])
+            
+        # TODO: where and when does display get updated?
+    
+    def on_preferences_close_button_clicked(self, button):
+        """Exits the preferences dialog."""
+        self.close()
+    
+    def close(self):
+        """Closes the preferences dialog and destroy its MVC components."""
+        self.model.unregister_observer(self)
+        self.view.get_top_widget().destroy()
+        self.view = None
+        self.model = None
+        
+        self.log.debug('Destroyed.')

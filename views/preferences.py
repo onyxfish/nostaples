@@ -15,38 +15,39 @@
 #~ You should have received a copy of the GNU General Public License
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
-'''
-This module holds the Model for the core of the application.
-'''
+"""
+TODO
+"""
 
 import logging
 
-from gtkmvc.model import Model
+import gtk
+from gtkmvc.view import View
 
-from models.document import DocumentModel
-from models.page import PageModel
-from models.preferences import PreferencesModel
+import constants
+from utils.gui import setup_combobox
 
-class MainModel(Model):
-    '''
-    The model for the main Model, which handles data all data not
-    specifically handled by another Model (generally this means
-    the state of the scan_window).
-    '''
-    __properties__ = \
-    {
-        'show_toolbar' : True,
-        'show_statusbar' : True,
-        'show_thumbnails' : True,
-    }
+class PreferencesView(View):
+    """
+    TODO
+    """
 
-    def __init__(self):
-        Model.__init__(self)
-        
+    def __init__(self, controller, parent):
+        View.__init__(
+            self, controller, constants.GLADE_CONFIG, 'preferences_dialog', 
+            parent, False)
+            
         self.log = logging.getLogger(self.__class__.__name__)
         
-        self.document_model = DocumentModel()
-        self.preferences_model = PreferencesModel()
-        self.blank_page = PageModel()
+        # Setup controls which can not be configured in Glade
+        setup_combobox(
+            self['preview_mode_combobox'], 
+            [constants.PREVIEW_MODE_NEAREST,
+                constants.PREVIEW_MODE_BILINEAR, 
+                constants.PREVIEW_MODE_BICUBIC, 
+                constants.PREVIEW_MODE_ANTIALIAS], 
+            constants.PREVIEW_MODE_ANTIALIAS)
+        
+        controller.register_view(self)
         
         self.log.debug('Created.')

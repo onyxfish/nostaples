@@ -25,8 +25,8 @@ import gtk
 from gtkmvc.view import View
 
 import constants
-from page import PageView
-from thumbnails import ThumbnailsView
+from views.document import DocumentView
+from views.page import PageView
 
 class MainView(View):
     """
@@ -48,11 +48,10 @@ class MainView(View):
             constants.STATUSBAR_BASE_CONTEXT_ID, 'Ready')
         
         # Setup sub views
-        self.thumbnails_view = ThumbnailsView( 
-            controller.thumbnails_controller)
+        self.document_view = DocumentView(controller.document_controller)
             
         self['thumbnails_scrolled_window'].add(
-            self.thumbnails_view['thumbnails_tree_view'])
+            self.document_view['thumbnails_tree_view'])
         self['thumbnails_scrolled_window'].show_all()
         
         self.page_view = PageView(

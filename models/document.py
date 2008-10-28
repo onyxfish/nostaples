@@ -16,37 +16,22 @@
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
 '''
-This module holds the Model for the core of the application.
+TODO
 '''
 
 import logging
 
-from gtkmvc.model import Model
+import gobject
+import gtk
+from gtkmvc.model import ListStoreModel
 
-from models.document import DocumentModel
-from models.page import PageModel
-from models.preferences import PreferencesModel
-
-class MainModel(Model):
+class DocumentModel(ListStoreModel):
     '''
-    The model for the main Model, which handles data all data not
-    specifically handled by another Model (generally this means
-    the state of the scan_window).
+    TODO
     '''
-    __properties__ = \
-    {
-        'show_toolbar' : True,
-        'show_statusbar' : True,
-        'show_thumbnails' : True,
-    }
-
     def __init__(self):
-        Model.__init__(self)
+        ListStoreModel.__init__(self, gobject.TYPE_PYOBJECT)
         
         self.log = logging.getLogger(self.__class__.__name__)
-        
-        self.document_model = DocumentModel()
-        self.preferences_model = PreferencesModel()
-        self.blank_page = PageModel()
         
         self.log.debug('Created.')

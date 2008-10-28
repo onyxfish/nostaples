@@ -15,38 +15,28 @@
 #~ You should have received a copy of the GNU General Public License
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
-'''
-This module holds the Model for the core of the application.
-'''
+"""
+TODO
+"""
 
 import logging
 
 from gtkmvc.model import Model
 
-from models.document import DocumentModel
-from models.page import PageModel
-from models.preferences import PreferencesModel
+import constants
 
-class MainModel(Model):
-    '''
-    The model for the main Model, which handles data all data not
-    specifically handled by another Model (generally this means
-    the state of the scan_window).
-    '''
+class PreferencesModel(Model):
+    """
+    TODO
+    """
     __properties__ = \
     {
-        'show_toolbar' : True,
-        'show_statusbar' : True,
-        'show_thumbnails' : True,
+        'preview_mode' : constants.PREVIEW_MODE_ANTIALIAS,
     }
 
     def __init__(self):
         Model.__init__(self)
         
         self.log = logging.getLogger(self.__class__.__name__)
-        
-        self.document_model = DocumentModel()
-        self.preferences_model = PreferencesModel()
-        self.blank_page = PageModel()
         
         self.log.debug('Created.')

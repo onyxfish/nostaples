@@ -64,3 +64,8 @@ GCONF_DIRECTORY = "/apps/nostaples"
 TEMP_IMAGES_DIRECTORY = os.path.expanduser('~/.nostaples')
 LOGGING_CONFIG = os.path.join(os.path.dirname(__file__), 'logging.config')
 GLADE_CONFIG = os.path.join(os.path.dirname(__file__), 'nostaples.glade')
+
+PREVIEW_MODE_NEAREST = 'Nearest (Fastest)'
+PREVIEW_MODE_BILINEAR = 'Bilinear'
+PREVIEW_MODE_BICUBIC = 'Bicubic'
+PREVIEW_MODE_ANTIALIAS = 'Antialias (Clearest)'

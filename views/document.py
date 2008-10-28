@@ -26,7 +26,7 @@ from gtkmvc.view import View
 
 import constants
 
-class ThumbnailsView(View):
+class DocumentView(View):
     """
     TODO
     """
