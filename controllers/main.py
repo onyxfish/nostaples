@@ -16,8 +16,8 @@
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-This module holds the controller for the main application view and
-model.
+This module holds the L{MainController}, which manages interaction 
+between the L{MainModel} and L{MainView}.
 """
 
 import logging
@@ -33,33 +33,46 @@ from views.preferences import PreferencesView
 
 class MainController(Controller):
     """
-    TODO
+    Manages interaction between the L{MainModel} and L{MainView}.
     """
+    
+    # SETUP METHODS
+    
     def __init__(self, model):
+        """
+        Constructs the MainController, as well as necessary sub-controllers 
+        and services.
+        """
         Controller.__init__(self, model)
-            
-        self.scanning_service = ScanningService()
-        
-        self.page_controller = PageController(model.blank_page)
-        self.document_controller = DocumentController(
-            model.document_model)
 
         self.log = logging.getLogger(self.__class__.__name__)
         self.log.debug('Created.')
+        
+        # Services
+        self.scanning_service = ScanningService()
+        
+        # Sub-controllers
+        self.document_controller = DocumentController(
+            model.document_model)
 
     def register_view(self, view):
+        """
+        Registers this controller with a view.
+        """
         Controller.register_view(self, view)
         
         self.log.debug('%s registered.', view.__class__.__name__)
         
     def register_adapters(self):
+        """
+        Registers adapters for property/widget pairs that do not require 
+        complex processing.
+        """
         self.adapt('show_toolbar', 'show_toolbar_menu_item')
         self.adapt('show_statusbar', 'show_statusbar_menu_item')
         self.adapt('show_thumbnails', 'show_thumbnails_menu_item')
         
-    def quit(self):
-        self.log.debug('Quit.')
-        gtk.main_quit()
+    # USER INTERFACE CALLBACKS
         
     def on_scan_window_destroy(self, window):
         """Exits the application."""
@@ -107,10 +120,17 @@ class MainController(Controller):
             
     def on_show_thumbnails_menu_item_toggled(self, menu_item):
         """Toggles the visibility of the thumbnails pane."""
-        if menu_item.get_active():
-            self.view['thumbnails_scrolled_window'].show()
-        else:
-            self.view['thumbnails_scrolled_window'].hide()
+        self.document_controller.toggle_thumbnails_visible(
+            menu_item.get_active())
         
     def on_scan_button_clicked(self, button):
         pass
+    
+    # PROPERTY CALLBACKS
+    
+    # UTILITY METHODS
+        
+    def quit(self):
+        """Exits the application."""
+        self.log.debug('Quit.')
+        gtk.main_quit()

@@ -16,7 +16,8 @@
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-TODO
+This module holds the L{PreferencesController}, which manages interaction 
+between the L{PreferencesModel} and L{PreferencesView}.
 """
 
 import logging
@@ -28,21 +29,37 @@ from utils.gui import read_combobox
 
 class PreferencesController(Controller):
     """
-    TODO
+    Manages interaction between the L{PreferencesModel} and 
+    L{PreferencesView}.
     """
+    
+    # SETUP METHODS
+    
     def __init__(self, model):
+        """
+        Constructs the PreferencesController.
+        """
         Controller.__init__(self, model)
 
         self.log = logging.getLogger(self.__class__.__name__)
         self.log.debug('Created.')
 
     def register_view(self, view):
+        """
+        Registers this controller with a view.
+        """
         Controller.register_view(self, view)
         
         self.log.debug('%s registered.', view.__class__.__name__)
         
     def register_adapters(self):
+        """
+        Registers adapters for property/widget pairs that do not require 
+        complex processing.
+        """
         pass
+    
+    # USER INTERFACE CALLBACKS
 
     def on_preferences_dialog_close(self, dialog):
         """Exits the preferences dialog."""
@@ -59,11 +76,15 @@ class PreferencesController(Controller):
         """Exits the preferences dialog."""
         self.close()
     
+    # PROPERTY CALLBACKS
+    
+    # UTILITY METHODS
+    
     def close(self):
         """Closes the preferences dialog and destroy its MVC components."""
         self.model.unregister_observer(self)
         self.view.get_top_widget().destroy()
         self.view = None
         self.model = None
-        
+                
         self.log.debug('Destroyed.')

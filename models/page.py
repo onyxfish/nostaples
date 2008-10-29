@@ -15,18 +15,18 @@
 #~ You should have received a copy of the GNU General Public License
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
-'''
-This module holds the Model for a single scanned page.
-'''
+"""
+This module holds the PageModel, which represents a single scanned page.
+"""
 
 import logging
 
 from gtkmvc.model import Model
 
 class PageModel(Model):
-    '''
-    TODO
-    '''
+    """
+    Represents a single scanned page 
+    """
     __properties__ = \
     {
         'path' : '',
@@ -39,6 +39,9 @@ class PageModel(Model):
     }
 
     def __init__(self):
+        """
+        Constructs the PageModel.
+        """
         Model.__init__(self)
         
         self.log = logging.getLogger(self.__class__.__name__)

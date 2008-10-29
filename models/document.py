@@ -15,9 +15,10 @@
 #~ You should have received a copy of the GNU General Public License
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
-'''
-TODO
-'''
+"""
+This module holds the DocumentModel, which represents a multi-page
+document in the process of being scanned.
+"""
 
 import logging
 
@@ -25,13 +26,23 @@ import gobject
 import gtk
 from gtkmvc.model import ListStoreModel
 
+from models.page import PageModel
+
 class DocumentModel(ListStoreModel):
-    '''
-    TODO
-    '''
+    """
+    Represents a multi-page document in the process of being scanned.
+    This is represented as a liststore of L{PageModel} objects so that it can
+    be fed into a treeview to provide an outline of the document.
+    """
+    
     def __init__(self):
+        """
+        Constructs the DocumentModel.
+        """
         ListStoreModel.__init__(self, gobject.TYPE_PYOBJECT)
         
         self.log = logging.getLogger(self.__class__.__name__)
+        
+        self.blank_page = PageModel()
         
         self.log.debug('Created.')

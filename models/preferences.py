@@ -16,7 +16,7 @@
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-TODO
+This module holds the PreferencesModel, which manages user settings.
 """
 
 import logging
@@ -27,7 +27,7 @@ import constants
 
 class PreferencesModel(Model):
     """
-    TODO
+    Manages user settings.
     """
     __properties__ = \
     {
@@ -35,6 +35,9 @@ class PreferencesModel(Model):
     }
 
     def __init__(self):
+        """
+        Constructs the PreferencesModel.
+        """
         Model.__init__(self)
         
         self.log = logging.getLogger(self.__class__.__name__)

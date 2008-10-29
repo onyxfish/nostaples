@@ -16,7 +16,8 @@
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-TODO
+This module holds the PageView which exposes the scanned page that is
+currently selected as a preview image.
 """
 
 import logging
@@ -28,21 +29,26 @@ import constants
 
 class PageView(View):
     """
-    TODO
+    Exposes the scanned page that is currently selected as a preview 
+    image.
     """
     def __init__(self, controller):
+        """
+        Constructs the PageView, including setting up controls that could
+        not be configured in Glade.
+        """
         View.__init__(
-            self, controller, constants.GLADE_CONFIG, 'preview_table',
-            None, False)
+            self, controller, constants.GLADE_CONFIG, 
+            'dummy_page_view_window', None, False)
             
         self.log = logging.getLogger(self.__class__.__name__)
 
-        self['preview_horizontal_scrollbar'].set_adjustment(
-            self['preview_layout'].get_hadjustment())
-        self['preview_vertical_scrollbar'].set_adjustment(
-            self['preview_layout'].get_vadjustment())
+        self['page_view_horizontal_scrollbar'].set_adjustment(
+            self['page_view_image_layout'].get_hadjustment())
+        self['page_view_vertical_scrollbar'].set_adjustment(
+            self['page_view_image_layout'].get_vadjustment())
         
-        self['preview_layout'].modify_bg(
+        self['page_view_image_layout'].modify_bg(
             gtk.STATE_NORMAL, 
             gtk.gdk.colormap_get_system().alloc_color(
                 gtk.gdk.Color(0, 0, 0), False, True))

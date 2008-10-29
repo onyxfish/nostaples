@@ -16,7 +16,8 @@
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-This module holds the View for the main application window.
+This module holds the MainView which exposes the application's main 
+window.
 """
 
 import logging
@@ -30,14 +31,17 @@ from views.page import PageView
 
 class MainView(View):
     """
-    The main view on the application--generally speaking, the 
-    scan_window.
+    Exposes the application's main window.
     """
 
     def __init__(self, controller):
+        """
+        Constructs the MainView, including setting up controls that could
+        not be configured in Glade and constructing sub-views.
+        """
         View.__init__(
-            self, controller, constants.GLADE_CONFIG, 'scan_window', 
-            None, False)
+            self, controller, constants.GLADE_CONFIG, 
+            'scan_window', None, False)
             
         self.log = logging.getLogger(self.__class__.__name__)
         
@@ -50,14 +54,10 @@ class MainView(View):
         # Setup sub views
         self.document_view = DocumentView(controller.document_controller)
             
-        self['thumbnails_scrolled_window'].add(
-            self.document_view['thumbnails_tree_view'])
-        self['thumbnails_scrolled_window'].show_all()
-        
-        self.page_view = PageView(
-            controller.page_controller)
-        
-        self['preview_viewport'].add(self.page_view['preview_table'])
+        self.document_view['document_view_horizontal_box'].reparent(
+             self['document_view_docking_viewport'])
+            
+        self['document_view_docking_viewport'].show_all()
         
 #        if self.app.state_manager['show_toolbar'] == False:
 #            self.show_toolbar_menu_item.set_active(False)

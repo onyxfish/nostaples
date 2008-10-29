@@ -16,7 +16,8 @@
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
 '''
-TODO
+This module holds the L{PageController}, which manages interaction 
+between the L{PageModel} and L{PageView}.
 '''
 
 import logging
@@ -26,14 +27,30 @@ from gtkmvc.controller import Controller
 
 class PageController(Controller):
     '''
+    Manages interaction between the L{PageModel} and L{PageView}.
     '''
+    
+    # SETUP METHODS
+    
     def __init__(self, model):
+        """
+        Constructs the PageController.
+        """
         Controller.__init__(self, model)
 
         self.log = logging.getLogger(self.__class__.__name__)
         self.log.debug('Created.')
 
     def register_view(self, view):
+        """
+        Registers this controller with a view.
+        """
         Controller.register_view(self, view)
         
         self.log.debug('%s registered.', view.__class__.__name__)
+        
+    # USER INTERFACE CALLBACKS
+    
+    # PROPERTY CALLBACKS
+    
+    # UTILITY METHODS

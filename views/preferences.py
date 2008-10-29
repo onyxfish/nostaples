@@ -16,7 +16,8 @@
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-TODO
+This module holds the PreferencesView which exposes user settings
+through a dialog seperate from the main application window.
 """
 
 import logging
@@ -29,10 +30,15 @@ from utils.gui import setup_combobox
 
 class PreferencesView(View):
     """
-    TODO
+    Exposes user settings through a dialog seperate from the main
+    application window.
     """
 
     def __init__(self, controller, parent):
+        """
+        Constructs the PreferencesView, including setting up controls that 
+        could not be configured in Glade.
+        """
         View.__init__(
             self, controller, constants.GLADE_CONFIG, 'preferences_dialog', 
             parent, False)

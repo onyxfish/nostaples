@@ -15,9 +15,10 @@
 #~ You should have received a copy of the GNU General Public License
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
-'''
-This module holds the Model for the core of the application.
-'''
+"""
+This module holds the MainModel, which manages general application
+data. 
+"""
 
 import logging
 
@@ -28,11 +29,10 @@ from models.page import PageModel
 from models.preferences import PreferencesModel
 
 class MainModel(Model):
-    '''
-    The model for the main Model, which handles data all data not
-    specifically handled by another Model (generally this means
-    the state of the scan_window).
-    '''
+    """
+    Handles data all data not specifically handled by another Model 
+    (e.g. the state of the main application window).
+    """
     __properties__ = \
     {
         'show_toolbar' : True,
@@ -41,12 +41,15 @@ class MainModel(Model):
     }
 
     def __init__(self):
+        """
+        Constructs the MainModel, as well as necessary sub-models.
+        """
         Model.__init__(self)
         
         self.log = logging.getLogger(self.__class__.__name__)
         
+        # Sub-models
         self.document_model = DocumentModel()
         self.preferences_model = PreferencesModel()
-        self.blank_page = PageModel()
         
         self.log.debug('Created.')

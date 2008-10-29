@@ -16,7 +16,8 @@
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-TODO
+This module holds the DocumentView which exposes the document being
+scanned as a thumbnail list.
 """
 
 import logging
@@ -25,18 +26,25 @@ import gtk
 from gtkmvc.view import View
 
 import constants
+from views.page import PageView
 
 class DocumentView(View):
     """
-    TODO
+    Exposes the document being scanned as a thumbnail list.
     """
 
     def __init__(self, controller):
+        """
+        Constructs the DocumentView, including setting up controls that could
+        not be configured in Glade and constructing sub-views.
+        """
         View.__init__(
-            self, controller, None, None, None, False)
+            self, controller, constants.GLADE_CONFIG, 
+            'dummy_document_view_window', None, False)
             
         self.log = logging.getLogger(self.__class__.__name__)
         
+        # Setup controls that could not be configured in Glade
         self['thumbnails_tree_view'] = gtk.TreeView()
         self['thumbnails_column'] = gtk.TreeViewColumn(None)
         self['thumbnails_cell'] = gtk.CellRendererPixbuf()
@@ -58,6 +66,14 @@ class DocumentView(View):
 #            'row-inserted', self._on_thumbnails_list_store_row_inserted)
 #        self.thumbnails_tree_view.get_selection().connect(
 #            'changed', self._on_thumbnails_tree_selection_changed)
+
+        self['thumbnails_scrolled_window'].add(self['thumbnails_tree_view'])
+
+        # Setup sub-views
+        self.page_view = PageView(controller.page_controller)
+        
+        self.page_view['page_view_table'].reparent(
+            self['page_view_docking_viewport'])
         
         controller.register_view(self)
         
