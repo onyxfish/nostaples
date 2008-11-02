@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Tue Oct 28 20:51:02 2008 -->
+<!--Generated with glade3 3.4.5 on Sun Nov  2 00:52:17 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="scan_window">
     <property name="visible">True</property>
@@ -447,7 +447,7 @@
                 <signal name="clicked" handler="on_scan_button_clicked"/>
               </widget>
               <packing>
-                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
               </packing>
             </child>
             <child>
@@ -458,17 +458,13 @@
                 <signal name="clicked" handler="on_save_as_button_clicked"/>
               </widget>
               <packing>
-                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
               </packing>
             </child>
             <child>
               <widget class="GtkSeparatorToolItem" id="toolbutton1">
                 <property name="visible">True</property>
               </widget>
-              <packing>
-                <property name="expand">False</property>
-                <property name="homogeneous">False</property>
-              </packing>
             </child>
             <child>
               <widget class="GtkToolButton" id="zoom_in_button">
@@ -478,7 +474,7 @@
                 <signal name="clicked" handler="on_zoom_in_button_clicked"/>
               </widget>
               <packing>
-                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
               </packing>
             </child>
             <child>
@@ -489,7 +485,7 @@
                 <signal name="clicked" handler="on_zoom_out_button_clicked"/>
               </widget>
               <packing>
-                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
               </packing>
             </child>
             <child>
@@ -500,7 +496,7 @@
                 <signal name="clicked" handler="on_zoom_one_to_one_button_clicked"/>
               </widget>
               <packing>
-                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
               </packing>
             </child>
             <child>
@@ -511,17 +507,13 @@
                 <signal name="clicked" handler="on_zoom_best_fit_button_clicked"/>
               </widget>
               <packing>
-                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
               </packing>
             </child>
             <child>
               <widget class="GtkSeparatorToolItem" id="toolbutton2">
                 <property name="visible">True</property>
               </widget>
-              <packing>
-                <property name="expand">False</property>
-                <property name="homogeneous">False</property>
-              </packing>
             </child>
             <child>
               <widget class="GtkToolButton" id="rotate_counter_clockwise_button">
@@ -531,7 +523,7 @@
                 <signal name="clicked" handler="on_rotate_counter_clockwise_button_clicked"/>
               </widget>
               <packing>
-                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
               </packing>
             </child>
             <child>
@@ -542,17 +534,13 @@
                 <signal name="clicked" handler="on_rotate_clockwise_button_clicked"/>
               </widget>
               <packing>
-                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
               </packing>
             </child>
             <child>
               <widget class="GtkSeparatorToolItem" id="toolbutton4">
                 <property name="visible">True</property>
               </widget>
-              <packing>
-                <property name="expand">False</property>
-                <property name="homogeneous">False</property>
-              </packing>
             </child>
             <child>
               <widget class="GtkToolButton" id="go_first_button">
@@ -562,7 +550,7 @@
                 <signal name="clicked" handler="on_go_first_button_clicked"/>
               </widget>
               <packing>
-                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
               </packing>
             </child>
             <child>
@@ -573,7 +561,7 @@
                 <signal name="clicked" handler="on_go_previous_button_clicked"/>
               </widget>
               <packing>
-                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
               </packing>
             </child>
             <child>
@@ -584,7 +572,7 @@
                 <signal name="clicked" handler="on_go_next_button_clicked"/>
               </widget>
               <packing>
-                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
               </packing>
             </child>
             <child>
@@ -595,7 +583,7 @@
                 <signal name="clicked" handler="on_go_last_button_clicked"/>
               </widget>
               <packing>
-                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
               </packing>
             </child>
           </widget>
@@ -939,10 +927,10 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
     <property name="skip_pager_hint">True</property>
     <property name="transient_for">scan_window</property>
     <property name="has_separator">False</property>
-    <property name="use_preview_label">False</property>
+    <property name="do_overwrite_confirmation">True</property>
     <property name="action">GTK_FILE_CHOOSER_ACTION_SAVE</property>
     <property name="preview_widget_active">False</property>
-    <property name="do_overwrite_confirmation">True</property>
+    <property name="use_preview_label">False</property>
     <child internal-child="vbox">
       <widget class="GtkVBox" id="dialog-vbox6">
         <property name="visible">True</property>
@@ -1180,7 +1168,6 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
                   <widget class="GtkProgressBar" id="scan_progress_bar">
                     <property name="visible">True</property>
                     <property name="activity_mode">True</property>
-                    <property name="text" translatable="yes"></property>
                   </widget>
                   <packing>
                     <property name="expand">False</property>
@@ -1246,27 +1233,16 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
           <placeholder/>
         </child>
         <child>
-          <widget class="GtkLayout" id="page_view_image_layout">
-            <property name="visible">True</property>
-            <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_STRUCTURE_MASK | GDK_SCROLL_MASK</property>
-            <signal name="button_press_event" handler="on_page_view_image_layout_button_press_event"/>
-            <signal name="motion_notify_event" handler="on_page_view_image_layout_motion_notify_event"/>
-            <signal name="button_release_event" handler="on_page_view_image_layout_button_release_event"/>
-            <signal name="size_allocate" handler="on_page_view_image_layout_size_allocate"/>
-            <signal name="scroll_event" handler="on_page_view_image_layout_scroll_event"/>
-            <child>
-              <widget class="GtkImage" id="page_view_image">
-                <property name="width_request">100</property>
-                <property name="height_request">80</property>
-                <property name="visible">True</property>
-                <property name="stock">gtk-missing-image</property>
-              </widget>
-              <packing>
-                <property name="x">61</property>
-                <property name="y">32</property>
-              </packing>
-            </child>
+          <widget class="GtkVScrollbar" id="page_view_vertical_scrollbar">
+            <property name="no_show_all">True</property>
+            <property name="adjustment">0 0 100 1 10 10</property>
           </widget>
+          <packing>
+            <property name="left_attach">1</property>
+            <property name="right_attach">2</property>
+            <property name="x_options">GTK_SHRINK | GTK_FILL</property>
+            <property name="y_options">GTK_SHRINK | GTK_FILL</property>
+          </packing>
         </child>
         <child>
           <widget class="GtkHScrollbar" id="page_view_horizontal_scrollbar">
@@ -1281,16 +1257,25 @@ along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</proper
           </packing>
         </child>
         <child>
-          <widget class="GtkVScrollbar" id="page_view_vertical_scrollbar">
-            <property name="no_show_all">True</property>
-            <property name="adjustment">0 0 100 1 10 10</property>
+          <widget class="GtkLayout" id="page_view_image_layout">
+            <property name="visible">True</property>
+            <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_STRUCTURE_MASK | GDK_SCROLL_MASK</property>
+            <signal name="button_press_event" handler="on_page_view_image_layout_button_press_event"/>
+            <signal name="motion_notify_event" handler="on_page_view_image_layout_motion_notify_event"/>
+            <signal name="button_release_event" handler="on_page_view_image_layout_button_release_event"/>
+            <signal name="size_allocate" handler="on_page_view_image_layout_size_allocate"/>
+            <signal name="scroll_event" handler="on_page_view_image_layout_scroll_event"/>
+            <child>
+              <widget class="GtkImage" id="page_view_image">
+                <property name="visible">True</property>
+                <property name="stock">gtk-missing-image</property>
+              </widget>
+              <packing>
+                <property name="x">61</property>
+                <property name="y">32</property>
+              </packing>
+            </child>
           </widget>
-          <packing>
-            <property name="left_attach">1</property>
-            <property name="right_attach">2</property>
-            <property name="x_options">GTK_SHRINK | GTK_FILL</property>
-            <property name="y_options">GTK_SHRINK | GTK_FILL</property>
-          </packing>
         </child>
       </widget>
     </child>

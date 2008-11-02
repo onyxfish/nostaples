@@ -43,6 +43,8 @@ class DocumentModel(ListStoreModel):
         
         self.log = logging.getLogger(self.__class__.__name__)
         
+        # Create a blank page to use as a placeholder when none have been
+        # scanned.
         self.blank_page = PageModel()
         
         self.log.debug('Created.')

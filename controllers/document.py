@@ -26,6 +26,7 @@ import gtk
 from gtkmvc.controller import Controller
 
 from controllers.page import PageController
+from models.page import PageModel
 
 class DocumentController(Controller):
     """
@@ -46,7 +47,10 @@ class DocumentController(Controller):
         self.log.debug('Created.')
 
         # Sub-controllers
-        self.page_controller = PageController(model.blank_page)
+        # TODO: Temp (should load document_model.blank_page)
+        self.page_model = PageModel(path='test.pnm', resolution=75)
+        self.model.append([self.page_model])
+        self.page_controller = PageController(model[0][0])
 
     def register_view(self, view):
         """
