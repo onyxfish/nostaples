@@ -49,7 +49,7 @@ class DocumentController(Controller):
         # Sub-controllers
         # TODO: Temp (should load document_model.blank_page)
         self.page_model = PageModel(path='test.pnm', resolution=75)
-        self.model.append([self.page_model])
+        self.model.append_page(self.page_model)
         self.page_controller = PageController(model[0][0])
 
     def register_view(self, view):

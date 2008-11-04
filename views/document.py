@@ -56,6 +56,9 @@ class DocumentView(View):
         self['thumbnails_column'].pack_start(self['thumbnails_cell'], True)
         self['thumbnails_column'].set_attributes(
             self['thumbnails_cell'], pixbuf=0)
+        self['thumbnails_column'].set_cell_data_func(
+            self['thumbnails_cell'],
+            self.thumbnails_column_cell_data_func)
         self['thumbnails_tree_view'].get_selection().set_mode(
             gtk.SELECTION_SINGLE)
         self['thumbnails_tree_view'].set_headers_visible(False)
@@ -78,3 +81,11 @@ class DocumentView(View):
         controller.register_view(self)
         
         self.log.debug('Created.')
+        
+    def thumbnails_column_cell_data_func(self, column, cell_renderer, document_model, iter):
+        """
+        Extracts the thumbnail pixbuf from the PageModel stored in the
+        DocumentModel ListStore.
+        """
+        page_model = document_model.get_value(iter, 0)
+        cell_renderer.set_property('pixbuf', page_model._thumbnail_pixbuf)

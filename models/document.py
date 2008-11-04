@@ -48,3 +48,9 @@ class DocumentModel(ListStoreModel):
         self.blank_page = PageModel()
         
         self.log.debug('Created.')
+        
+    def append_page(self, page_model):
+        """
+        Adds a page to the end of the document.
+        """
+        self.append([page_model])

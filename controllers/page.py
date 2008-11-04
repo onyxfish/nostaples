@@ -40,25 +40,28 @@ class PageController(Controller):
 
         self.log = logging.getLogger(self.__class__.__name__)
         
+        # The preview pixbuf is cached so it can be rerendered without
+        # reapplying zoom transformations.
+        self.preview_pixbuf = None
+        
         # Non persistent settings that apply to all scanned pages
-        # TODO: temp, should grab pixbuf from model when needed
-        self.preview_pixbuf = self.model._raw_pixbuf
-        self.scaled_pixbuf = None
         self.preview_width = 0
         self.preview_height = 0
         self.preview_zoom = 1.0
-        self.preview_is_best_fit = True
+        self.preview_is_best_fit = False
         
-        #self.preview_move_start_x = 0
-        #self.preview_move_start_y = 0
         # TODO: should be a user preference
         self.preview_zoom_rect_color = \
             gtk.gdk.colormap_get_system().alloc_color(
                 gtk.gdk.Color(65535, 0, 0), False, True)
-        #self.zoom_move_start_x = 0
-        #self.zoom_move_start_y = 0
-        self.preview_drag_start_x = 0
-        self.preview_drag_start_y = 0
+                
+        # Reusable temp vars to hold the start point of a mouse drag action.
+        #self.preview_drag_start_x = 0
+        #self.preview_drag_start_y = 0
+        self.zoom_drag_start_x = 0
+        self.zoom_drag_start_y = 0
+        self.move_drag_start_x = 0
+        self.move_drag_start_y = 0
         
         self.log.debug('Created.')
 
@@ -91,17 +94,20 @@ class PageController(Controller):
         # Handle both hint events and routine notifications
         # See: http://www.pygtk.org/pygtk2tutorial/sec-EventHandling.html
         if event.is_hint:
-            mouse_x, mouse_y, mouse_state = event.window.get_pointer()
+            mouse_state = event.window.get_pointer()[2]
         else:
-            mouse_x, mouse_y = event.x, event.y
             mouse_state = event.state
-        
+            
         # Move
         if (mouse_state & gtk.gdk.BUTTON1_MASK):
-            self._update_move(mouse_x, mouse_y)
+            self._update_move(event.x_root, event.y_root)
         # Zoom
         elif (mouse_state & gtk.gdk.BUTTON3_MASK):
-            self._update_zoom(mouse_x, mouse_y)
+            self._update_zoom(event.x, event.y)
+        
+        # NB: These need to be updated even if the button wasn't pressed
+        self.move_drag_start_x = event.x_root
+        self.move_drag_start_y = event.y_root
                
     def on_page_view_image_layout_button_release_event(self, widget, event):
         """
@@ -135,28 +141,102 @@ class PageController(Controller):
         self.preview_width = allocation.width
         self.preview_height = allocation.height
         
-#        if self.preview_is_best_fit:
-#            self.zoom_best_fit()
-#        else:
-        self._update_preview()
+        if self.preview_is_best_fit:
+            self.zoom_best_fit()
+        else:
+            self._update_preview()
 #            self.update_status()
     
     # PROPERTY CALLBACKS
     
-    # UTILITY METHOD
+    def property_pixbuf_value_change(self, model, old_value, new_value):
+        self._update_preview()
+        print 1
+        pass
+    
+    # PUBLIC METHODS
+    
+    def zoom_in(self):
+        """
+        Zooms the preview image in.
+        """ 
+        # TODO: max zoom should be configurable
+        if self.preview_zoom == 5:
+            return
+        
+        # TODO: zoom amount should be configurable
+        self.preview_zoom +=  0.5
+        
+        if self.preview_zoom > 5:
+            self.preview_zoom = 5
+            
+        self.preview_is_best_fit = False
+            
+        self._update_preview()
+        #self.update_status()
+    
+    def zoom_out(self):  
+        """
+        Zooms the preview image out.
+        """             
+        if self.preview_zoom == 0.5:
+            return
+            
+        self.preview_zoom -=  0.5
+        
+        if self.preview_zoom < 0.5:
+            self.preview_zoom = 0.5
+            
+        self.preview_is_best_fit = False
+            
+        self._update_preview()
+        #self.update_status()
+    
+    def zoom_one_to_one(self):
+        """
+        Zooms the preview image to its true size.
+        """
+        self.preview_zoom =  1.0
+            
+        self.preview_is_best_fit = False
+            
+        self._update_preview()
+        #self.update_status()
+    
+    def zoom_best_fit(self):
+        """
+        Zooms the preview image so the entire image will fit within the
+        preview window.
+        """
+        width = self.model.pixbuf.get_width()
+        height = self.model.pixbuf.get_height()
+        
+        width_ratio = float(width) / self.preview_width
+        height_ratio = float(height) / self.preview_height
+        
+        if width_ratio < height_ratio:
+            self.preview_zoom =  1 / float(height_ratio)
+        else:
+            self.preview_zoom =  1 / float(width_ratio)
+            
+        self.preview_is_best_fit = True
+
+        self._update_preview()
+        #self.update_status()
+    
+    # PRIVATE (INTERNAL) METHODS
     
     def _begin_move(self, x, y):
         """
         Determines if there is anything to be dragged and if so, sets the
         'drag' cursor.
         """
-        if self.view['page_view_horizontal_scrollbar'].get_property('visible') or \
-           self.view['page_view_vertical_scrollbar'].get_property('visible') :
-            self.view['page_view_image'].get_parent_window().set_cursor(
-                gtk.gdk.Cursor(gtk.gdk.FLEUR))      
-                  
-            self.preview_drag_start_x = x
-            self.preview_drag_start_y = y
+        if self.view['page_view_horizontal_scrollbar'].get_property('visible') and \
+           self.view['page_view_vertical_scrollbar'].get_property('visible'):
+               return
+           
+        self.view['page_view_image'].get_parent_window().set_cursor(
+            gtk.gdk.Cursor(gtk.gdk.FLEUR))
                 
     def _begin_zoom(self, x, y):
         """
@@ -165,8 +245,8 @@ class PageController(Controller):
         self.view['page_view_image'].get_parent_window().set_cursor(
             gtk.gdk.Cursor(gtk.gdk.CROSS))
             
-        self.preview_drag_start_x = x
-        self.preview_drag_start_y = y
+        self.zoom_drag_start_x = x
+        self.zoom_drag_start_y = y
             
     def _update_move(self, x, y):
         """
@@ -176,7 +256,7 @@ class PageController(Controller):
             self.view['page_view_image_layout'].get_hadjustment()
         
         new_x = horizontal_adjustment.value + \
-            (self.preview_drag_start_x - x)
+            (self.move_drag_start_x - x)
                         
         if new_x >= horizontal_adjustment.lower and \
            new_x <= horizontal_adjustment.upper - horizontal_adjustment.page_size:
@@ -186,7 +266,7 @@ class PageController(Controller):
             self.view['page_view_image_layout'].get_vadjustment()
             
         new_y = vertical_adjustment.value + \
-                (self.preview_drag_start_y - y)
+                (self.move_drag_start_y - y)
         
         if new_y >= vertical_adjustment.lower and \
            new_y <= vertical_adjustment.upper - vertical_adjustment.page_size:
@@ -197,8 +277,8 @@ class PageController(Controller):
             Renders a box around the zoom region the user has specified
             by dragging the mouse.
             """
-            start_x = self.preview_drag_start_x
-            start_y = self.preview_drag_start_y
+            start_x = self.zoom_drag_start_x
+            start_y = self.zoom_drag_start_y
             end_x = x
             end_y = y
             
@@ -211,7 +291,7 @@ class PageController(Controller):
             width = end_x - start_x
             height = end_y - start_y
 
-            self.view['page_view_image'].set_from_pixbuf(self.scaled_pixbuf)
+            self.view['page_view_image'].set_from_pixbuf(self.preview_pixbuf)
             self.view['page_view_image'].get_parent_window().invalidate_rect(
                 (0, 0, self.preview_width, self.preview_height), 
                 False)
@@ -241,8 +321,8 @@ class PageController(Controller):
         Calculates and applies zoom to the preview and updates the display.
         """
         # Transform to absolute coords
-        start_x = self.preview_drag_start_x / self.preview_zoom
-        start_y = self.preview_drag_start_y / self.preview_zoom
+        start_x = self.zoom_drag_start_x / self.preview_zoom
+        start_y = self.zoom_drag_start_y / self.preview_zoom
         end_x = x / self.preview_zoom
         end_y = y / self.preview_zoom
         
@@ -259,9 +339,9 @@ class PageController(Controller):
         
         # Calculate centering offset
         target_width =  \
-            self.preview_pixbuf.get_width() * self.preview_zoom
+            self.model.pixbuf.get_width() * self.preview_zoom
         target_height = \
-            self.preview_pixbuf.get_height() * self.preview_zoom
+            self.model.pixbuf.get_height() * self.preview_zoom
         
         shift_x = int((self.preview_width - target_width) / 2)
         if shift_x < 0:
@@ -315,17 +395,17 @@ class PageController(Controller):
         # Zoom if necessary
         if self.preview_zoom != 1.0:
             target_width = \
-                int(self.preview_pixbuf.get_width() * self.preview_zoom)
+                int(self.model.pixbuf.get_width() * self.preview_zoom)
             target_height = \
-                int(self.preview_pixbuf.get_height() * self.preview_zoom)
+                int(self.model.pixbuf.get_height() * self.preview_zoom)
             
-            self.scaled_pixbuf = self.preview_pixbuf.scale_simple(
+            self.preview_pixbuf = self.model.pixbuf.scale_simple(
                 target_width, target_height, gtk.gdk.INTERP_BILINEAR)
         else:
-            target_width = self.preview_pixbuf.get_width()
-            target_height = self.preview_pixbuf.get_height()
+            target_width = self.model.pixbuf.get_width()
+            target_height = self.model.pixbuf.get_height()
         
-            self.scaled_pixbuf = self.preview_pixbuf
+            self.preview_pixbuf = self.model.pixbuf
         
         # Resize preview area
         self.view['page_view_image_layout'].set_size(
@@ -353,4 +433,4 @@ class PageController(Controller):
             self.view['page_view_vertical_scrollbar'].hide()
         
         # Render updated preview
-        self.view['page_view_image'].set_from_pixbuf(self.scaled_pixbuf)
+        self.view['page_view_image'].set_from_pixbuf(self.preview_pixbuf)

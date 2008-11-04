@@ -122,9 +122,41 @@ class MainController(Controller):
         """Toggles the visibility of the thumbnails pane."""
         self.document_controller.toggle_thumbnails_visible(
             menu_item.get_active())
+            
+    def on_zoom_in_menu_item_activate(self, menu_item):
+        """Zooms the page preview in."""
+        self.document_controller.page_controller.zoom_in()
+    
+    def on_zoom_out_menu_item_activate(self, menu_item):
+        """Zooms the page preview out."""
+        self.document_controller.page_controller.zoom_out()
+    
+    def on_zoom_one_to_one_menu_item_activate(self, menu_item):
+        """Zooms the page preview to the true size of the scanned image."""
+        self.document_controller.page_controller.zoom_one_to_one()
+        
+    def on_zoom_best_fit_menu_item_activate(self, menu_item):
+        """Zooms the page preview to best fit within the preview window."""
+        self.document_controller.page_controller.zoom_best_fit()
         
     def on_scan_button_clicked(self, button):
         pass
+    
+    def on_zoom_in_button_clicked(self, button):
+        """Zooms the page preview in."""
+        self.document_controller.page_controller.zoom_in()
+    
+    def on_zoom_out_button_clicked(self, button):
+        """Zooms the page preview out."""
+        self.document_controller.page_controller.zoom_out()
+    
+    def on_zoom_one_to_one_button_clicked(self, button):
+        """Zooms the page preview to the true size of the scanned image."""
+        self.document_controller.page_controller.zoom_one_to_one()
+    
+    def on_zoom_best_fit_button_clicked(self, button):
+        """Zooms the page preview to best fit within the preview window."""
+        self.document_controller.page_controller.zoom_best_fit()
     
     # PROPERTY CALLBACKS
     
