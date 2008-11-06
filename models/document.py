@@ -48,9 +48,29 @@ class DocumentModel(ListStoreModel):
         self.blank_page = PageModel()
         
         self.log.debug('Created.')
+    
+    # PROPERTY CALLBACKS
+        
+    def property_thumbnail_pixbuf_value_change(self, model, old_value, new_value):
+        """
+        Searches through the liststore for the PageModel that has been
+        changed and issues its row's row_changed event so that its display
+        will be updated.
+        """
+        iter = self.get_iter_first()
+        
+        while iter:
+            if self.get_value(iter, 0) == model:
+                self.row_changed(self.get_path(iter), iter)
+                return
+                
+            iter = self.iter_next(iter)
+            
+    # PUBLIC METHODS
         
     def append_page(self, page_model):
         """
         Adds a page to the end of the document.
         """
         self.append([page_model])
+        page_model.register_observer(self)

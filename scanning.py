@@ -22,6 +22,14 @@ import re
 
 import constants
 
+class Scanner():
+    # TODO: Should be a model?
+    # TODO: Needs docstrings.
+    
+    def __init__(self, display_name, sane_name):
+        self.display_name = display_name
+        self.sane_name = sane_name        
+
 class ScanningService():
     """
     Provides SANE-based scanning services to the application.
@@ -46,13 +54,13 @@ class ScanningService():
             update_command)
         output = commands.getoutput(update_command)
 
-        scanner_dict = {}
-        scanner_list = re.findall('(.*?)=(.*?)[;|$]', output)
+        results = re.findall('(.*?)=(.*?)[;|$]', output)
+        scanner_list = []
         
-        for value, key in scanner_list:
-            scanner_dict[key] = value
+        for sane_name, display_name in results:
+            scanner_list.append(Scanner(display_name, sane_name))
             
-        return scanner_dict
+        return scanner_list
         
     def get_scanner_options(self, scanner):
         """

@@ -38,6 +38,12 @@ class MainModel(Model):
         'show_toolbar' : True,
         'show_statusbar' : True,
         'show_thumbnails' : True,
+        'available_scanners' : [],
+        'valid_scan_modes' : [],
+        'valid_scan_resolutions' : [],
+        'active_scanner' : None,
+        'active_scan_mode' : None,
+        'active_scan_resolution' : None,
     }
 
     def __init__(self):

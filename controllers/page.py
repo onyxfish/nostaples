@@ -150,9 +150,14 @@ class PageController(Controller):
     # PROPERTY CALLBACKS
     
     def property_pixbuf_value_change(self, model, old_value, new_value):
-        self._update_preview()
-        print 1
-        pass
+        """
+        Update the preview display.
+        """
+        if self.preview_is_best_fit:
+            self.zoom_best_fit()
+        else:
+            self._update_preview()
+#            self.update_status()
     
     # PUBLIC METHODS
     
@@ -208,11 +213,8 @@ class PageController(Controller):
         Zooms the preview image so the entire image will fit within the
         preview window.
         """
-        width = self.model.pixbuf.get_width()
-        height = self.model.pixbuf.get_height()
-        
-        width_ratio = float(width) / self.preview_width
-        height_ratio = float(height) / self.preview_height
+        width_ratio = float(self.model.width) / self.preview_width
+        height_ratio = float(self.model.height) / self.preview_height
         
         if width_ratio < height_ratio:
             self.preview_zoom =  1 / float(height_ratio)
@@ -223,6 +225,14 @@ class PageController(Controller):
 
         self._update_preview()
         #self.update_status()
+        
+    def rotate_counter_clockwise(self):
+        #TODO
+        self.model.rotate_counter_clockwise()
+    
+    def rotate_clockwise(self):
+        #TODO
+        self.model.rotate_clockwise()
     
     # PRIVATE (INTERNAL) METHODS
     

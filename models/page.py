@@ -73,54 +73,56 @@ class PageModel(Model):
     @property
     def width(self):
         """
-        Gets the width of the page, correctly adjusting if the page
-        has been rotated.
+        Gets the width of the page after transformations have been
+        applied.
         """
-        if abs(self.rotation % 360) == 90 or \
-           abs(self.rotation % 360) == 270:
-            return self._raw_pixbuf.get_height()
-        else:
-            return self._raw_pixbuf.get_width()
+        return self.pixbuf.get_width()
         
     @property
     def height(self):
         """
-        Gets the height of the page, correctly adjusting if the page
-        has been rotated.
+        Gets the height of the page after transformations have been
+        applied.
         """
-        if abs(self.rotation % 360) == 90 or \
-           abs(self.rotation % 360) == 270:
-            return self._raw_pixbuf.get_width()
-        else:
-            return self._raw_pixbuf.get_height()
+        return self.pixbuf.get_height()
     
     # PROPERTY CALLBACKS
         
     def property_rotation_value_change(self, model, old_value, new_value):
-        # TODO
+        """Updates the full and thumbnail pixbufs."""
         self._update_pixbuf()
         self._update_thumbnail_pixbuf()
-        pass
         
     def property_brightness_value_change(self, model, old_value, new_value):
-        # TODO
+        """Updates the full and thumbnail pixbufs."""
         self._update_pixbuf()
         self._update_thumbnail_pixbuf()
-        pass
         
     def property_contrast_value_change(self, model, old_value, new_value):
-        # TODO
+        """Updates the full and thumbnail pixbufs."""
         self._update_pixbuf()
         self._update_thumbnail_pixbuf()
-        pass
         
     def property_sharpness_value_change(self, model, old_value, new_value):
-        # TODO
+        """Updates the full and thumbnail pixbufs."""
         self._update_pixbuf()
         self._update_thumbnail_pixbuf()
-        pass
     
-    # UTILITY METHODS
+    # PUBLIC METHODS
+    
+    def rotate_counter_clockwise(self):
+        """
+        Rotate this page ninety degrees counter-clockwise.
+        """
+        self.rotation += 90
+    
+    def rotate_clockwise(self):
+        """
+        Rotate this page ninety degrees clockwise.
+        """
+        self.rotation -= 90
+    
+    # PRIVATE METHODS
     
     def _update_pixbuf(self):
         """
@@ -205,7 +207,7 @@ class PageModel(Model):
         target_width = int(pixbuf.get_width() * zoom)
         target_height = int(pixbuf.get_height() * zoom)
             
-        self._thumbnail_pixbuf = pixbuf.scale_simple(
+        self.thumbnail_pixbuf = pixbuf.scale_simple(
             target_width, target_height, gtk.gdk.INTERP_BILINEAR)
     
 def convert_pil_image_to_pixbuf(image):

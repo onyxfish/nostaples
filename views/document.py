@@ -88,4 +88,4 @@ class DocumentView(View):
         DocumentModel ListStore.
         """
         page_model = document_model.get_value(iter, 0)
-        cell_renderer.set_property('pixbuf', page_model._thumbnail_pixbuf)
+        cell_renderer.set_property('pixbuf', page_model.thumbnail_pixbuf)
