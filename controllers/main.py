@@ -149,6 +149,27 @@ class MainController(Controller):
         """Rotates the visible page ninety degress counter-clockwise."""
         self.document_controller.page_controller.rotate_counter_clockwise()
         
+    def on_available_scanner_menu_item_toggled(self, menu_item):
+        """Set the active scanner."""
+        # TODO: This has not been tested.
+        if menu_item.get_active():
+            for scanner in self.model.available_scanners:
+                if scanner.display_name == menu_item.get_children()[0].get_text():
+                    self.model.active_scanner = scanner
+                    return
+    
+    def on_valid_scan_mode_menu_item_toggled(self, menu_item):
+        """Sets the active scan mode."""
+        if menu_item.get_active():
+            self.model.active_scan_mode = \
+                menu_item.get_children()[0].get_text()
+
+    def on_valid_scan_resolution_menu_item_toggled(self, menu_item):
+        """Sets the active scan resolution."""
+        if menu_item.get_active():
+            self.model.active_scan_resolution = \
+                menu_item.get_children()[0].get_text()
+        
     def on_scan_button_clicked(self, button):
         pass
     
@@ -231,6 +252,9 @@ class MainController(Controller):
 #            constants.STATUSBAR_SCANNER_STATUS_CONTEXT_ID)
     
     def property_valid_scan_modes_value_change(self, model, old_value, new_value):
+        """
+        Updates the list of valid scan modes for the current scanner.
+        """
         # Clear scan modes sub menu
         for child in self.view['scan_mode_sub_menu'].get_children():
             self.view['scan_mode_sub_menu'].remove(child)
@@ -239,7 +263,7 @@ class MainController(Controller):
         if (len(list(self.model.valid_scan_modes)) == 0):
             self.active_scan_mode = None
             menu_item = gtk.MenuItem("No Scan Modes")
-            #menu_item.set_sensitive(False)
+            menu_item.set_sensitive(False)
             self.view['scan_mode_sub_menu'].append(menu_item)
         else:        
             for i in range(len(list(self.model.valid_scan_modes))):
@@ -258,7 +282,7 @@ class MainController(Controller):
                 if self.model.valid_scan_modes[i] == self.model.active_scan_mode:
                     menu_item.set_active(True)
                 
-                #menu_item.connect('toggled', self.update_scan_mode)
+                menu_item.connect('toggled', self.on_valid_scan_mode_menu_item_toggled)
                 self.view['scan_mode_sub_menu'].append(menu_item)
             
         self.view['scan_mode_sub_menu'].show_all()
@@ -271,6 +295,49 @@ class MainController(Controller):
         #self.state_manager['active_scanner'] = self.active_scanner
     
     def property_valid_scan_resolutions_value_change(self, model, old_value, new_value):
+        """
+        Updates the list of valid scan resolutions for the current scanner.
+        """
+        # Clear scan modes sub menu
+        for child in self.view['scan_resolution_sub_menu'].get_children():
+            self.view['scan_resolution_sub_menu'].remove(child)
+        
+        # Generate new scan mode menu
+        if (len(list(self.model.valid_scan_resolutions)) == 0):
+            self.active_scan_mode = None
+            menu_item = gtk.MenuItem("No Scan Resolutions")
+            menu_item.set_sensitive(False)
+            self.view['scan_resolution_sub_menu'].append(menu_item)
+        else:        
+            for i in range(len(list(self.model.valid_scan_resolutions))):
+                if i == 0:
+                    menu_item = gtk.RadioMenuItem(
+                        None, self.model.valid_scan_resolutions[i])
+                    first_item = menu_item
+                else:
+                    menu_item = gtk.RadioMenuItem(
+                        first_item, self.model.valid_scan_resolutions[i])
+                    
+                if i == 0 and self.model.active_scan_resolution not in self.model.valid_scan_resolutions:
+                    menu_item.set_active(True)
+                    self.model.active_scan_resolution = self.model.valid_scan_resolutions[i]
+                
+                if self.model.valid_scan_resolutions[i] == self.model.active_scan_resolution:
+                    menu_item.set_active(True)
+                
+                menu_item.connect('toggled', self.on_valid_scan_resolution_menu_item_toggled)
+                self.view['scan_resolution_sub_menu'].append(menu_item)
+            
+        self.view['scan_resolution_sub_menu'].show_all()
+        
+        # Emulate the default scan mode being toggled
+        #self.update_scan_mode(selected_item)
+        
+        # NB: Only do this if everything else has succeeded, 
+        # otherwise a crash could repeat everytime the app is started
+        #self.state_manager['active_scanner'] = self.active_scanner
+        
+    def property_active_scanner_value_change(self, model, old_value, new_value):
         pass
         
     # PUBLIC METHODS
