@@ -140,12 +140,9 @@ class PageController(Controller):
             
         self.preview_width = allocation.width
         self.preview_height = allocation.height
-        
-        if self.preview_is_best_fit:
-            self.zoom_best_fit()
-        else:
-            self._update_preview()
-#            self.update_status()
+
+        self._update_preview()
+#       self.update_status()
     
     # PROPERTY CALLBACKS
     
@@ -153,13 +150,20 @@ class PageController(Controller):
         """
         Update the preview display.
         """
-        if self.preview_is_best_fit:
-            self.zoom_best_fit()
-        else:
-            self._update_preview()
-#            self.update_status()
+        self._update_preview()
+#       self.update_status()
     
     # PUBLIC METHODS
+    
+    def set_model(self, page_model):
+        """
+        Sets the PageModel that is currently being displayed in the preview area.
+        """
+        self.model.unregister_observer(self)
+        self.model = page_model
+        self.model.register_observer(self)
+        
+        self._update_preview()
     
     def zoom_in(self):
         """
@@ -202,7 +206,6 @@ class PageController(Controller):
         Zooms the preview image to its true size.
         """
         self.preview_zoom =  1.0
-            
         self.preview_is_best_fit = False
             
         self._update_preview()
@@ -212,15 +215,7 @@ class PageController(Controller):
         """
         Zooms the preview image so the entire image will fit within the
         preview window.
-        """
-        width_ratio = float(self.model.width) / self.preview_width
-        height_ratio = float(self.model.height) / self.preview_height
-        
-        if width_ratio < height_ratio:
-            self.preview_zoom =  1 / float(height_ratio)
-        else:
-            self.preview_zoom =  1 / float(width_ratio)
-            
+        """            
         self.preview_is_best_fit = True
 
         self._update_preview()
@@ -349,9 +344,9 @@ class PageController(Controller):
         
         # Calculate centering offset
         target_width =  \
-            self.model.pixbuf.get_width() * self.preview_zoom
+            self.model.width * self.preview_zoom
         target_height = \
-            self.model.pixbuf.get_height() * self.preview_zoom
+            self.model.height * self.preview_zoom
         
         shift_x = int((self.preview_width - target_width) / 2)
         if shift_x < 0:
@@ -401,19 +396,29 @@ class PageController(Controller):
     def _update_preview(self):
         """
         Render the current page to the preview display.
-        """        
+        """
+        # Fit if necessary
+        if self.preview_is_best_fit:
+            width_ratio = float(self.model.width) / self.preview_width
+            height_ratio = float(self.model.height) / self.preview_height
+            
+            if width_ratio < height_ratio:
+                self.preview_zoom =  1 / float(height_ratio)
+            else:
+                self.preview_zoom =  1 / float(width_ratio)
+        
         # Zoom if necessary
         if self.preview_zoom != 1.0:
             target_width = \
-                int(self.model.pixbuf.get_width() * self.preview_zoom)
+                int(self.model.width * self.preview_zoom)
             target_height = \
-                int(self.model.pixbuf.get_height() * self.preview_zoom)
+                int(self.model.height * self.preview_zoom)
             
             self.preview_pixbuf = self.model.pixbuf.scale_simple(
                 target_width, target_height, gtk.gdk.INTERP_BILINEAR)
         else:
-            target_width = self.model.pixbuf.get_width()
-            target_height = self.model.pixbuf.get_height()
+            target_width = self.model.width
+            target_height = self.model.height
         
             self.preview_pixbuf = self.model.pixbuf
         

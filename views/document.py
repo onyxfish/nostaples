@@ -63,12 +63,7 @@ class DocumentView(View):
             gtk.SELECTION_SINGLE)
         self['thumbnails_tree_view'].set_headers_visible(False)
         self['thumbnails_tree_view'].set_property('can-focus', False)
-        
         self['thumbnails_tree_view'].set_reorderable(True)
-#        self.thumbnails_list_store.connect(
-#            'row-inserted', self._on_thumbnails_list_store_row_inserted)
-#        self.thumbnails_tree_view.get_selection().connect(
-#            'changed', self._on_thumbnails_tree_selection_changed)
 
         self['thumbnails_scrolled_window'].add(self['thumbnails_tree_view'])
 

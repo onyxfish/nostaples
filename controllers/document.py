@@ -49,7 +49,9 @@ class DocumentController(Controller):
         # Sub-controllers
         # TODO: Temp (should load document_model.blank_page)
         self.page_model = PageModel(path='test.pnm', resolution=75)
+        self.page_model2 = PageModel(path='test.pnm', resolution=75)
         self.model.append_page(self.page_model)
+        self.model.append_page(self.page_model2)
         self.page_controller = PageController(model[0][0])
 
     def register_view(self, view):
@@ -59,10 +61,24 @@ class DocumentController(Controller):
         Controller.register_view(self, view)
         
         self.view['thumbnails_tree_view'].set_model(self.model)
+        self.view['thumbnails_tree_view'].get_selection().connect(
+          'changed', self.on_thumbnails_tree_view_selection_changed)
+        
+        # TODO: temp?
+        self.view['thumbnails_tree_view'].get_selection().select_path(0)
         
         self.log.debug('%s registered.', view.__class__.__name__)
         
     # USER INTERFACE CALLBACKS
+    
+    def on_thumbnails_tree_view_selection_changed(self, selection):
+        selection_iter = selection.get_selected()[1]
+        
+        if not selection_iter:
+            return
+        
+        page_model = self.model.get_value(selection_iter, 0)
+        self.page_controller.set_model(page_model)
     
     # PROPERTY CALLBACKS
     
@@ -74,3 +90,31 @@ class DocumentController(Controller):
             self.view['thumbnails_scrolled_window'].show()
         else:
             self.view['thumbnails_scrolled_window'].hide()
+            
+    def goto_first_page(self):
+        """Select the first scanned page."""
+        self.view['thumbnails_tree_view'].get_selection().select_path(0)
+    
+    def goto_previous_page(self):
+        """Select the previous scanned page."""
+        iter = self.view['thumbnails_tree_view'].get_selection().get_selected()[1]
+        row = self.model.get_path(iter)[0]
+        
+        if row == 0:
+            return
+        
+        self.view['thumbnails_tree_view'].get_selection().select_path(row - 1)
+    
+    def goto_next_page(self):
+        """Select the next scanned page."""
+        iter = self.view['thumbnails_tree_view'].get_selection().get_selected()[1]
+        row = self.model.get_path(iter)[0]
+        self.view['thumbnails_tree_view'].get_selection().select_path(row + 1)
+    
+    def goto_last_page(self):
+        """
+        Select the last scanned page.
+        
+        Handles invalid paths gracefully without an exception case.
+        """        
+        self.view['thumbnails_tree_view'].get_selection().select_path(len(self.model) - 1)

@@ -61,7 +61,7 @@ class MainController(Controller):
         """
         Controller.register_view(self, view)
         
-        self.update_available_scanners()
+        #self.update_available_scanners()
         
         self.log.debug('%s registered.', view.__class__.__name__)
         
@@ -169,9 +169,29 @@ class MainController(Controller):
         if menu_item.get_active():
             self.model.active_scan_resolution = \
                 menu_item.get_children()[0].get_text()
+                
+    def on_go_first_menu_item_activate(self, menu_item):
+        """Selects the first scanned page."""
+        self.document_controller.goto_first_page()
+        
+    def on_go_previous_menu_item_activate(self, menu_item):
+        """Selects the scanned page before to the currently selected one."""
+        self.document_controller.goto_previous_page()
+    
+    def on_go_next_menu_item_activate(self, menu_item):
+        """Selects the scanned page after to the currently selected one."""
+        self.document_controller.goto_next_page()
+    
+    def on_go_last_menu_item_activate(self, menu_item):
+        """Selects the last scanned page."""
+        self.document_controller.goto_last_page()
         
     def on_scan_button_clicked(self, button):
-        pass
+        self.scanning_service.scan_to_file(
+           self.model.active_scanner.sane_name,
+           self.model.active_scan_mode,
+           self.model.active_scan_resolution,
+           'test.pnm')
     
     def on_zoom_in_button_clicked(self, button):
         """Zooms the page preview in."""
@@ -196,6 +216,22 @@ class MainController(Controller):
     def on_rotate_counter_clockwise_button_clicked(self, button):
         """Rotates the visible page ninety degress counter-clockwise."""
         self.document_controller.page_controller.rotate_counter_clockwise()
+        
+    def on_go_first_button_clicked(self, button):
+        """Selects the first scanned page."""
+        self.document_controller.goto_first_page()
+        
+    def on_go_previous_button_clicked(self, button):
+        """Selects the scanned page before to the currently selected one."""
+        self.document_controller.goto_previous_page()
+    
+    def on_go_next_button_clicked(self, button):
+        """Selects the scanned page after to the currently selected one."""
+        self.document_controller.goto_next_page()
+    
+    def on_go_last_button_clicked(self, button):
+        """Selects the last scanned page."""
+        self.document_controller.goto_last_page()
     
     # PROPERTY CALLBACKS
     
