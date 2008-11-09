@@ -16,45 +16,46 @@
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-This module holds the MainModel, which manages general application
-data. 
+This module holds the ScannerModel, which represents a connected
+scanning device.
 """
 
 import logging
 
+import gtk
 from gtkmvc.model import Model
 
-from models.document import DocumentModel
-from models.page import PageModel
-from models.preferences import PreferencesModel
-from models.scanner import ScannerModel
-
-class MainModel(Model):
+class ScannerModel(Model):
     """
-    Handles data all data not specifically handled by another Model 
-    (e.g. the state of the main application window).
+    Represents a single scanned page.
     """
     __properties__ = \
     {
-        'show_toolbar' : True,
-        'show_statusbar' : True,
-        'show_thumbnails' : True,
-        'available_scanners' : [],
-        'active_scanner' : None,
+        'display_name' : None,
+        'sane_name' : None,
+        'valid_modes' : [],
+        'valid_resolutions' : [],
+        'active_mode' : None,
+        'active_resolution' : None,
     }
 
-    def __init__(self):
+    # SETUP METHODS
+    
+    def __init__(self, display_name, sane_name):
         """
-        Constructs the MainModel, as well as necessary sub-models.
+        Constructs the ScannerModel.
+        
+        TODO: @param defintions
         """
         Model.__init__(self)
         
         self.log = logging.getLogger(self.__class__.__name__)
         
-        # Sub-models
-        self.document_model = DocumentModel()
-        self.preferences_model = PreferencesModel()
-        
-        self.blank_scanner = ScannerModel('Blank Scanner', None)
+        self.display_name = display_name
+        self.sane_name = sane_name
         
         self.log.debug('Created.')
+    
+    # PUBLIC METHODS
+    
+    # PRIVATE METHODS

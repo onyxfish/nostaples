@@ -21,6 +21,9 @@ between the L{MainModel} and L{MainView}.
 """
 
 import logging
+import os
+import commands
+import re
 
 import gtk
 from gtkmvc.controller import Controller
@@ -28,7 +31,9 @@ from gtkmvc.controller import Controller
 from controllers.document import DocumentController
 from controllers.page import PageController
 from controllers.preferences import PreferencesController
-from scanning import ScanningService
+from controllers.scanner import ScannerController
+#from scanning import ScanningService
+from models.scanner import ScannerModel
 from views.preferences import PreferencesView
 
 class MainController(Controller):
@@ -48,12 +53,11 @@ class MainController(Controller):
         self.log = logging.getLogger(self.__class__.__name__)
         self.log.debug('Created.')
         
-        # Services
-        self.scanning_service = ScanningService()
-        
         # Sub-controllers
         self.document_controller = DocumentController(
             model.document_model)
+        self.scanner_controller = ScannerController(
+            model.blank_scanner)
 
     def register_view(self, view):
         """
@@ -61,7 +65,7 @@ class MainController(Controller):
         """
         Controller.register_view(self, view)
         
-        #self.update_available_scanners()
+        self._update_available_scanners()
         
         self.log.debug('%s registered.', view.__class__.__name__)
         
@@ -157,18 +161,6 @@ class MainController(Controller):
                 if scanner.display_name == menu_item.get_children()[0].get_text():
                     self.model.active_scanner = scanner
                     return
-    
-    def on_valid_scan_mode_menu_item_toggled(self, menu_item):
-        """Sets the active scan mode."""
-        if menu_item.get_active():
-            self.model.active_scan_mode = \
-                menu_item.get_children()[0].get_text()
-
-    def on_valid_scan_resolution_menu_item_toggled(self, menu_item):
-        """Sets the active scan resolution."""
-        if menu_item.get_active():
-            self.model.active_scan_resolution = \
-                menu_item.get_children()[0].get_text()
                 
     def on_go_first_menu_item_activate(self, menu_item):
         """Selects the first scanned page."""
@@ -187,11 +179,7 @@ class MainController(Controller):
         self.document_controller.goto_last_page()
         
     def on_scan_button_clicked(self, button):
-        self.scanning_service.scan_to_file(
-           self.model.active_scanner.sane_name,
-           self.model.active_scan_mode,
-           self.model.active_scan_resolution,
-           'test.pnm')
+        self.scanner_controller.scan_to_file('yay.pnm')
     
     def on_zoom_in_button_clicked(self, button):
         """Zooms the page preview in."""
@@ -275,9 +263,6 @@ class MainController(Controller):
         
         self.view['scanner_sub_menu'].show_all()
         
-        # Emulate the default scanner being toggled
-        self.update_valid_scanner_options()
-        
         # Notify user if no scanners are connected
 #        if selected_item == None:
 #            self.gui.statusbar.push(
@@ -286,95 +271,9 @@ class MainController(Controller):
 #        else:
 #            self.gui.statusbar.pop(
 #            constants.STATUSBAR_SCANNER_STATUS_CONTEXT_ID)
-    
-    def property_valid_scan_modes_value_change(self, model, old_value, new_value):
-        """
-        Updates the list of valid scan modes for the current scanner.
-        """
-        # Clear scan modes sub menu
-        for child in self.view['scan_mode_sub_menu'].get_children():
-            self.view['scan_mode_sub_menu'].remove(child)
-        
-        # Generate new scan mode menu
-        if (len(list(self.model.valid_scan_modes)) == 0):
-            self.active_scan_mode = None
-            menu_item = gtk.MenuItem("No Scan Modes")
-            menu_item.set_sensitive(False)
-            self.view['scan_mode_sub_menu'].append(menu_item)
-        else:        
-            for i in range(len(list(self.model.valid_scan_modes))):
-                if i == 0:
-                    menu_item = gtk.RadioMenuItem(
-                        None, self.model.valid_scan_modes[i])
-                    first_item = menu_item
-                else:
-                    menu_item = gtk.RadioMenuItem(
-                        first_item, self.model.valid_scan_modes[i])
-                    
-                if i == 0 and self.model.active_scan_mode not in self.model.valid_scan_modes:
-                    menu_item.set_active(True)
-                    self.model.active_scan_mode = self.model.valid_scan_modes[i]
-                
-                if self.model.valid_scan_modes[i] == self.model.active_scan_mode:
-                    menu_item.set_active(True)
-                
-                menu_item.connect('toggled', self.on_valid_scan_mode_menu_item_toggled)
-                self.view['scan_mode_sub_menu'].append(menu_item)
-            
-        self.view['scan_mode_sub_menu'].show_all()
-        
-        # Emulate the default scan mode being toggled
-        #self.update_scan_mode(selected_item)
-        
-        # NB: Only do this if everything else has succeeded, 
-        # otherwise a crash could repeat everytime the app is started
-        #self.state_manager['active_scanner'] = self.active_scanner
-    
-    def property_valid_scan_resolutions_value_change(self, model, old_value, new_value):
-        """
-        Updates the list of valid scan resolutions for the current scanner.
-        """
-        # Clear scan modes sub menu
-        for child in self.view['scan_resolution_sub_menu'].get_children():
-            self.view['scan_resolution_sub_menu'].remove(child)
-        
-        # Generate new scan mode menu
-        if (len(list(self.model.valid_scan_resolutions)) == 0):
-            self.active_scan_mode = None
-            menu_item = gtk.MenuItem("No Scan Resolutions")
-            menu_item.set_sensitive(False)
-            self.view['scan_resolution_sub_menu'].append(menu_item)
-        else:        
-            for i in range(len(list(self.model.valid_scan_resolutions))):
-                if i == 0:
-                    menu_item = gtk.RadioMenuItem(
-                        None, self.model.valid_scan_resolutions[i])
-                    first_item = menu_item
-                else:
-                    menu_item = gtk.RadioMenuItem(
-                        first_item, self.model.valid_scan_resolutions[i])
-                    
-                if i == 0 and self.model.active_scan_resolution not in self.model.valid_scan_resolutions:
-                    menu_item.set_active(True)
-                    self.model.active_scan_resolution = self.model.valid_scan_resolutions[i]
-                
-                if self.model.valid_scan_resolutions[i] == self.model.active_scan_resolution:
-                    menu_item.set_active(True)
-                
-                menu_item.connect('toggled', self.on_valid_scan_resolution_menu_item_toggled)
-                self.view['scan_resolution_sub_menu'].append(menu_item)
-            
-        self.view['scan_resolution_sub_menu'].show_all()
-        
-        # Emulate the default scan mode being toggled
-        #self.update_scan_mode(selected_item)
-        
-        # NB: Only do this if everything else has succeeded, 
-        # otherwise a crash could repeat everytime the app is started
-        #self.state_manager['active_scanner'] = self.active_scanner
         
     def property_active_scanner_value_change(self, model, old_value, new_value):
-        pass
+        self.scanner_controller.set_model(self.model.active_scanner)
         
     # PUBLIC METHODS
         
@@ -382,19 +281,27 @@ class MainController(Controller):
         """Exits the application."""
         self.log.debug('Quit.')
         gtk.main_quit()
-        
-    def update_available_scanners(self):
-        """Retrieve a list of connected scanners ."""
-        self.model.available_scanners = \
-            self.scanning_service.get_available_scanners()
-        
-    def update_valid_scanner_options(self):
-        """
-        Retrieve a list of valid scanner options for the currently selected
-        scanner.
-        """
-        self.model.valid_scan_modes, self.model.valid_scan_resolutions = \
-            self.scanning_service.get_scanner_options(
-                self.model.active_scanner.sane_name)
 
     # PRIVATE METHODS
+            
+    def _update_available_scanners(self):
+        """
+        Queries SANE for a list of connected scanners.
+        
+        @return: A dictionary of available scanners in the format::
+            
+            dict[human_readable_name] = sane_backend_descriptor
+        """
+        update_command = 'scanimage -f "%d=%v %m;"'
+        self.log.debug(
+            'Updating available scanners with command: "%s".' % \
+            update_command)
+        output = commands.getoutput(update_command)
+
+        results = re.findall('(.*?)=(.*?)[;|$]', output)
+        scanner_list = []
+        
+        for sane_name, display_name in results:
+            scanner_list.append(ScannerModel(display_name, sane_name))
+            
+        self.model.available_scanners = scanner_list

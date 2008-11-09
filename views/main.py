@@ -28,6 +28,7 @@ from gtkmvc.view import View
 import constants
 from views.document import DocumentView
 from views.page import PageView
+from views.scanner import ScannerView
 
 class MainView(View):
     """
@@ -53,12 +54,18 @@ class MainView(View):
         
         # Setup sub views
         self.document_view = DocumentView(controller.document_controller)
-            
         self.document_view['document_view_horizontal_box'].reparent(
              self['document_view_docking_viewport'])
-            
         self['document_view_docking_viewport'].show_all()
         
+        # TODO: figure out how to avoid GtkWarnings.
+        self.scanner_view = ScannerView(controller.scanner_controller)
+        self['scan_mode_docking_menu_item'].set_submenu(
+            self.scanner_view['scan_mode_sub_menu'])
+        self['scan_resolution_docking_menu_item'].set_submenu(
+            self.scanner_view['scan_resolution_sub_menu'])
+        self['options_menu'].show_all()
+                
 #        if self.app.state_manager['show_toolbar'] == False:
 #            self.show_toolbar_menu_item.set_active(False)
 #            self.toolbar.hide()
