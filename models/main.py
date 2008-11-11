@@ -55,6 +55,6 @@ class MainModel(Model):
         self.document_model = DocumentModel()
         self.preferences_model = PreferencesModel()
         
-        self.blank_scanner = ScannerModel('Blank Scanner', None)
+        self.null_scanner = ScannerModel('Null Scanner', '')
         
         self.log.debug('Created.')

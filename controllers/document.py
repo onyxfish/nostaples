@@ -47,7 +47,7 @@ class DocumentController(Controller):
         self.log.debug('Created.')
 
         # Sub-controllers
-        # TODO: Temp (should load document_model.blank_page)
+        # TODO: Temp (should load document_model.null_page)
         self.page_model = PageModel(path='test.pnm', resolution=75)
         self.page_model2 = PageModel(path='test.pnm', resolution=75)
         self.model.append_page(self.page_model)

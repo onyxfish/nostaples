@@ -31,8 +31,8 @@ class ScannerModel(Model):
     """
     __properties__ = \
     {
-        'display_name' : None,
-        'sane_name' : None,
+        'display_name' : '',
+        'sane_name' : '',
         'valid_modes' : [],
         'valid_resolutions' : [],
         'active_mode' : None,

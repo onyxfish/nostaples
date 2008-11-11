@@ -81,7 +81,7 @@ class ScannerController(Controller):
         
         # Generate new scan mode menu
         if (len(list(self.model.valid_modes)) == 0):
-            self.active_scan_mode = None
+            self.model.active_scan_mode = None
             menu_item = gtk.MenuItem("No Scan Modes")
             menu_item.set_sensitive(False)
             self.view['scan_mode_sub_menu'].append(menu_item)
@@ -107,9 +107,6 @@ class ScannerController(Controller):
             
         self.view['scan_mode_sub_menu'].show_all()
         
-        # Emulate the default scan mode being toggled
-        #self.update_scan_mode(selected_item)
-        
         # NB: Only do this if everything else has succeeded, 
         # otherwise a crash could repeat everytime the app is started
         #self.state_manager['active_scanner'] = self.active_scanner
@@ -124,7 +121,7 @@ class ScannerController(Controller):
         
         # Generate new scan mode menu
         if (len(list(self.model.valid_resolutions)) == 0):
-            self.active_resolution = None
+            self.model.active_resolution = None
             menu_item = gtk.MenuItem("No Scan Resolutions")
             menu_item.set_sensitive(False)
             self.view['scan_resolution_sub_menu'].append(menu_item)
@@ -149,9 +146,6 @@ class ScannerController(Controller):
                 self.view['scan_resolution_sub_menu'].append(menu_item)
             
         self.view['scan_resolution_sub_menu'].show_all()
-        
-        # Emulate the default scan mode being toggled
-        #self.update_scan_mode(selected_item)
         
         # NB: Only do this if everything else has succeeded, 
         # otherwise a crash could repeat everytime the app is started
@@ -212,7 +206,7 @@ class ScannerController(Controller):
     def _update_scanner_options(self):
         """
         Queries SANE for a list of available options for the specified scanner.    
-        """
+        """        
         update_command = ' '.join(['scanimage --help -d',  self.model.sane_name])
         self.log.debug(
             'Updating scanner options with command: "%s".' % \
@@ -226,16 +220,16 @@ class ScannerController(Controller):
         except IndexError:
             self.log.warn(
                 'Could not parse scan modes or no modes available for \
-                device "%s".' % scanner)
-            mode_list = None
+                device "%s".' % self.model.display_name)
+            mode_list = []
             
         try:
             resolution_list = re.findall('--resolution (.*)dpi ', output)[0].split('|')
         except IndexError:
             self.log.warn(
                 'Could not parse resolutions or no resolutions available for \
-                device "%s".' % scanner)
-            resolution_list = None
+                device "%s".' % self.model.display_name)
+            resolution_list = []
         
         self.model.valid_modes = mode_list
         self.model.valid_resolutions = resolution_list

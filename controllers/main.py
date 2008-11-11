@@ -55,9 +55,9 @@ class MainController(Controller):
         
         # Sub-controllers
         self.document_controller = DocumentController(
-            model.document_model)
+            self.model.document_model)
         self.scanner_controller = ScannerController(
-            model.blank_scanner)
+            self.model.null_scanner)
 
     def register_view(self, view):
         """
@@ -162,6 +162,10 @@ class MainController(Controller):
                     self.model.active_scanner = scanner
                     return
                 
+    def on_refresh_available_scanners_menu_item_activate(self, menu_item):
+        """Refresh the list of connected scanners from SANE."""
+        self._update_available_scanners()
+                
     def on_go_first_menu_item_activate(self, menu_item):
         """Selects the first scanned page."""
         self.document_controller.goto_first_page()
@@ -223,6 +227,9 @@ class MainController(Controller):
     
     # PROPERTY CALLBACKS
     
+    def property_available_scanners_after_change(self, model, instance, name, res, args, kwargs):
+        print instance
+            
     def property_available_scanners_value_change(self, model, old_value, new_value):
         """
         Updates the menu listing of available scanners.
@@ -231,34 +238,40 @@ class MainController(Controller):
         for child in self.view['scanner_sub_menu'].get_children():
             self.view['scanner_sub_menu'].remove(child)
         
-        first_item = None
-
-        # Note the cast to list() as available_scanners is wrapped in
-        # gtkmvc's ObsListWrapper.
-        for i in range(len(list(self.model.available_scanners))):
-            # The first menu item defines the group
-            if i == 0:
-                menu_item = gtk.RadioMenuItem(
-                    None, self.model.available_scanners[i].display_name)
-                first_item = menu_item
-            else:
-                menu_item = gtk.RadioMenuItem(first_item,
-                    self.model.available_scanners[i].display_name)
-                
-            # Select the first scanner if the previously selected scanner
-            # is not in the list
-            if i == 0 and self.model.active_scanner not in self.model.available_scanners:
-                menu_item.set_active(True)
-                self.model.active_scanner = self.model.available_scanners[i]
-            
-            if self.model.available_scanners[i] == self.model.active_scanner:
-                menu_item.set_active(True)
-            
-            #menu_item.connect('toggled', self.update_scanner_options)
+        if len(list(self.model.available_scanners)) == 0:
+            self.model.active_scanner = self.model.null_scanner
+            menu_item = gtk.MenuItem('No Scanners Connected')
+            menu_item.set_sensitive(False)
             self.view['scanner_sub_menu'].append(menu_item)
+        else:
+            first_item = None
+    
+            # Note the cast to list() as available_scanners is wrapped in
+            # gtkmvc's ObsListWrapper.
+            for i in range(len(list(self.model.available_scanners))):
+                # The first menu item defines the group
+                if i == 0:
+                    menu_item = gtk.RadioMenuItem(
+                        None, self.model.available_scanners[i].display_name)
+                    first_item = menu_item
+                else:
+                    menu_item = gtk.RadioMenuItem(first_item,
+                        self.model.available_scanners[i].display_name)
+                    
+                # Select the first scanner if the previously selected scanner
+                # is not in the list
+                if i == 0 and self.model.active_scanner not in self.model.available_scanners:
+                    menu_item.set_active(True)
+                    self.model.active_scanner = self.model.available_scanners[i]
+                
+                if self.model.available_scanners[i] == self.model.active_scanner:
+                    menu_item.set_active(True)
+                
+                #menu_item.connect('toggled', self.update_scanner_options)
+                self.view['scanner_sub_menu'].append(menu_item)
         
         menu_item = gtk.MenuItem('Refresh List')
-        #menu_item.connect('activate', self.update_scanner_list)
+        menu_item.connect('activate', self.on_refresh_available_scanners_menu_item_activate)
         self.view['scanner_sub_menu'].append(menu_item)
         
         self.view['scanner_sub_menu'].show_all()
@@ -286,11 +299,8 @@ class MainController(Controller):
             
     def _update_available_scanners(self):
         """
-        Queries SANE for a list of connected scanners.
-        
-        @return: A dictionary of available scanners in the format::
-            
-            dict[human_readable_name] = sane_backend_descriptor
+        Queries SANE for a list of connected scanners and updates
+        the list of available scanners from the results.
         """
         update_command = 'scanimage -f "%d=%v %m;"'
         self.log.debug(
@@ -302,6 +312,16 @@ class MainController(Controller):
         scanner_list = []
         
         for sane_name, display_name in results:
-            scanner_list.append(ScannerModel(display_name, sane_name))
+            scanner_in_list = False
             
+            # Check if the scanner has already been connected, if so
+            # use existing instance so settings are not lost.
+            for scanner in self.model.available_scanners:
+                if scanner.sane_name == sane_name:
+                    scanner_in_list = True
+                    scanner_list.append(scanner)
+            
+            if not scanner_in_list:
+                scanner_list.append(ScannerModel(display_name, sane_name))
+                
         self.model.available_scanners = scanner_list
