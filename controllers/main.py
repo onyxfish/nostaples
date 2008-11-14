@@ -32,7 +32,7 @@ from controllers.document import DocumentController
 from controllers.page import PageController
 from controllers.preferences import PreferencesController
 from controllers.scanner import ScannerController
-#from scanning import ScanningService
+from models.page import PageModel
 from models.scanner import ScannerModel
 from views.preferences import PreferencesView
 
@@ -183,7 +183,8 @@ class MainController(Controller):
         self.document_controller.goto_last_page()
         
     def on_scan_button_clicked(self, button):
-        self.scanner_controller.scan_to_file('yay.pnm')
+        """Scan a page into the current document."""
+        self.scanner_controller.scan_to_file(self.on_scan_succeeded, self.on_scan_failed)
     
     def on_zoom_in_button_clicked(self, button):
         """Zooms the page preview in."""
@@ -287,6 +288,16 @@ class MainController(Controller):
         
     def property_active_scanner_value_change(self, model, old_value, new_value):
         self.scanner_controller.set_model(self.model.active_scanner)
+        
+    # MISCELLANEOUS CALLBACKS
+    
+    def on_scan_succeeded(self, scanning_thread, filename):
+        """Append the new page to the current document."""
+        self.model.document_model.append(PageModel(path=filename, resolution=75))
+    
+    def on_scan_failed(self, scanning_thread):
+        """TODO"""
+        print "%s failed.", scanning_thread
         
     # PUBLIC METHODS
         

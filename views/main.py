@@ -58,7 +58,9 @@ class MainView(View):
              self['document_view_docking_viewport'])
         self['document_view_docking_viewport'].show_all()
         
-        # TODO: figure out how to avoid GtkWarnings.
+        # NB: Because of the way this is setup in glade (with dummy menu items
+        # containing the submenus) GTK throws some innocous warnings about the
+        # submenu already being attached to a GtkMenuItem.
         self.scanner_view = ScannerView(controller.scanner_controller)
         self['scan_mode_docking_menu_item'].set_submenu(
             self.scanner_view['scan_mode_sub_menu'])

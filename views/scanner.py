@@ -42,6 +42,11 @@ class ScannerView(View):
             
         self.log = logging.getLogger(self.__class__.__name__)
         
+        # Detach menus so that they can be attached to the parent window
+        # in the Main View's constructor.
+        #self['dummy_mode_menu_item'].remove_submenu()
+        #self['dummy_resolution_menu_item'].remove_submenu()
+        
         controller.register_view(self)
         
         self.log.debug('Created.')

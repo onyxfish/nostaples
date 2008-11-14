@@ -68,9 +68,9 @@ class DocumentModel(ListStoreModel):
             
     # PUBLIC METHODS
         
-    def append_page(self, page_model):
+    def append(self, page_model):
         """
         Adds a page to the end of the document.
         """
-        self.append([page_model])
+        super(DocumentModel, self).append([page_model])
         page_model.register_observer(self)
