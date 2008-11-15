@@ -41,6 +41,7 @@ class MainModel(Model):
         'show_thumbnails' : True,
         'available_scanners' : [],
         'active_scanner' : None,
+        'is_scanner_in_use' : False,
     }
 
     def __init__(self):

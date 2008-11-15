@@ -83,3 +83,77 @@ class MainView(View):
         controller.register_view(self)
         
         self.log.debug('Created.')
+        
+    def set_file_controls_sensitive(self, sensitive):
+        """
+        Enables or disables all gui widgets related to saving.
+        """
+        self['save_as_menu_item'].set_sensitive(sensitive)
+        self['save_as_button'].set_sensitive(sensitive)
+            
+    def set_scan_controls_sensitive(self, sensitive):
+        """
+        Enables or disables all gui widgets related to scanning and
+        setting of scanner options.
+        """
+        self['scan_menu_item'].set_sensitive(sensitive)
+        self['insert_scan_menu_item'].set_sensitive(sensitive)
+        self['scan_button'].set_sensitive(sensitive)
+        
+        for child in self['scanner_sub_menu'].get_children():
+            child.set_sensitive(sensitive)
+            
+        for child in self.scanner_view['scan_mode_sub_menu'].get_children():
+            child.set_sensitive(sensitive)
+            
+        for child in self.scanner_view['scan_resolution_sub_menu'].get_children():
+            child.set_sensitive(sensitive)
+            
+    def set_delete_controls_sensitive(self, sensitive):
+        """
+        Enables or disables all gui widgets related to deleting or reordering 
+        pages.
+        """
+        self['delete_menu_item'].set_sensitive(sensitive)
+    
+    def set_zoom_controls_sensitive(self, sensitive):
+        """
+        Enables or disables all gui widgets related to zooming.
+        """
+        self['zoom_in_menu_item'].set_sensitive(sensitive)
+        self['zoom_out_menu_item'].set_sensitive(sensitive)
+        self['zoom_one_to_one_menu_item'].set_sensitive(sensitive)
+        self['zoom_best_fit_menu_item'].set_sensitive(sensitive)
+        self['zoom_in_button'].set_sensitive(sensitive)
+        self['zoom_out_button'].set_sensitive(sensitive)
+        self['zoom_one_to_one_button'].set_sensitive(sensitive)
+        self['zoom_best_fit_button'].set_sensitive(sensitive)
+        
+    def set_adjustment_controls_sensitive(self, sensitive):
+        """
+        Enables or disables all gui widgets related to making adjustments to 
+        the current page.
+        """
+        self['rotate_counter_clock_menu_item'].set_sensitive(sensitive)
+        self['rotate_clock_menu_item'].set_sensitive(sensitive)
+        self['rotate_all_pages_menu_item'].set_sensitive(sensitive)
+        self['rotate_counter_clock_button'].set_sensitive(sensitive)
+        self['rotate_clock_button'].set_sensitive(sensitive)
+        
+        #self['brightness_scale'].set_sensitive(sensitive)
+        #self['contrast_scale'].set_sensitive(sensitive)
+        #self['sharpness_scale'].set_sensitive(sensitive)
+        #self['color_all_pages_check'].set_sensitive(sensitive)
+
+    def set_navigation_controls_sensitive(self, sensitive):
+        """
+        Enables or disables all gui widgets related to navigation.
+        """
+        self['go_first_menu_item'].set_sensitive(sensitive)
+        self['go_previous_menu_item'].set_sensitive(sensitive)
+        self['go_next_menu_item'].set_sensitive(sensitive)
+        self['go_last_menu_item'].set_sensitive(sensitive)
+        self['go_first_button'].set_sensitive(sensitive)
+        self['go_previous_button'].set_sensitive(sensitive)
+        self['go_next_button'].set_sensitive(sensitive)
+        self['go_last_button'].set_sensitive(sensitive)

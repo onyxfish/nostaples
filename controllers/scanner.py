@@ -25,81 +25,14 @@ import logging
 import os
 import re
 import tempfile
+import threading
 
 import gobject
 import gtk
 from gtkmvc.controller import Controller
-import threading
 
 import constants
-
-class ScanningThread(gobject.GObject, threading.Thread):
-    """
-    A specialized thread that scans a page and emits status
-    callbacks on the main thread.
-    
-    This class is based on an example by John Stowers:
-    U{http://www.johnstowers.co.nz/blog/index.php/tag/pygtk/}
-    """
-    __gsignals__ =  {
-            "succeeded": (
-                gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, [gobject.TYPE_STRING]),
-            "failed": (
-                gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, [])
-            }
-    
-    def __init__(self, scanning_model):
-        """
-        Initialize the thread and get a tempfile name that
-        will house the scanned image.
-        """
-        gobject.GObject.__init__(self)
-        threading.Thread.__init__(self)
-        
-        self.log = logging.getLogger(self.__class__.__name__)
-        
-        self.model = scanning_model
-        self.path = tempfile.mktemp()
-        
-        self.log.debug('Created targetting temp file %s.' % self.path)
-        
-    def emit(self, *args):
-        """
-        Override the emit method so that callbacks always occur on the
-        main GTK thread.
-        """
-        gobject.idle_add(gobject.GObject.emit,self,*args)
-    
-    def run(self):
-        """
-        Scan a page and emit status callbacks.
-        """
-        scan_program = 'scanimage --format=pnm'
-        mode_flag = ' '.join(['--mode', self.model.active_mode])
-        resolution_flag = ' '.join(['--resolution', self.model.active_resolution])
-        scanner_flag = ' '.join(['-d', self.model.sane_name])
-        output_file = '>%s' % self.path
-        scan_command = ' '.join(
-            [scan_program, mode_flag, resolution_flag, scanner_flag, output_file])
-        
-        self.log.info(
-            'Scanning with command: "%s".' % scan_command)
-        output = commands.getoutput(scan_command)
-        
-        # TODO: check output for errors?
-        
-        if not os.path.exists(self.path):
-            self.log.error(
-                'Failed: temp file %s not created.' % self.path)
-            self.emit("failed")
-        
-        if os.stat(self.path).st_size <= 0:
-            self.log.error(
-                'Failed: temp file %s is empty.' % self.path)
-            os.remove(path)
-            self.emit("failed")
-
-        self.emit("succeeded", self.path)
+from utils.idleobject import IdleObject
 
 class ScannerController(Controller):
     """
@@ -115,8 +48,6 @@ class ScannerController(Controller):
         Controller.__init__(self, model)
 
         self.log = logging.getLogger(self.__class__.__name__)
-        
-        self.is_in_use = False
         
         self.log.debug('Created.')
 
@@ -223,13 +154,13 @@ class ScannerController(Controller):
         # NB: Only do this if everything else has succeeded, 
         # otherwise a crash could repeat everytime the app is started
         #self.state_manager['active_scanner'] = self.active_scanner
+        
+    # THREAD CALLBACKS
     
-    # MISCELLANEOUS CALLBACKS
-    
-    def on_scan_finished(self, scan_thread, *args):
-        """Mark that the scanner is no longer in use."""
-        self.is_in_use = False
-    
+    def on_update_thread_finished(self, update_thread, mode_list, resolution_list):
+        self.model.valid_modes = mode_list
+        self.model.valid_resolutions = resolution_list
+
     # PUBLIC METHODS
     
     def set_model(self, scanner_model):
@@ -246,23 +177,108 @@ class ScannerController(Controller):
         """
         Creates a L{ScanningThread} and executes it, connecting
         callbacks to report on the scan status.
-        """
-        if self.is_in_use:
-            # TODO: notify user that the scanner is in use
-            return
-        
+        """        
         scanning_thread = ScanningThread(self.model)
         scanning_thread.connect("succeeded", on_scan_succeeded)
-        scanning_thread.connect("succeeded", self.on_scan_finished)
         scanning_thread.connect("failed", on_scan_failed)
-        scanning_thread.connect("failed", self.on_scan_finished)
         scanning_thread.start()
-        
-        self.is_in_use = True
     
     # PRIVATE (INTERNAL) METHODS
     
     def _update_scanner_options(self):
+        """TODO"""
+        update_thread = UpdateScannerOptionsThread(self.model)
+        update_thread.connect("finished", self.on_update_thread_finished)
+        update_thread.start()
+
+class ScanningThread(IdleObject, threading.Thread):
+    """
+    Responsible for scanning a page and emitting status
+    callbacks on the main thread.
+    
+    This class is based on an example by John Stowers:
+    U{http://www.johnstowers.co.nz/blog/index.php/tag/pygtk/}
+    """
+    __gsignals__ =  {
+            "succeeded": (
+                gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, [gobject.TYPE_STRING]),
+            "failed": (
+                gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, [])
+            }
+    
+    def __init__(self, scanning_model):
+        """
+        Initialize the thread and get a tempfile name that
+        will house the scanned image.
+        """
+        IdleObject.__init__(self)
+        threading.Thread.__init__(self)
+        
+        self.log = logging.getLogger(self.__class__.__name__)
+        
+        self.model = scanning_model
+        self.path = tempfile.mktemp()
+        
+        self.log.debug('Created targetting temp file %s.' % self.path)
+    
+    def run(self):
+        """
+        Scan a page and emit status callbacks.
+        """
+        scan_program = 'scanimage --format=pnm'
+        mode_flag = ' '.join(['--mode', self.model.active_mode])
+        resolution_flag = ' '.join(['--resolution', self.model.active_resolution])
+        scanner_flag = ' '.join(['-d', self.model.sane_name])
+        output_file = '>%s' % self.path
+        scan_command = ' '.join(
+            [scan_program, mode_flag, resolution_flag, scanner_flag, output_file])
+        
+        self.log.info(
+            'Scanning with command: "%s".' % scan_command)
+        output = commands.getoutput(scan_command)
+        
+        # TODO: check output for errors?
+        
+        if not os.path.exists(self.path):
+            self.log.error(
+                'Failed: temp file %s not created.' % self.path)
+            self.emit("failed")
+        
+        if os.stat(self.path).st_size <= 0:
+            self.log.error(
+                'Failed: temp file %s is empty.' % self.path)
+            os.remove(path)
+            self.emit("failed")
+
+        self.emit("succeeded", self.path)
+        
+class UpdateScannerOptionsThread(IdleObject, threading.Thread):
+    """
+    Responsible for getting an up-to-date list of valid scanner options
+    and passing it back to the main thread.
+    
+    This class is based on an example by John Stowers:
+    U{http://www.johnstowers.co.nz/blog/index.php/tag/pygtk/}
+    """
+    __gsignals__ =  {
+            "finished": (
+                gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, [gobject.TYPE_PYOBJECT, gobject.TYPE_PYOBJECT]),
+            }
+    
+    def __init__(self, scanning_model):
+        """
+        Initialize the thread.
+        """
+        IdleObject.__init__(self)
+        threading.Thread.__init__(self)
+        
+        self.log = logging.getLogger(self.__class__.__name__)
+        
+        self.model = scanning_model
+        
+        self.log.debug('Created.')
+    
+    def run(self):
         """
         Queries SANE for a list of available options for the specified scanner.    
         """        
@@ -290,5 +306,5 @@ class ScannerController(Controller):
                 device "%s".' % self.model.display_name)
             resolution_list = []
         
-        self.model.valid_modes = mode_list
-        self.model.valid_resolutions = resolution_list
+        # NB: We callback with the lists so that they can updated on the main thread
+        self.emit("finished", mode_list, resolution_list)

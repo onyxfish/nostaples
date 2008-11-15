@@ -20,11 +20,13 @@ This module holds the L{MainController}, which manages interaction
 between the L{MainModel} and L{MainView}.
 """
 
+import commands
 import logging
 import os
-import commands
 import re
+import threading
 
+import gobject
 import gtk
 from gtkmvc.controller import Controller
 
@@ -34,6 +36,7 @@ from controllers.preferences import PreferencesController
 from controllers.scanner import ScannerController
 from models.page import PageModel
 from models.scanner import ScannerModel
+from utils.idleobject import IdleObject
 from views.preferences import PreferencesView
 
 class MainController(Controller):
@@ -184,6 +187,7 @@ class MainController(Controller):
         
     def on_scan_button_clicked(self, button):
         """Scan a page into the current document."""
+        self.model.is_scanner_in_use = True
         self.scanner_controller.scan_to_file(self.on_scan_succeeded, self.on_scan_failed)
     
     def on_zoom_in_button_clicked(self, button):
@@ -227,9 +231,6 @@ class MainController(Controller):
         self.document_controller.goto_last_page()
     
     # PROPERTY CALLBACKS
-    
-    def property_available_scanners_after_change(self, model, instance, name, res, args, kwargs):
-        print instance
             
     def property_available_scanners_value_change(self, model, old_value, new_value):
         """
@@ -287,17 +288,33 @@ class MainController(Controller):
 #            constants.STATUSBAR_SCANNER_STATUS_CONTEXT_ID)
         
     def property_active_scanner_value_change(self, model, old_value, new_value):
+        """TODO"""
         self.scanner_controller.set_model(self.model.active_scanner)
         
-    # MISCELLANEOUS CALLBACKS
+    def property_is_scanner_in_use_value_change(self, model, old_value, new_value):
+        """
+        Disable scan controls if the scanner is being accessed, renable if it is not.
+        """
+        self.view.set_scan_controls_sensitive(not new_value)
+        
+    # THREAD CALLBACKS
     
     def on_scan_succeeded(self, scanning_thread, filename):
         """Append the new page to the current document."""
         self.model.document_model.append(PageModel(path=filename, resolution=75))
+        self.model.is_scanner_in_use = False
     
     def on_scan_failed(self, scanning_thread):
-        """TODO"""
-        print "%s failed.", scanning_thread
+        """
+        Unset the scanner in use flag and hope that
+        whatever caused the failure was non-catastrophic.
+        """
+        self.model.is_scanner_in_use = False
+        
+    def on_update_thread_finished(self, update_thread, scanner_list):
+        """Set the new list of available scanners."""
+        self.model.available_scanners = scanner_list
+        self.model.is_scanner_in_use = False
         
     # PUBLIC METHODS
         
@@ -309,6 +326,41 @@ class MainController(Controller):
     # PRIVATE METHODS
             
     def _update_available_scanners(self):
+        """
+        Start a new update thread to query for available scanners.
+        """
+        self.model.is_scanner_in_use = True
+        update_thread = UpdateAvailableScannersThread(self.model)
+        update_thread.connect("finished", self.on_update_thread_finished)
+        update_thread.start()
+        
+class UpdateAvailableScannersThread(IdleObject, threading.Thread):
+    """
+    Responsible for getting an updated list of available scanners
+    and passing it back to the main thread.
+    
+    This class is based on an example by John Stowers:
+    U{http://www.johnstowers.co.nz/blog/index.php/tag/pygtk/}
+    """
+    __gsignals__ =  {
+            "finished": (
+                gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, [gobject.TYPE_PYOBJECT]),
+            }
+    
+    def __init__(self, main_model):
+        """
+        Initialize the thread.
+        """
+        IdleObject.__init__(self)
+        threading.Thread.__init__(self)
+        
+        self.log = logging.getLogger(self.__class__.__name__)
+        
+        self.model = main_model
+        
+        self.log.debug('Created.')
+    
+    def run(self):
         """
         Queries SANE for a list of connected scanners and updates
         the list of available scanners from the results.
@@ -334,5 +386,6 @@ class MainController(Controller):
             
             if not scanner_in_list:
                 scanner_list.append(ScannerModel(display_name, sane_name))
-                
-        self.model.available_scanners = scanner_list
+        
+        # NB: We callback with the lists so that they can updated on the main thread
+        self.emit("finished", scanner_list)
