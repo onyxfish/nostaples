@@ -54,11 +54,8 @@ class DocumentView(View):
         self['thumbnails_column'].set_fixed_width(128)
         self['thumbnails_tree_view'].append_column(self['thumbnails_column'])
         self['thumbnails_column'].pack_start(self['thumbnails_cell'], True)
-        self['thumbnails_column'].set_attributes(
-            self['thumbnails_cell'], pixbuf=0)
         self['thumbnails_column'].set_cell_data_func(
-            self['thumbnails_cell'],
-            self.thumbnails_column_cell_data_func)
+            self['thumbnails_cell'], self.thumbnails_column_cell_data_func)
         self['thumbnails_tree_view'].get_selection().set_mode(
             gtk.SELECTION_SINGLE)
         self['thumbnails_tree_view'].set_headers_visible(False)

@@ -33,7 +33,7 @@ class PageModel(Model):
     """
     __properties__ = \
     {
-        'path' : '',
+        'path' : None,
         '_raw_pixbuf' : None,
         'rotation' : 0,
         'brightness' : 1.0,
@@ -46,7 +46,7 @@ class PageModel(Model):
 
     # SETUP METHODS
     
-    def __init__(self, path='', resolution=75):
+    def __init__(self, path=None, resolution=75):
         """
         Constructs the PageModel.
         
@@ -128,7 +128,7 @@ class PageModel(Model):
         """
         Creates a full-size pixbuf of the scanned image with all 
         transformations applied.
-        """
+        """        
         if self.brightness != 1.0 or \
            self.contrast != 1.0 or \
            self.sharpness != 1.0:

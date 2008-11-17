@@ -81,6 +81,8 @@ class MainController(Controller):
         self.adapt('show_statusbar', 'show_statusbar_menu_item')
         self.adapt('show_thumbnails', 'show_thumbnails_menu_item')
         
+        self.log.debug('Adapters registered.')
+        
     # USER INTERFACE CALLBACKS
         
     def on_scan_window_destroy(self, window):
@@ -295,26 +297,33 @@ class MainController(Controller):
         """
         Disable scan controls if the scanner is being accessed, renable if it is not.
         """
+        # TODO: only if doc not empty
+        print 'property_is_scanner_in_use_value_change'
         self.view.set_scan_controls_sensitive(not new_value)
         
+    def property_is_document_empty_value_change(self, model, old_value, new_value):
+        # TODO: docstring
+        print 'property_is_document_empty_value_change'
+        if self.view:
+            self.view.set_file_controls_sensitive(not new_value)
+            self.view.set_delete_controls_sensitive(not new_value)
+            self.view.set_zoom_controls_sensitive(not new_value)
+            self.view.set_adjustment_controls_sensitive(not new_value)        
+            self.view.set_navigation_controls_sensitive(not new_value)
+    
     # THREAD CALLBACKS
     
     def on_scan_succeeded(self, scanning_thread, filename):
         """Append the new page to the current document."""
         self.model.document_model.append(PageModel(path=filename, resolution=75))
-        self.model.is_scanner_in_use = False
     
     def on_scan_failed(self, scanning_thread):
-        """
-        Unset the scanner in use flag and hope that
-        whatever caused the failure was non-catastrophic.
-        """
-        self.model.is_scanner_in_use = False
+        # TODO
+        pass
         
     def on_update_thread_finished(self, update_thread, scanner_list):
         """Set the new list of available scanners."""
         self.model.available_scanners = scanner_list
-        self.model.is_scanner_in_use = False
         
     # PUBLIC METHODS
         
@@ -329,9 +338,9 @@ class MainController(Controller):
         """
         Start a new update thread to query for available scanners.
         """
-        self.model.is_scanner_in_use = True
         update_thread = UpdateAvailableScannersThread(self.model)
         update_thread.connect("finished", self.on_update_thread_finished)
+        # TODO: should disable scan button
         update_thread.start()
         
 class UpdateAvailableScannersThread(IdleObject, threading.Thread):

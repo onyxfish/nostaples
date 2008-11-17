@@ -157,9 +157,20 @@ class ScannerController(Controller):
         
     # THREAD CALLBACKS
     
+    def on_scan_finished(self, update_thread, filename=None):
+        """
+        Mark the scanner as no longer in use.
+        """
+        self.model.is_device_in_use = False
+    
     def on_update_thread_finished(self, update_thread, mode_list, resolution_list):
+        """
+        Update the mode and resolution lists and rark that
+        the scanner is no longer in use.
+        """
         self.model.valid_modes = mode_list
         self.model.valid_resolutions = resolution_list
+        self.model.is_device_in_use = False
 
     # PUBLIC METHODS
     
@@ -180,7 +191,10 @@ class ScannerController(Controller):
         """        
         scanning_thread = ScanningThread(self.model)
         scanning_thread.connect("succeeded", on_scan_succeeded)
+        scanning_thread.connect("succeeded", self.on_scan_finished)
         scanning_thread.connect("failed", on_scan_failed)
+        scanning_thread.connect("failed", self.on_scan_finished)
+        self.is_device_in_use = True
         scanning_thread.start()
     
     # PRIVATE (INTERNAL) METHODS
@@ -189,12 +203,17 @@ class ScannerController(Controller):
         """TODO"""
         update_thread = UpdateScannerOptionsThread(self.model)
         update_thread.connect("finished", self.on_update_thread_finished)
+        self.is_device_in_use = True
         update_thread.start()
 
 class ScanningThread(IdleObject, threading.Thread):
     """
     Responsible for scanning a page and emitting status
     callbacks on the main thread.
+    
+    This thread should treat its reference to the ScanningModel
+    as read-only.  That way we don't have to worry about making
+    the Model thread-safe.
     
     This class is based on an example by John Stowers:
     U{http://www.johnstowers.co.nz/blog/index.php/tag/pygtk/}
@@ -219,7 +238,7 @@ class ScanningThread(IdleObject, threading.Thread):
         self.model = scanning_model
         self.path = tempfile.mktemp()
         
-        self.log.debug('Created targetting temp file %s.' % self.path)
+        self.log.debug('Created targeting temp file %s.' % self.path)
     
     def run(self):
         """
@@ -256,6 +275,10 @@ class UpdateScannerOptionsThread(IdleObject, threading.Thread):
     """
     Responsible for getting an up-to-date list of valid scanner options
     and passing it back to the main thread.
+    
+    This thread should treat its reference to the ScanningModel
+    as read-only.  That way we don't have to worry about making
+    the Model thread-safe.
     
     This class is based on an example by John Stowers:
     U{http://www.johnstowers.co.nz/blog/index.php/tag/pygtk/}

@@ -34,6 +34,10 @@ class DocumentModel(ListStoreModel):
     This is represented as a liststore of L{PageModel} objects so that it can
     be fed into a treeview to provide an outline of the document.
     """
+    __properties__ = \
+    {
+        'count' : 0,
+    }
     
     def __init__(self):
         """
@@ -69,8 +73,44 @@ class DocumentModel(ListStoreModel):
     # PUBLIC METHODS
         
     def append(self, page_model):
-        """
-        Adds a page to the end of the document.
-        """
+        """Adds a page to the end of the document."""
         super(DocumentModel, self).append([page_model])
         page_model.register_observer(self)
+        self.count += 1
+        
+    def prepend(self, page_model):
+        """Adds a page to the beginning of the document."""
+        super(DocumentModel, self).prepend([page_model])
+        page_model.register_observer(self)
+        self.count += 1
+        
+    def insert(self, position, page_model):
+        """Insert a page in the doucument at the specified position."""
+        super(DocumentModel, self).insert(position, [page_model])
+        page_model.register_observer(self)
+        self.count += 1
+    
+    def insert_before(self, iter, page_model):
+        """Insert a page in the doucument before the iter."""
+        super(DocumentModel, self).insert_before(iter, [page_model])
+        page_model.register_observer(self)
+        self.count += 1
+    
+    def insert_after(self, iter, page_model):
+        """Insert a page in the doucument after the iter."""
+        super(DocumentModel, self).insert_after(iter, [page_model])
+        page_model.register_observer(self)
+        self.count += 1
+        
+    def remove(self, iter):
+        """Remove a page from the doucument."""
+        self.get_value(iter, 0).unregister_observer(self)
+        super(DocumentModel, self).remove(iter)
+        self.count -= 1
+        
+    def clear(self):
+        """Remove all pages from the document."""
+        for row in self:
+            row[0].unregister_observer(self)
+        super(DocumentModel, self).clear()
+        self.count = 0

@@ -79,6 +79,15 @@ class MainView(View):
 #        if self.app.state_manager['show_statusbar'] == False:
 #            self.show_statusbar_menu_item.set_active(False)
 #            self.statusbar.hide()
+
+        # All controls are disabled by default, they become
+        # avaiable when an event indicates that they should be.
+        self.set_scan_controls_sensitive(False)
+        self.set_file_controls_sensitive(False)
+        self.set_delete_controls_sensitive(False)
+        self.set_zoom_controls_sensitive(False)
+        self.set_adjustment_controls_sensitive(False)  
+        self.set_navigation_controls_sensitive(False)
         
         controller.register_view(self)
         
@@ -134,11 +143,11 @@ class MainView(View):
         Enables or disables all gui widgets related to making adjustments to 
         the current page.
         """
-        self['rotate_counter_clock_menu_item'].set_sensitive(sensitive)
-        self['rotate_clock_menu_item'].set_sensitive(sensitive)
+        self['rotate_counter_clockwise_menu_item'].set_sensitive(sensitive)
+        self['rotate_clockwise_menu_item'].set_sensitive(sensitive)
         self['rotate_all_pages_menu_item'].set_sensitive(sensitive)
-        self['rotate_counter_clock_button'].set_sensitive(sensitive)
-        self['rotate_clock_button'].set_sensitive(sensitive)
+        self['rotate_counter_clockwise_button'].set_sensitive(sensitive)
+        self['rotate_clockwise_button'].set_sensitive(sensitive)
         
         #self['brightness_scale'].set_sensitive(sensitive)
         #self['contrast_scale'].set_sensitive(sensitive)

@@ -47,12 +47,10 @@ class DocumentController(Controller):
         self.log.debug('Created.')
 
         # Sub-controllers
-        # TODO: Temp (should load document_model.null_page)
-        self.page_model = PageModel(path='test.pnm', resolution=75)
-        self.page_model2 = PageModel(path='test.pnm', resolution=75)
-        self.model.append(self.page_model)
-        self.model.append(self.page_model2)
-        self.page_controller = PageController(model[0][0])
+        self.page_controller = PageController(self.model.null_page)
+        
+        self.model.connect(
+          'row-changed', self.on_document_model_row_changed)
 
     def register_view(self, view):
         """
@@ -72,15 +70,33 @@ class DocumentController(Controller):
     # USER INTERFACE CALLBACKS
     
     def on_thumbnails_tree_view_selection_changed(self, selection):
+        """
+        Set the current visible page to the be newly selected one.
+        """
         selection_iter = selection.get_selected()[1]
-        
-        if not selection_iter:
-            return
         
         page_model = self.model.get_value(selection_iter, 0)
         self.page_controller.set_model(page_model)
+        
+    def on_document_model_row_changed(self, model, path, iter):
+        """
+        Select a new rows when they are added.
+        
+        Per the following FAQ entry, must use row-changed event,
+        not row-inserted.
+        U{http://faq.pygtk.org/index.py?file=faq13.028.htp&req=show}
+        """
+        self.view['thumbnails_tree_view'].get_selection().select_path(path)
     
     # PROPERTY CALLBACKS
+    
+    def property_count_value_change(self, model, old_value, new_value):
+        """
+        If all pages have been removed/deleted, switch to the null_page
+        model for display.
+        """
+        if new_value == 0:
+            self.page_controller.set_model(self.model.null_page)
     
     # UTILITY METHODS
         

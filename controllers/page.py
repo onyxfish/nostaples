@@ -72,7 +72,7 @@ class PageController(Controller):
         Controller.register_view(self, view)
         
         # TODO: temp
-        self._update_preview()
+        #self._update_preview()
         
         self.log.debug('%s registered.', view.__class__.__name__)
         
@@ -82,6 +82,10 @@ class PageController(Controller):
         """
         Begins a drag or zoom event.
         """        
+        # Do not process mouse events if nothing is visible
+        if not self.model.pixbuf:
+            return
+        
         if event.button == 1:
             self._begin_move(event.x, event.y)
         elif event.button == 3:
@@ -91,6 +95,10 @@ class PageController(Controller):
         """
         Update the preview during a drag or zoom event.
         """
+        # Do not process mouse events if nothing is visible
+        if not self.model.pixbuf:
+            return
+        
         # Handle both hint events and routine notifications
         # See: http://www.pygtk.org/pygtk2tutorial/sec-EventHandling.html
         if event.is_hint:
@@ -112,7 +120,11 @@ class PageController(Controller):
     def on_page_view_image_layout_button_release_event(self, widget, event):
         """
         Ends a drag or zoom event.
-        """ 
+        """
+        # Do not process mouse events if nothing is visible
+        if not self.model.pixbuf:
+            return
+        
         # Move
         if event.button == 1:
             self._end_move()
@@ -215,7 +227,7 @@ class PageController(Controller):
         """
         Zooms the preview image so the entire image will fit within the
         preview window.
-        """            
+        """   
         self.preview_is_best_fit = True
 
         self._update_preview()
@@ -324,7 +336,7 @@ class PageController(Controller):
     def _end_zoom(self, x, y):
         """
         Calculates and applies zoom to the preview and updates the display.
-        """
+        """        
         # Transform to absolute coords
         start_x = self.zoom_drag_start_x / self.preview_zoom
         start_y = self.zoom_drag_start_y / self.preview_zoom
@@ -397,6 +409,16 @@ class PageController(Controller):
         """
         Render the current page to the preview display.
         """
+        # Short circuit if the view has not been created yet.
+        if not self.view:
+            return
+        
+        # Short circuit if the PageModel does not have a pixbuf 
+        # (such as DocumentModel.null_page).
+        if not self.model.pixbuf:
+            self.view['page_view_image'].clear()
+            return
+        
         # Fit if necessary
         if self.preview_is_best_fit:
             width_ratio = float(self.model.width) / self.preview_width
