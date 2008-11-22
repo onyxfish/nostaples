@@ -297,8 +297,7 @@ class MainController(Controller):
         """
         Disable scan controls if the scanner is being accessed, renable if it is not.
         """
-        # TODO: only if doc not empty
-        print 'property_is_scanner_in_use_value_change'
+        # TODO: only if doc not empty and scanner options parsed
         self.view.set_scan_controls_sensitive(not new_value)
         
     def property_is_document_empty_value_change(self, model, old_value, new_value):
@@ -316,14 +315,17 @@ class MainController(Controller):
     def on_scan_succeeded(self, scanning_thread, filename):
         """Append the new page to the current document."""
         self.model.document_model.append(PageModel(path=filename, resolution=75))
+        self.model.is_scanner_in_use = False
     
     def on_scan_failed(self, scanning_thread):
         # TODO
         pass
+        self.model.is_scanner_in_use = False
         
     def on_update_thread_finished(self, update_thread, scanner_list):
         """Set the new list of available scanners."""
         self.model.available_scanners = scanner_list
+        self.model.is_scanner_in_use = False
         
     # PUBLIC METHODS
         
@@ -340,7 +342,7 @@ class MainController(Controller):
         """
         update_thread = UpdateAvailableScannersThread(self.model)
         update_thread.connect("finished", self.on_update_thread_finished)
-        # TODO: should disable scan button
+        self.model.is_scanner_in_use = True
         update_thread.start()
         
 class UpdateAvailableScannersThread(IdleObject, threading.Thread):

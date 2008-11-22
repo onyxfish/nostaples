@@ -53,8 +53,6 @@ class MainModel(Model):
         
         self.log = logging.getLogger(self.__class__.__name__)
         
-        self.register_observer(self)
-        
         # Sub-models
         self.document_model = DocumentModel()
         self.document_model.register_observer(self)
@@ -66,20 +64,6 @@ class MainModel(Model):
         self.accepts_spurious_change = lambda : True
         
         self.log.debug('Created.')
-            
-    # Self PROPERTY CALLBACKS
-            
-    def property_available_scanners_value_change(self, model, old_value, new_value):
-        """
-        When the controller updates the list of available scanners,
-        the model needs to observe them so that it can track if
-        they are in use or not.
-        """
-        for scanner_model in old_value:
-            scanner_model.unregister_observer(self)
-            
-        for scanner_model in new_value:
-            scanner_model.register_observer(self)
 
     # DocumentModel PROPERTY CALLBACKS
     
@@ -91,14 +75,3 @@ class MainModel(Model):
             self.is_document_empty = True
         else:
             self.is_document_empty = False
-            
-    # ScannerModel PROPERTY CALLBACKS
-    
-    def property_is_device_in_use_value_change(self, model, old_value, new_value):
-        # TODO: docstring
-        for scanner_model in self.available_scanners:
-            if scanner_model.is_device_in_use == True:
-                self.is_scanner_in_use = True
-                return
-
-        self.is_scanner_in_use = False

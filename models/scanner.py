@@ -37,7 +37,6 @@ class ScannerModel(Model):
         'valid_resolutions' : [],
         'active_mode' : None,
         'active_resolution' : None,
-        'is_device_in_use' : False,
     }
 
     # SETUP METHODS

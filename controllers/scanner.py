@@ -78,10 +78,8 @@ class ScannerController(Controller):
     def property_valid_modes_value_change(self, model, old_value, new_value):
         """
         Updates the list of valid scan modes for the current scanner.
-        """        
-        # Clear scan modes sub menu
-        for child in self.view['scan_mode_sub_menu'].get_children():
-            self.view['scan_mode_sub_menu'].remove(child)
+        """
+        self._clear_scan_modes_sub_menu()
         
         # Generate new scan mode menu
         if (len(list(self.model.valid_modes)) == 0):
@@ -118,10 +116,8 @@ class ScannerController(Controller):
     def property_valid_resolutions_value_change(self, model, old_value, new_value):
         """
         Updates the list of valid scan resolutions for the current scanner.
-        """        
-        # Clear scan modes sub menu
-        for child in self.view['scan_resolution_sub_menu'].get_children():
-            self.view['scan_resolution_sub_menu'].remove(child)
+        """
+        self._clear_scan_resolutions_sub_menu()
         
         # Generate new scan mode menu
         if (len(list(self.model.valid_resolutions)) == 0):
@@ -157,12 +153,6 @@ class ScannerController(Controller):
         
     # THREAD CALLBACKS
     
-    def on_scan_finished(self, update_thread, filename=None):
-        """
-        Mark the scanner as no longer in use.
-        """
-        self.model.is_device_in_use = False
-    
     def on_update_thread_finished(self, update_thread, mode_list, resolution_list):
         """
         Update the mode and resolution lists and rark that
@@ -170,7 +160,6 @@ class ScannerController(Controller):
         """
         self.model.valid_modes = mode_list
         self.model.valid_resolutions = resolution_list
-        self.model.is_device_in_use = False
 
     # PUBLIC METHODS
     
@@ -191,19 +180,41 @@ class ScannerController(Controller):
         """        
         scanning_thread = ScanningThread(self.model)
         scanning_thread.connect("succeeded", on_scan_succeeded)
-        scanning_thread.connect("succeeded", self.on_scan_finished)
         scanning_thread.connect("failed", on_scan_failed)
-        scanning_thread.connect("failed", self.on_scan_finished)
-        self.is_device_in_use = True
         scanning_thread.start()
     
     # PRIVATE (INTERNAL) METHODS
     
+    def _clear_scan_modes_sub_menu(self):
+        """TODO"""
+        for child in self.view['scan_mode_sub_menu'].get_children():
+            self.view['scan_mode_sub_menu'].remove(child)
+    
+    def _clear_scan_resolutions_sub_menu(self):
+        """TODO"""
+        for child in self.view['scan_resolution_sub_menu'].get_children():
+            self.view['scan_resolution_sub_menu'].remove(child)
+    
     def _update_scanner_options(self):
         """TODO"""
+        self._clear_scan_modes_sub_menu()
+            
+        self.model.active_scan_mode = None
+        menu_item = gtk.MenuItem("Updating scan modes...")
+        menu_item.set_sensitive(False)
+        self.view['scan_mode_sub_menu'].append(menu_item)
+        self.view['scan_mode_sub_menu'].show_all()
+        
+        self._clear_scan_resolutions_sub_menu()
+            
+        self.model.active_scan_resolutions = None
+        menu_item = gtk.MenuItem("Updating scan resolutions...")
+        menu_item.set_sensitive(False)
+        self.view['scan_resolution_sub_menu'].append(menu_item)
+        self.view['scan_resolution_sub_menu'].show_all()        
+            
         update_thread = UpdateScannerOptionsThread(self.model)
         update_thread.connect("finished", self.on_update_thread_finished)
-        self.is_device_in_use = True
         update_thread.start()
 
 class ScanningThread(IdleObject, threading.Thread):
