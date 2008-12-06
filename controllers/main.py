@@ -314,8 +314,9 @@ class MainController(Controller):
         self.view.set_scan_controls_sensitive(not new_value)
         
     def property_is_document_empty_value_change(self, model, old_value, new_value):
-        # TODO: docstring
-        print 'property_is_document_empty_value_change'
+        """
+        Disable file and page manipulation controls if no pages have been scanned.
+        """
         if self.view:
             self.view.set_file_controls_sensitive(not new_value)
             self.view.set_delete_controls_sensitive(not new_value)
@@ -327,7 +328,8 @@ class MainController(Controller):
     
     def on_scan_succeeded(self, scanning_thread, filename):
         """Append the new page to the current document."""
-        self.model.document_model.append(PageModel(path=filename, resolution=75))
+        new_page = PageModel(filename, int(self.model.active_scanner.active_resolution))
+        self.model.document_model.append(new_page)
         self.model.is_scanner_in_use = False
     
     def on_scan_failed(self, scanning_thread):

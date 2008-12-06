@@ -86,7 +86,8 @@ class SaveController(Controller):
         
     def on_pdf_dialog_response(self, dialog, response):
         # TODO: docstring
-        self.view['pdf_dialog'].hide()
+        self.view['pdf_dialog'].window.set_cursor(gtk.gdk.Cursor(gtk.gdk.WATCH))
+        gtk.gdk.flush()
             
         if response != gtk.RESPONSE_APPLY:
             return
@@ -96,6 +97,8 @@ class SaveController(Controller):
         keywords = unicode(self.view['keywords_entry'].get_text())
         
         self.model.author = str(author)
+        
+        # TODO: seperate saving code into its own thread
         
         # Setup output pdf
         pdf = PdfCanvas(self.model.filename)
@@ -119,6 +122,10 @@ class SaveController(Controller):
                 int(current_page.width / current_page.resolution)
             height_in_inches = \
                 int(current_page.height / current_page.resolution)
+                
+            print current_page.width
+            print current_page.height
+            print current_page.resolution
             
             # NB: Because not all SANE backends support specifying the size
             # of the scan area, the best we can do is scan at the default
@@ -150,8 +157,19 @@ class SaveController(Controller):
             page_iter = self.document_model.iter_next(page_iter)
             
         self.document_model.clear()
-            
-    # PRIVATE METHODS
+        
+        self.view['pdf_dialog'].window.set_cursor(None)
+        self.view['pdf_dialog'].hide()
+        
+    # PUBLIC METHODS
+    
+    def run(self):
+        # TODO: docstring
+        self.view['save_dialog'].set_current_folder(self.model.save_path)
+        self.view['save_dialog'].set_current_name('')
+        response = self.view['save_dialog'].run()
+        
+    # UTILITY METHODS
     
     def _save_pdf(self):
         # TODO: docstring
@@ -164,16 +182,7 @@ class SaveController(Controller):
         self.view['keywords_entry'].set_text(keywords)
         
         self.view['pdf_dialog'].run()
-        
-    # PUBLIC METHODS
     
-    def run(self):
-        # TODO: docstring
-        self.view['save_dialog'].set_current_folder(self.model.save_path)
-        self.view['save_dialog'].set_current_name('')
-        response = self.view['save_dialog'].run()
-        
-    # UTILITY METHODS
     def _determine_best_fitting_pagesize(self, width_in_inches, height_in_inches):
         '''
         Searches through the possible page sizes and finds the smallest one that
@@ -181,6 +190,9 @@ class SaveController(Controller):
         '''        
         image_width_in_points = width_in_inches * points_per_inch
         image_height_in_points = height_in_inches * points_per_inch
+        
+        print image_width_in_points
+        print image_height_in_points
         
         nearest_size = None
         nearest_distance = sys.maxint
