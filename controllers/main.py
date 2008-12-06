@@ -33,11 +33,13 @@ from gtkmvc.controller import Controller
 from controllers.document import DocumentController
 from controllers.page import PageController
 from controllers.preferences import PreferencesController
+from controllers.save import SaveController
 from controllers.scanner import ScannerController
 from models.page import PageModel
 from models.scanner import ScannerModel
 from utils.idleobject import IdleObject
 from views.preferences import PreferencesView
+from views.save import SaveView
 
 class MainController(Controller):
     """
@@ -90,13 +92,14 @@ class MainController(Controller):
         self.quit()
         
     def on_scan_menu_item_activate(self, menu_item):
-        pass
+        """Scan a page into the current document."""
+        self._scan()
     
     def on_save_as_menu_item_activate(self, menu_item):
         pass
     
     def on_delete_menu_item_activate(self, menu_item):
-        pass
+        self.document_controller.delete_selected()
     
     def on_insert_scan_menu_item_activate(self, menu_item):
         pass
@@ -189,8 +192,18 @@ class MainController(Controller):
         
     def on_scan_button_clicked(self, button):
         """Scan a page into the current document."""
-        self.model.is_scanner_in_use = True
-        self.scanner_controller.scan_to_file(self.on_scan_succeeded, self.on_scan_failed)
+        self._scan()
+        
+    def on_save_as_button_clicked(self, button):
+        """Saves the current document to a file."""
+        save_controller = SaveController(
+            self.model.save_model,
+            self.model.document_model)
+            
+        save_view = SaveView(
+            save_controller, self.view)
+        
+        save_controller.run()
     
     def on_zoom_in_button_clicked(self, button):
         """Zooms the page preview in."""
@@ -318,8 +331,8 @@ class MainController(Controller):
         self.model.is_scanner_in_use = False
     
     def on_scan_failed(self, scanning_thread):
-        # TODO
-        pass
+        # TODO: check if the scanner has been disconnected
+        # TODO: docstring
         self.model.is_scanner_in_use = False
         
     def on_update_thread_finished(self, update_thread, scanner_list):
@@ -335,6 +348,13 @@ class MainController(Controller):
         gtk.main_quit()
 
     # PRIVATE METHODS
+    
+    def _scan(self):
+        """
+        Begin a scan.
+        """
+        self.model.is_scanner_in_use = True
+        self.scanner_controller.scan_to_file(self.on_scan_succeeded, self.on_scan_failed)
             
     def _update_available_scanners(self):
         """

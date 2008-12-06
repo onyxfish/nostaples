@@ -27,6 +27,7 @@ from gtkmvc.model import Model
 from models.document import DocumentModel
 from models.page import PageModel
 from models.preferences import PreferencesModel
+from models.save import SaveModel
 from models.scanner import ScannerModel
 
 class MainModel(Model):
@@ -57,6 +58,7 @@ class MainModel(Model):
         self.document_model = DocumentModel()
         self.document_model.register_observer(self)
         self.preferences_model = PreferencesModel()
+        self.save_model = SaveModel()
         
         self.null_scanner = ScannerModel('Null Scanner', '')
         

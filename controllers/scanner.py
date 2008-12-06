@@ -273,12 +273,13 @@ class ScanningThread(IdleObject, threading.Thread):
             self.log.error(
                 'Failed: temp file %s not created.' % self.path)
             self.emit("failed")
+            return
         
         if os.stat(self.path).st_size <= 0:
             self.log.error(
                 'Failed: temp file %s is empty.' % self.path)
-            os.remove(path)
             self.emit("failed")
+            return
 
         self.emit("succeeded", self.path)
         

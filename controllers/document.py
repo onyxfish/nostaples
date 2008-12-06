@@ -75,8 +75,11 @@ class DocumentController(Controller):
         """
         selection_iter = selection.get_selected()[1]
         
-        page_model = self.model.get_value(selection_iter, 0)
-        self.page_controller.set_model(page_model)
+        if selection_iter:
+            page_model = self.model.get_value(selection_iter, 0)
+            self.page_controller.set_model(page_model)
+        else:
+            self.page_controller.set_model(self.model.null_page)
         
     def on_document_model_row_changed(self, model, path, iter):
         """
@@ -106,6 +109,15 @@ class DocumentController(Controller):
             self.view['thumbnails_scrolled_window'].show()
         else:
             self.view['thumbnails_scrolled_window'].hide()
+            
+    def delete_selected(self):
+        """Delete the currently selected page."""
+        selection_iter = self.view['thumbnails_tree_view'].get_selection().get_selected()[1]
+        
+        if selection_iter:
+            self.model.remove(selection_iter)
+        else:
+            self.log.warn('Method delete_selected was called, but no selection has been made.')
             
     def goto_first_page(self):
         """Select the first scanned page."""

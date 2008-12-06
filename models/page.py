@@ -23,6 +23,7 @@ import logging
 
 import gtk
 from gtkmvc.model import Model
+import Image, ImageEnhance
 
 # TODO: temp
 THUMBNAIL_SIZE = 128
@@ -85,6 +86,17 @@ class PageModel(Model):
         applied.
         """
         return self.pixbuf.get_height()
+    
+    @property
+    def pil_image(self):
+        '''
+        Returns a PIL version of the transformed pixbuf for this page.
+        
+        This could be sped up by bypassing the conversion to and from
+        a PIL image in L{pixbuf}, but this is not a speed intensive 
+        routine and requires less maintenance this way.
+        '''
+        return convert_pixbuf_to_pil_image(self.pixbuf)
     
     # PROPERTY CALLBACKS
         
