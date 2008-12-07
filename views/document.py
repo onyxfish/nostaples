@@ -81,3 +81,16 @@ class DocumentView(View):
         """
         page_model = document_model.get_value(iter, 0)
         cell_renderer.set_property('pixbuf', page_model.thumbnail_pixbuf)
+        
+    def set_adjustments_sensitive(self, sensitive):
+        """
+        Set all adjustment controls sensitive or insensitive
+        to user input.
+        """
+        self['brightness_label'].set_sensitive(sensitive)
+        self['brightness_scale'].set_sensitive(sensitive)
+        self['contrast_label'].set_sensitive(sensitive)
+        self['contrast_scale'].set_sensitive(sensitive)
+        self['sharpness_label'].set_sensitive(sensitive)
+        self['sharpness_scale'].set_sensitive(sensitive)
+        self['adjust_all_pages_check'].set_sensitive(sensitive)

@@ -24,6 +24,7 @@ import logging
 
 from gtkmvc.model import Model
 
+from models.adjustments import AdjustmentsModel
 from models.document import DocumentModel
 from models.page import PageModel
 from models.preferences import PreferencesModel
@@ -40,6 +41,7 @@ class MainModel(Model):
         'show_toolbar' : True,
         'show_statusbar' : True,
         'show_thumbnails' : True,
+        'show_adjustments' : False,
         'available_scanners' : [],
         'active_scanner' : None,
         'is_scanner_in_use' : True,
@@ -55,6 +57,7 @@ class MainModel(Model):
         self.log = logging.getLogger(self.__class__.__name__)
         
         # Sub-models
+        self.adjustments_model = AdjustmentsModel()
         self.document_model = DocumentModel()
         self.document_model.register_observer(self)
         self.preferences_model = PreferencesModel()

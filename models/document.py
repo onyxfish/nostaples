@@ -37,6 +37,8 @@ class DocumentModel(ListStoreModel):
     __properties__ = \
     {
         'count' : 0,
+         'adjust_all_pages' : False,
+         'manually_updating_row' : False,
     }
     
     def __init__(self):

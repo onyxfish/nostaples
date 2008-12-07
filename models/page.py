@@ -67,6 +67,9 @@ class PageModel(Model):
         
         self.register_observer(self)
         
+        # TODO: Wtf am I doing here, solves a bug, but why?
+        self.accepts_spurious_change = lambda : True
+        
         self.log.debug('Created.')
         
     # COMPUTED PROPERTIES
@@ -133,6 +136,19 @@ class PageModel(Model):
         Rotate this page ninety degrees clockwise.
         """
         self.rotation -= 90
+        
+    def set_adjustments(self, brightness, contrast, sharpness):
+        """
+        Sets all three adjustment values in one method without
+        triggering each property callback.  This prevents
+        the pixbuf and thumbnail from being update multiple
+        times.
+        """
+        self.__properties__['brightness'] = brightness
+        self.__properties__['contrast'] = contrast
+        self.__properties__['sharpness'] = sharpness  
+        self._update_pixbuf()
+        self._update_thumbnail_pixbuf()      
     
     # PRIVATE METHODS
     
@@ -156,7 +172,7 @@ class PageModel(Model):
                 image = ImageEnhance.Sharpness(image).enhance(
                     self.sharpness)
                 
-            pixbuf = self.__convert_pil_image_to_pixbuf(image)
+            pixbuf = convert_pil_image_to_pixbuf(image)
         else:
             pixbuf = self._raw_pixbuf
         

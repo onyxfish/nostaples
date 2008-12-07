@@ -75,9 +75,14 @@ class DocumentController(Controller):
         """
         selection_iter = selection.get_selected()[1]
         
+        # TODO: when a new row is added, if adjust_all is checked
+        # the current scale values should be applied to it.
         if selection_iter:
             page_model = self.model.get_value(selection_iter, 0)
             self.page_controller.set_model(page_model)
+            self.view['brightness_scale'].set_value(page_model.brightness)
+            self.view['contrast_scale'].set_value(page_model.contrast)
+            self.view['sharpness_scale'].set_value(page_model.sharpness)
         else:
             self.page_controller.set_model(self.model.null_page)
         
@@ -88,8 +93,108 @@ class DocumentController(Controller):
         Per the following FAQ entry, must use row-changed event,
         not row-inserted.
         U{http://faq.pygtk.org/index.py?file=faq13.028.htp&req=show}
+        
+        Regarding the voodoo in this method:
+        Whenever an adjustment causes page_model.thumbnail_pixbuf
+        to be updated, the treeview emits a row-changed signal.
+        If this method is allowed to handle those changes, then the
+        change will be treated as a new row and it will be
+        selected.  This causes all sorts of unusual problems. To
+        avoid this, all changes to a page_model that will cause
+        thumbnail_pixbuf to be updated should be preceeded by
+        setting the manually_updating_row flag so that this event
+        can bypass them appropriately.
         """
-        self.view['thumbnails_tree_view'].get_selection().select_path(path)
+        if self.model.manually_updating_row:
+            self.model.manually_updating_row = False
+        else:
+            self.view['thumbnails_tree_view'].get_selection().select_path(path)
+    
+    def on_brightness_scale_value_changed(self, widget):
+        """
+        Sets the brightness of the current page or,
+        if "Apply to all pages?" is checked, all scanned
+        pages.
+        
+        See L{on_document_model_row_changed} for an
+        explanation of the voodoo in this method.
+        """
+        if self.model.adjust_all_pages:
+            page_iter = self.model.get_iter_first()
+            while page_iter:
+                page = self.model.get(page_iter, 0)[0]
+                self.model.manually_updating_row = True
+                page.brightness = \
+                    self.view['brightness_scale'].get_value()
+                page_iter = self.model.iter_next(page_iter)
+        else:
+            self.page_controller.model.brightness = \
+                self.view['brightness_scale'].get_value()
+    
+    def on_contrast_scale_value_changed(self, widget):
+        """
+        Sets the contrast of the current page or,
+        if "Apply to all pages?" is checked, all scanned
+        pages.
+        
+        See L{on_document_model_row_changed} for an
+        explanation of the voodoo in this method.
+        """
+        if self.model.adjust_all_pages:
+            page_iter = self.model.get_iter_first()
+            while page_iter:
+                page = self.model.get(page_iter, 0)[0]
+                self.model.manually_updating_row = True
+                page.contrast = \
+                    self.view['contrast_scale'].get_value()
+                page_iter = self.model.iter_next(page_iter)
+        else:
+            self.page_controller.model.contrast = \
+                self.view['contrast_scale'].get_value()
+    
+    def on_sharpness_scale_value_changed(self, widget):
+        """
+        Sets the sharpness of the current page or,
+        if "Apply to all pages?" is checked, all scanned
+        pages.
+        
+        See L{on_document_model_row_changed} for an
+        explanation of the voodoo in this method.
+        """
+        if self.model.adjust_all_pages:
+            page_iter = self.model.get_iter_first()
+            while page_iter:
+                page = self.model.get(page_iter, 0)[0]
+                self.model.manually_updating_row = True
+                page.sharpness = \
+                    self.view['sharpness_scale'].get_value()
+                page_iter = self.model.iter_next(page_iter)
+        else:
+            self.page_controller.model.sharpness = \
+                self.view['sharpness_scale'].get_value()
+                
+    def on_adjust_all_pages_check_toggled(self, checkbox):
+        """
+        When this box is checked, synchronize all page
+        adjustments.
+        
+        See L{on_document_model_row_changed} for an
+        explanation of the voodoo in this method.
+        
+        # TODO: should set hourglass cursor
+        """
+        self.model.adjust_all_pages = checkbox.get_active()
+        
+        if self.model.adjust_all_pages:
+            page_iter = self.model.get_iter_first()
+            while page_iter:
+                page = self.model.get(page_iter, 0)[0]
+                self.model.manually_updating_row = True
+                page.set_adjustments(
+                    self.view['brightness_scale'].get_value(),
+                    self.view['contrast_scale'].get_value(),
+                    self.view['sharpness_scale'].get_value())
+                page_iter = self.model.iter_next(page_iter)
     
     # PROPERTY CALLBACKS
     
@@ -100,6 +205,9 @@ class DocumentController(Controller):
         """
         if new_value == 0:
             self.page_controller.set_model(self.model.null_page)
+            self.view.set_adjustments_sensitive(False)
+        else:
+            self.view.set_adjustments_sensitive(True)
     
     # UTILITY METHODS
         
@@ -109,6 +217,13 @@ class DocumentController(Controller):
             self.view['thumbnails_scrolled_window'].show()
         else:
             self.view['thumbnails_scrolled_window'].hide()
+        
+    def toggle_adjustments_visible(self, visible):
+        """Toggles the visibility of the adjustments view."""
+        if visible:
+            self.view['adjustments_alignment'].show()
+        else:
+            self.view['adjustments_alignment'].hide()
             
     def delete_selected(self):
         """Delete the currently selected page."""

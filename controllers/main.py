@@ -59,6 +59,7 @@ class MainController(Controller):
         self.log.debug('Created.')
         
         # Sub-controllers
+        
         self.document_controller = DocumentController(
             self.model.document_model)
         self.scanner_controller = ScannerController(
@@ -82,7 +83,7 @@ class MainController(Controller):
         self.adapt('show_toolbar', 'show_toolbar_menu_item')
         self.adapt('show_statusbar', 'show_statusbar_menu_item')
         self.adapt('show_thumbnails', 'show_thumbnails_menu_item')
-        
+        self.adapt('show_adjustments', 'show_adjustments_menu_item')        
         self.log.debug('Adapters registered.')
         
     # USER INTERFACE CALLBACKS
@@ -136,6 +137,11 @@ class MainController(Controller):
         """Toggles the visibility of the thumbnails pane."""
         self.document_controller.toggle_thumbnails_visible(
             menu_item.get_active())
+        
+    def on_show_adjustments_menu_item_toggled(self, menu_item):
+        """Toggles the visibility of the adjustments pane."""
+        self.document_controller.toggle_adjustments_visible(
+            menu_item.get_active())
             
     def on_zoom_in_menu_item_activate(self, menu_item):
         """Zooms the page preview in."""
@@ -160,6 +166,10 @@ class MainController(Controller):
     def on_rotate_counter_clockwise_menu_item_activate(self, menu_item):
         """Rotates the visible page ninety degress counter-clockwise."""
         self.document_controller.page_controller.rotate_counter_clockwise()
+        
+    def on_rotate_all_pages_menu_item_toggled(self, menu_item):
+        # TODO
+        pass
         
     def on_available_scanner_menu_item_toggled(self, menu_item):
         """Set the active scanner."""

@@ -67,7 +67,7 @@ class PreferencesController(Controller):
         
     def on_preview_mode_combobox_changed(self, combobox):
         """Registers changes in the preview rendering mode."""
-        self.model.prevew_mode = read_combobox(
+        self.model.preview_mode = read_combobox(
             self.view['preview_mode_combobox'])
             
         # TODO: where and when does display get updated?
