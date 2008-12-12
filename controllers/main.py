@@ -71,6 +71,9 @@ class MainController(Controller):
         """
         Controller.register_view(self, view)
         
+        # Load persistent state from backend
+        self.model.load_state()
+        
         self._update_available_scanners()
         
         self.log.debug('%s registered.', view.__class__.__name__)
@@ -119,29 +122,29 @@ class MainController(Controller):
         """Exits the application."""
         self.quit()
         
-    def on_show_toolbar_menu_item_toggled(self, menu_item):
-        """Toggles the visibility of the toolbar."""
-        if menu_item.get_active():
-            self.view['main_toolbar'].show()
-        else:
-            self.view['main_toolbar'].hide()
+    #def on_show_toolbar_menu_item_toggled(self, menu_item):
+    #    """Toggles the visibility of the toolbar."""
+    #    if menu_item.get_active():
+    #        self.view['main_toolbar'].show()
+    #    else:
+    #        self.view['main_toolbar'].hide()
             
-    def on_show_statusbar_menu_item_toggled(self, menu_item):
-        """Toggles the visibility of the statusbar."""
-        if menu_item.get_active():
-            self.view['scan_window_statusbar'].show()
-        else:
-            self.view['scan_window_statusbar'].hide()
-            
-    def on_show_thumbnails_menu_item_toggled(self, menu_item):
-        """Toggles the visibility of the thumbnails pane."""
-        self.document_controller.toggle_thumbnails_visible(
-            menu_item.get_active())
-        
-    def on_show_adjustments_menu_item_toggled(self, menu_item):
-        """Toggles the visibility of the adjustments pane."""
-        self.document_controller.toggle_adjustments_visible(
-            menu_item.get_active())
+#    def on_show_statusbar_menu_item_toggled(self, menu_item):
+#        """Toggles the visibility of the statusbar."""
+#        if menu_item.get_active():
+#            self.view['scan_window_statusbar'].show()
+#        else:
+#            self.view['scan_window_statusbar'].hide()
+#            
+#    def on_show_thumbnails_menu_item_toggled(self, menu_item):
+#        """Toggles the visibility of the thumbnails pane."""
+#        self.document_controller.toggle_thumbnails_visible(
+#            menu_item.get_active())
+#        
+#    def on_show_adjustments_menu_item_toggled(self, menu_item):
+#        """Toggles the visibility of the adjustments pane."""
+#        self.document_controller.toggle_adjustments_visible(
+#            menu_item.get_active())
             
     def on_zoom_in_menu_item_activate(self, menu_item):
         """Zooms the page preview in."""
@@ -256,6 +259,40 @@ class MainController(Controller):
         self.document_controller.goto_last_page()
     
     # PROPERTY CALLBACKS
+    
+    def property_show_toolbar_value_change(self, model, old_value, new_value):
+        """Update the visibility of the toolbar."""
+        menu_item = self.view['show_toolbar_menu_item']
+        menu_item.set_active(new_value)
+        
+        if new_value:
+            self.view['main_toolbar'].show()
+        else:
+            self.view['main_toolbar'].hide()
+    
+    def property_show_statusbar_value_change(self, model, old_value, new_value):
+        """Update the visibility of the statusbar."""
+        menu_item = self.view['show_statusbar_menu_item']
+        menu_item.set_active(new_value)
+        
+        if new_value:
+            self.view['scan_window_statusbar'].show()
+        else:
+            self.view['scan_window_statusbar'].hide()
+
+    def property_show_thumbnails_value_change(self, model, old_value, new_value):
+        """Update the visibility of the thumbnails."""
+        menu_item = self.view['show_thumbnails_menu_item']
+        menu_item.set_active(new_value)
+        
+        self.document_controller.toggle_thumbnails_visible(new_value)
+
+    def property_show_adjustments_value_change(self, model, old_value, new_value):
+        """Update the visibility of the adjustments controls."""
+        menu_item = self.view['show_adjustments_menu_item']
+        menu_item.set_active(new_value)
+        
+        self.document_controller.toggle_adjustments_visible(new_value)       
             
     def property_available_scanners_value_change(self, model, old_value, new_value):
         """

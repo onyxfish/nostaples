@@ -24,17 +24,28 @@ import logging
 
 from gtkmvc.model import Model
 
+import constants
 from models.adjustments import AdjustmentsModel
 from models.document import DocumentModel
 from models.page import PageModel
 from models.preferences import PreferencesModel
 from models.save import SaveModel
 from models.scanner import ScannerModel
+from state import StateManager
 
 class MainModel(Model):
     """
     Handles data all data not specifically handled by another Model 
     (e.g. the state of the main application window).
+    
+    # TODO: persist active_scanner to gconf.
+        move scanner loading logic into model as much as possible
+        when loading active_scanner (the string) changes, check for its existence in
+            available_scanners and update as necessary
+        the controller should also be taking its queues for the active_scanner from
+            this model, rather than making its own determination
+        accomplish both these things and the view should be able to update smoothly
+            whether the change came from user input or from a change in gconf
     """
     __properties__ = \
     {
@@ -64,11 +75,110 @@ class MainModel(Model):
         self.save_model = SaveModel()
         
         self.null_scanner = ScannerModel('Null Scanner', '')
+        self.active_scanner = self.null_scanner
+        self.null_scanner.register_observer(self)
         
         # TODO: Wtf am I doing here, solves a bug, but why?
         self.accepts_spurious_change = lambda : True
         
         self.log.debug('Created.')
+        
+    def load_state(self):
+        """
+        Load persisted state from the StateManager.
+        """
+        # Load persistent state variables
+        self.show_toolbar = StateManager.init_state(
+            'show_toolbar', constants.DEFAULT_SHOW_TOOLBAR, 
+            self.state_show_toolbar_change)
+        
+        self.show_statusbar = StateManager.init_state(
+            'show_statusbar', constants.DEFAULT_SHOW_STATUSBAR, 
+            self.state_show_statusbar_change)
+        
+        self.show_thumbnails = StateManager.init_state(
+            'show_thumbnails', constants.DEFAULT_SHOW_THUMBNAILS, 
+            self.state_show_thumbnails_change)
+        
+        self.show_adjustments = StateManager.init_state(
+            'show_adjustments', constants.DEFAULT_SHOW_ADJUSTMENTS, 
+            self.state_show_adjustments_change)
+        
+        self.active_scanner = StateManager.init_state(
+            'active_scanner', constants.DEFAULT_ACTIVE_SCANNER, 
+            self.state_active_scanner_change)
+        
+        # The next two states get applied to the null_scanner initially
+        # but are copied over to the actual device when it is loaded
+        self.active_scanner.active_mode = StateManager.init_state(
+            'scan_mode', constants.DEFAULT_SCAN_MODE, 
+            self.state_scan_mode_change)
+        
+        # Register as a self-observer so that changes to properties
+        # can be persisted to the StateManager
+        self.register_observer(self)
+        
+    # State callbacks
+    
+    def state_show_toolbar_change(self):
+        """Read state."""
+        self.show_toolbar = StateManager['show_toolbar']
+    
+    def state_show_statusbar_change(self):
+        """Read state."""
+        self.show_statusbar = StateManager['show_statusbar']
+    
+    def state_show_thumbnails_change(self):
+        """Read state."""
+        self.show_thumbnails = StateManager['show_thumbnails']
+    
+    def state_show_adjustments_change(self):
+        """Read state."""
+        self.show_adjustments = StateManager['show_adjustments']
+        
+    def state_scan_mode_change(self):
+        """Read state"""
+        self.active_scanner.active_mode = StateManager['scan_mode']
+        
+    def state_scan_resolution_change(self):
+        """Read state"""
+        self.active_scanner.active_resolution = StateManager['scan_resolution']
+        
+    # Self property callbacks
+        
+    def property_show_toolbar_value_change(self, model, old_value, new_value):
+        """Write state."""
+        StateManager['show_toolbar'] = new_value
+        
+    def property_show_statusbar_value_change(self, model, old_value, new_value):
+        """Write state."""
+        StateManager['show_statusbar'] = new_value
+        
+    def property_show_thumbnails_value_change(self, model, old_value, new_value):
+        """Write state."""
+        StateManager['show_thumbnails'] = new_value
+        
+    def property_show_adjustments_value_change(self, model, old_value, new_value):
+        """Write state."""
+        StateManager['show_adjustments'] = new_value
+        
+    def property_active_scanner_value_change(self, model, old_value, new_value):
+        """
+        Update scanner that is being observed for state changes.
+        TODO: write state
+        """
+        old_value.unregister_observer(self)
+        new_value.register_observer(self)
+        
+    # ScannerModel PROPERTY CALLBACKS
+        
+    def property_active_mode_value_change(self, model, old_value, new_value):
+        """Write state"""
+        StateManager['scan_mode'] = new_value
+        
+    def property_active_resolution_value_change(self, model, old_value, new_value):
+        """Write state"""
+        StateManager['scan_resolution'] = new_value 
 
     # DocumentModel PROPERTY CALLBACKS
     

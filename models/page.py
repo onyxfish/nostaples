@@ -110,16 +110,19 @@ class PageModel(Model):
         
     def property_brightness_value_change(self, model, old_value, new_value):
         """Updates the full and thumbnail pixbufs."""
+        print 1
         self._update_pixbuf()
         self._update_thumbnail_pixbuf()
         
     def property_contrast_value_change(self, model, old_value, new_value):
         """Updates the full and thumbnail pixbufs."""
+        print 2
         self._update_pixbuf()
         self._update_thumbnail_pixbuf()
         
     def property_sharpness_value_change(self, model, old_value, new_value):
         """Updates the full and thumbnail pixbufs."""
+        print 3
         self._update_pixbuf()
         self._update_thumbnail_pixbuf()
     
@@ -237,7 +240,8 @@ class PageModel(Model):
             
         self.thumbnail_pixbuf = pixbuf.scale_simple(
             target_width, target_height, gtk.gdk.INTERP_BILINEAR)
-    
+
+# TODO: move these utility functions into own module? 
 def convert_pil_image_to_pixbuf(image):
     '''
     Utility function to quickly convert a PIL Image to a GTK Pixbuf.

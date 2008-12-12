@@ -165,11 +165,24 @@ class ScannerController(Controller):
     
     def set_model(self, scanner_model):
         """
-        Sets the PageModel that is currently being displayed in the preview area.
+        Set the ScannerModel for the device that is currently in use.
+        
+        Migrate settings from the previous device to the new device as
+        applicable.
         """
+        # Store settings from previously selected scanner
+        previous_mode = self.model.active_mode
+        previous_resolution = self.model.active_resolution        
+        
         self.model.unregister_observer(self)
         self.model = scanner_model
         self.model.register_observer(self)
+        
+        # Reapply stored settings to new scanner
+        # These will be overwritten by _update_scanner_options if
+        # they are not available for the new device.
+        self.model.active_mode = previous_mode
+        self.model.active_resolution = previous_resolution
         
         self._update_scanner_options()
         

@@ -42,7 +42,11 @@ PAGESIZES = {'A0' : A0,
                         'LETTER' : LETTER, 
                         'LEGAL' : LEGAL, 
                         'ELEVENSEVENTEEN' : ELEVENSEVENTEEN}
-                        
+
+DEFAULT_SHOW_TOOLBAR = True
+DEFAULT_SHOW_STATUSBAR = True
+DEFAULT_SHOW_THUMBNAILS = True
+DEFAULT_SHOW_ADJUSTMENTS = False
 DEFAULT_ACTIVE_SCANNER = ''
 DEFAULT_SCAN_MODE = 'Color'
 DEFAULT_SCAN_RESOLUTION = '75'
