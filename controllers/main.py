@@ -100,51 +100,23 @@ class MainController(Controller):
         self._scan()
     
     def on_save_as_menu_item_activate(self, menu_item):
-        pass
+        """Saves the current document to a file."""
+        self._save_as()
     
     def on_delete_menu_item_activate(self, menu_item):
         self.document_controller.delete_selected()
     
     def on_insert_scan_menu_item_activate(self, menu_item):
-        pass
+        """Scan a page into the current document."""
+        self._scan()
     
     def on_preferences_menu_item_activate(self, menu_item):
         """Creates and displays a preferences dialog."""
-        preferences_controller = PreferencesController(
-            self.model.preferences_model)
-            
-        preferences_view = PreferencesView(
-            preferences_controller, self.view)
-        
-        preferences_view.show()
+        self._show_preferences()
         
     def on_quit_menu_item_activate(self, menu_item):
         """Exits the application."""
         self.quit()
-        
-    #def on_show_toolbar_menu_item_toggled(self, menu_item):
-    #    """Toggles the visibility of the toolbar."""
-    #    if menu_item.get_active():
-    #        self.view['main_toolbar'].show()
-    #    else:
-    #        self.view['main_toolbar'].hide()
-            
-#    def on_show_statusbar_menu_item_toggled(self, menu_item):
-#        """Toggles the visibility of the statusbar."""
-#        if menu_item.get_active():
-#            self.view['scan_window_statusbar'].show()
-#        else:
-#            self.view['scan_window_statusbar'].hide()
-#            
-#    def on_show_thumbnails_menu_item_toggled(self, menu_item):
-#        """Toggles the visibility of the thumbnails pane."""
-#        self.document_controller.toggle_thumbnails_visible(
-#            menu_item.get_active())
-#        
-#    def on_show_adjustments_menu_item_toggled(self, menu_item):
-#        """Toggles the visibility of the adjustments pane."""
-#        self.document_controller.toggle_adjustments_visible(
-#            menu_item.get_active())
             
     def on_zoom_in_menu_item_activate(self, menu_item):
         """Zooms the page preview in."""
@@ -171,7 +143,7 @@ class MainController(Controller):
         self.document_controller.page_controller.rotate_counter_clockwise()
         
     def on_rotate_all_pages_menu_item_toggled(self, menu_item):
-        # TODO
+        """TODO"""
         pass
         
     def on_available_scanner_menu_item_toggled(self, menu_item):
@@ -209,14 +181,7 @@ class MainController(Controller):
         
     def on_save_as_button_clicked(self, button):
         """Saves the current document to a file."""
-        save_controller = SaveController(
-            self.model.save_model,
-            self.model.document_model)
-            
-        save_view = SaveView(
-            save_controller, self.view)
-        
-        save_controller.run()
+        self._save_as()
     
     def on_zoom_in_button_clicked(self, button):
         """Zooms the page preview in."""
@@ -397,6 +362,31 @@ class MainController(Controller):
         gtk.main_quit()
 
     # PRIVATE METHODS
+
+    def _save_as(self):
+        """
+        Save the current document.
+        """
+        save_controller = SaveController(
+            self.model.save_model,
+            self.model.document_model)
+            
+        save_view = SaveView(
+            save_controller, self.view)
+        
+        save_controller.run()
+        
+    def _show_preferences(self):
+        """
+        Shows the Preferences dialog.
+        """
+        preferences_controller = PreferencesController(
+            self.model.preferences_model)
+            
+        preferences_view = PreferencesView(
+            preferences_controller, self.view)
+        
+        preferences_view.show()
     
     def _scan(self):
         """

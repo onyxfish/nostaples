@@ -78,6 +78,11 @@ class MainModel(Model):
         self.active_scanner = self.null_scanner
         self.null_scanner.register_observer(self)
         
+        # Register as a self-observer so that changes to properties
+        # can be persisted to the StateManager.  The Model is always
+        # the first consumer of its own property signals.
+        self.register_observer(self)
+        
         # TODO: Wtf am I doing here, solves a bug, but why?
         self.accepts_spurious_change = lambda : True
         
@@ -104,9 +109,9 @@ class MainModel(Model):
             'show_adjustments', constants.DEFAULT_SHOW_ADJUSTMENTS, 
             self.state_show_adjustments_change)
         
-        self.active_scanner = StateManager.init_state(
-            'active_scanner', constants.DEFAULT_ACTIVE_SCANNER, 
-            self.state_active_scanner_change)
+        #self.active_scanner = StateManager.init_state(
+        #    'active_scanner', constants.DEFAULT_ACTIVE_SCANNER, 
+        #    self.state_active_scanner_change)
         
         # The next two states get applied to the null_scanner initially
         # but are copied over to the actual device when it is loaded
@@ -114,9 +119,9 @@ class MainModel(Model):
             'scan_mode', constants.DEFAULT_SCAN_MODE, 
             self.state_scan_mode_change)
         
-        # Register as a self-observer so that changes to properties
-        # can be persisted to the StateManager
-        self.register_observer(self)
+        self.active_scanner.active_resolution = StateManager.init_state(
+            'scan_resolution', constants.DEFAULT_SCAN_RESOLUTION, 
+            self.state_scan_resolution_change)
         
     # State callbacks
     
@@ -136,6 +141,10 @@ class MainModel(Model):
         """Read state."""
         self.show_adjustments = StateManager['show_adjustments']
         
+    def state_active_scanner_change(self):
+        """TODO"""
+        pass
+        
     def state_scan_mode_change(self):
         """Read state"""
         self.active_scanner.active_mode = StateManager['scan_mode']
@@ -147,7 +156,7 @@ class MainModel(Model):
     # Self property callbacks
         
     def property_show_toolbar_value_change(self, model, old_value, new_value):
-        """Write state."""
+        """Write state."""  
         StateManager['show_toolbar'] = new_value
         
     def property_show_statusbar_value_change(self, model, old_value, new_value):
@@ -170,6 +179,18 @@ class MainModel(Model):
         old_value.unregister_observer(self)
         new_value.register_observer(self)
         
+#    def property_available_scanners_value_change(self, model, old_value, new_value):
+#        """
+#        TODO
+#        """        
+#        if len(list(new_value)) == 0:
+#            self.active_scanner = self.null_scanner
+#        else:                   
+#            # Select the first scanner if the previously selected scanner
+#            # is not in the list
+#            if self.active_scanner not in self.model.available_scanners:
+#                self.active_scanner = self.model.available_scanners[0]
+     
     # ScannerModel PROPERTY CALLBACKS
         
     def property_active_mode_value_change(self, model, old_value, new_value):
