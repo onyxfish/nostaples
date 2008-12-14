@@ -30,7 +30,6 @@ from models.document import DocumentModel
 from models.page import PageModel
 from models.preferences import PreferencesModel
 from models.save import SaveModel
-from models.scanner import ScannerModel
 from state import StateManager
 
 class MainModel(Model):
@@ -53,10 +52,14 @@ class MainModel(Model):
         'show_statusbar' : True,
         'show_thumbnails' : True,
         'show_adjustments' : False,
-        'available_scanners' : [],
-        'active_scanner' : None,
+        'available_scanners' : [], # Tuples: (display_name, sane_name)
+        'active_scanner' : None, # Tuple, also
         'is_scanner_in_use' : True,
         'is_document_empty' : True,
+        'valid_modes' : [],
+        'valid_resolutions' : [],
+        'active_mode' : None,
+        'active_resolution' : None,
     }
 
     def __init__(self):
@@ -73,10 +76,6 @@ class MainModel(Model):
         self.document_model.register_observer(self)
         self.preferences_model = PreferencesModel()
         self.save_model = SaveModel()
-        
-        self.null_scanner = ScannerModel('Null Scanner', '')
-        self.active_scanner = self.null_scanner
-        self.null_scanner.register_observer(self)
         
         # Register as a self-observer so that changes to properties
         # can be persisted to the StateManager.  The Model is always
@@ -115,11 +114,11 @@ class MainModel(Model):
         
         # The next two states get applied to the null_scanner initially
         # but are copied over to the actual device when it is loaded
-        self.active_scanner.active_mode = StateManager.init_state(
+        self.active_mode = StateManager.init_state(
             'scan_mode', constants.DEFAULT_SCAN_MODE, 
             self.state_scan_mode_change)
         
-        self.active_scanner.active_resolution = StateManager.init_state(
+        self.active_resolution = StateManager.init_state(
             'scan_resolution', constants.DEFAULT_SCAN_RESOLUTION, 
             self.state_scan_resolution_change)
         
@@ -147,11 +146,11 @@ class MainModel(Model):
         
     def state_scan_mode_change(self):
         """Read state"""
-        self.active_scanner.active_mode = StateManager['scan_mode']
+        self.active_mode = StateManager['scan_mode']
         
     def state_scan_resolution_change(self):
         """Read state"""
-        self.active_scanner.active_resolution = StateManager['scan_resolution']
+        self.active_resolution = StateManager['scan_resolution']
         
     # Self property callbacks
         
@@ -176,8 +175,7 @@ class MainModel(Model):
         Update scanner that is being observed for state changes.
         TODO: write state
         """
-        old_value.unregister_observer(self)
-        new_value.register_observer(self)
+        pass
         
 #    def property_available_scanners_value_change(self, model, old_value, new_value):
 #        """

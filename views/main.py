@@ -28,7 +28,6 @@ from gtkmvc.view import View
 import constants
 from views.document import DocumentView
 from views.page import PageView
-from views.scanner import ScannerView
 
 class MainView(View):
     """
@@ -57,16 +56,6 @@ class MainView(View):
         self.document_view['document_view_horizontal_box'].reparent(
              self['document_view_docking_viewport'])
         self['document_view_docking_viewport'].show_all()
-        
-        # NB: Because of the way this is setup in glade (with dummy menu items
-        # containing the submenus) GTK throws some innocous warnings about the
-        # submenu already being attached to a GtkMenuItem.
-        self.scanner_view = ScannerView(controller.scanner_controller)
-        self['scan_mode_docking_menu_item'].set_submenu(
-            self.scanner_view['scan_mode_sub_menu'])
-        self['scan_resolution_docking_menu_item'].set_submenu(
-            self.scanner_view['scan_resolution_sub_menu'])
-        self['options_menu'].show_all()
                 
 #        if self.app.state_manager['show_toolbar'] == False:
 #            self.show_toolbar_menu_item.set_active(False)
@@ -112,10 +101,10 @@ class MainView(View):
         for child in self['scanner_sub_menu'].get_children():
             child.set_sensitive(sensitive)
             
-        for child in self.scanner_view['scan_mode_sub_menu'].get_children():
+        for child in self['scan_mode_sub_menu'].get_children():
             child.set_sensitive(sensitive)
             
-        for child in self.scanner_view['scan_resolution_sub_menu'].get_children():
+        for child in self['scan_resolution_sub_menu'].get_children():
             child.set_sensitive(sensitive)
             
     def set_delete_controls_sensitive(self, sensitive):
