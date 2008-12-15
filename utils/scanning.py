@@ -199,7 +199,8 @@ class UpdateScannerOptionsThread(IdleObject, threading.Thread):
     def run(self):
         """
         Queries SANE for a list of available options for the specified scanner.    
-        """        
+        """
+        print self.model.active_scanner
         update_command = ' '.join(['scanimage --help -d',  self.model.active_scanner[1]])
         self.log.debug(
             'Updating scanner options with command: "%s".' % \

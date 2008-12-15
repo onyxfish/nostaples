@@ -24,7 +24,7 @@ end of this module so that can be effectively used as a Singleton.
 """
 
 import logging
-from types import IntType, StringType, FloatType, BooleanType
+from types import IntType, StringType, FloatType, BooleanType, TupleType
 
 import gconf
 
@@ -56,6 +56,8 @@ class GConfState():
             self.gconf_type = gconf.VALUE_FLOAT
         elif self.python_type is BooleanType:
             self.gconf_type = gconf.VALUE_BOOL
+        elif self.python_type is TupleType:
+            self.gconf_type = gconf.VALUE_STRING
         else:
             raise TypeError
 
@@ -125,6 +127,9 @@ class GConfStateManager(dict):
                 state.value = stored_value.get_float()
             elif state.python_type is BooleanType:
                 state.value = stored_value.get_bool()
+            elif state.python_type is TupleType:
+                state.value = tuple(stored_value.get_string().split(
+                    constants.GCONF_TUPLE_SEPARATOR))
             else:
                 # It should not be possible to get here due to previous
                 # error-checking.
@@ -141,6 +146,10 @@ class GConfStateManager(dict):
                 self.gconf_client.set_float(state.path, default_value)
             elif state.python_type is BooleanType:
                 self.gconf_client.set_bool(state.path, default_value)
+            elif state.python_type is TupleType:
+                packed_tuple = constants.GCONF_TUPLE_SEPARATOR.join(
+                    default_value)
+                self.gconf_client.set_string(state.path, packed_tuple)
             else:
                 # It should not be possible to get here due to previous
                 # error-checking.
@@ -192,9 +201,8 @@ class GConfStateManager(dict):
         # originally specified for this state.
         if type(new_value) != state.python_type:
             self.log.error(
-                'Type %s is not the correct type for state %s. \
-                It should be %s.' % 
-                    str(type(new_value)), state_name, str(state.python_type))
+                'Type %s is not the correct type for state %s.  It should be %s.' % 
+                    (str(type(new_value)), state_name, str(state.python_type)))
             # When a wrong type is assigned raise a breaking error
             raise TypeError
         
@@ -212,6 +220,10 @@ class GConfStateManager(dict):
             self.gconf_client.set_float(state.path, new_value)
         elif state.python_type is BooleanType:
             self.gconf_client.set_bool(state.path, new_value)
+        elif state.python_type is TupleType:
+            packed_tuple = constants.GCONF_TUPLE_SEPARATOR.join(
+                new_value)
+            self.gconf_client.set_string(state.path, packed_tuple)
         else:
             # It should not be possible to get here due to error-checking
             # when the state was initialized.
@@ -261,6 +273,9 @@ class GConfStateManager(dict):
             new_value_typed = new_value.get_float()
         elif state.python_type is BooleanType:
             new_value_typed = new_value.get_bool()
+        elif state.python_type is TupleType:
+            new_value_typed = tuple(new_value.get_string().split(
+                constants.GCONF_TUPLE_SEPARATOR))
         else:
             # It should not be possible to get here due to prior error-checking
             self.log.error(

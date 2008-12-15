@@ -144,8 +144,11 @@ class MainController(Controller):
         pass
         
     def on_available_scanner_menu_item_toggled(self, menu_item):
-        """Set the active scanner."""
-        # TODO: This has not been tested.
+        """
+        Set the active scanner.
+        
+        TODO: Need a second scanner to test this...
+        """
         if menu_item.get_active():
             for scanner in self.model.available_scanners:
                 if scanner[0] == menu_item.get_children()[0].get_text():
@@ -155,6 +158,18 @@ class MainController(Controller):
     def on_refresh_available_scanners_menu_item_activate(self, menu_item):
         """Refresh the list of connected scanners from SANE."""
         self._update_available_scanners()
+        
+    def on_valid_mode_menu_item_toggled(self, menu_item):
+        """Sets the active scan mode."""
+        if menu_item.get_active():
+            self.model.active_mode = \
+                menu_item.get_children()[0].get_text()
+
+    def on_valid_resolution_menu_item_toggled(self, menu_item):
+        """Sets the active scan resolution."""
+        if menu_item.get_active():
+            self.model.active_resolution = \
+                menu_item.get_children()[0].get_text() 
                 
     def on_go_first_menu_item_activate(self, menu_item):
         """Selects the first scanned page."""
@@ -171,6 +186,14 @@ class MainController(Controller):
     def on_go_last_menu_item_activate(self, menu_item):
         """Selects the last scanned page."""
         self.document_controller.goto_last_page()
+        
+    def on_contents_menu_item_clicked(self, menu_item):
+        """TODO"""
+        pass
+    
+    def on_about_menu_item_activate(self, menu_item):
+        """TODO"""
+        pass
         
     def on_scan_button_clicked(self, button):
         """Scan a page into the current document."""
@@ -203,18 +226,6 @@ class MainController(Controller):
     def on_rotate_counter_clockwise_button_clicked(self, button):
         """Rotates the visible page ninety degress counter-clockwise."""
         self.document_controller.page_controller.rotate_counter_clockwise()
-        
-    def on_valid_mode_menu_item_toggled(self, menu_item):
-        """Sets the active scan mode."""
-        if menu_item.get_active():
-            self.model.active_mode = \
-                menu_item.get_children()[0].get_text()
-
-    def on_valid_resolution_menu_item_toggled(self, menu_item):
-        """Sets the active scan resolution."""
-        if menu_item.get_active():
-            self.model.active_resolution = \
-                menu_item.get_children()[0].get_text() 
         
     def on_go_first_button_clicked(self, button):
         """Selects the first scanned page."""
@@ -303,9 +314,13 @@ class MainController(Controller):
                     self.model.active_scanner = self.model.available_scanners[i]
                 
                 if self.model.available_scanners[i] == self.model.active_scanner:
+                    # Force update of scanner options
+                    # This is NECESSARY, as the "pre-selected" scanner may have been
+                    # loaded from persisted state, in which case the options will not
+                    # yet have been parsed.
+                    self._update_scanner_options()
                     menu_item.set_active(True)
                 
-                #menu_item.connect('toggled', self.update_scanner_options)
                 self.view['scanner_sub_menu'].append(menu_item)
         
         menu_item = gtk.MenuItem('Refresh List')
@@ -324,9 +339,8 @@ class MainController(Controller):
 #            constants.STATUSBAR_SCANNER_STATUS_CONTEXT_ID)
         
     def property_active_scanner_value_change(self, model, old_value, new_value):
-        """TODO"""
+        """Update the available options to reflect the new device."""
         self._update_scanner_options()
-        pass
         
     def property_valid_modes_value_change(self, model, old_value, new_value):
         """
@@ -402,7 +416,15 @@ class MainController(Controller):
         
         # NB: Only do this if everything else has succeeded, 
         # otherwise a crash could repeat everytime the app is started
-        #self.state_manager['active_scanner'] = self.active_scanner        
+        #self.state_manager['active_scanner'] = self.active_scanner
+        
+    def property_active_mode_value_change(self, model, old_value, new_value):
+        """TODO: scan mode set from state mananger (or elsewhere!)"""
+        pass
+    
+    def property_active_resolution_value_change(self, model, old_value, new_value):
+        """TODO: resolution set from state mananger (or elsewhere!)"""
+        pass
         
     def property_is_scanner_in_use_value_change(self, model, old_value, new_value):
         """
@@ -481,6 +503,16 @@ class MainController(Controller):
             preferences_controller, self.view)
         
         preferences_view.show()
+        
+    def _clear_scan_modes_sub_menu(self):
+        """TODO"""
+        for child in self.view['scan_mode_sub_menu'].get_children():
+            self.view['scan_mode_sub_menu'].remove(child)
+    
+    def _clear_scan_resolutions_sub_menu(self):
+        """TODO"""
+        for child in self.view['scan_resolution_sub_menu'].get_children():
+            self.view['scan_resolution_sub_menu'].remove(child)
     
     def _scan(self):
         """
@@ -498,20 +530,10 @@ class MainController(Controller):
         
         TODO: clear scanner options until update is finished
         """
+        self.model.is_scanner_in_use = True
         update_thread = UpdateAvailableScannersThread(self.model)
         update_thread.connect("finished", self.on_update_available_scanners_thread_finished)
-        self.model.is_scanner_in_use = True
         update_thread.start()
-        
-    def _clear_scan_modes_sub_menu(self):
-        """TODO"""
-        for child in self.view['scan_mode_sub_menu'].get_children():
-            self.view['scan_mode_sub_menu'].remove(child)
-    
-    def _clear_scan_resolutions_sub_menu(self):
-        """TODO"""
-        for child in self.view['scan_resolution_sub_menu'].get_children():
-            self.view['scan_resolution_sub_menu'].remove(child)
     
     def _update_scanner_options(self):
         """TODO"""
@@ -519,6 +541,7 @@ class MainController(Controller):
             
         self.model.active_scan_mode = None
         menu_item = gtk.MenuItem("Updating scan modes...")
+        # TODO: why doesn't this work...?
         menu_item.set_sensitive(False)
         self.view['scan_mode_sub_menu'].append(menu_item)
         self.view['scan_mode_sub_menu'].show_all()
@@ -527,10 +550,11 @@ class MainController(Controller):
             
         self.model.active_scan_resolutions = None
         menu_item = gtk.MenuItem("Updating scan resolutions...")
-        menu_item.set_sensitive(False)
+        menu_item.set_sensitive(False)    
         self.view['scan_resolution_sub_menu'].append(menu_item)
-        self.view['scan_resolution_sub_menu'].show_all()        
+        self.view['scan_resolution_sub_menu'].show_all()
             
+        self.model.is_scanner_in_use = True
         update_thread = UpdateScannerOptionsThread(self.model)
         update_thread.connect("finished", self.on_update_scanner_options_thread_finished)
         update_thread.start()

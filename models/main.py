@@ -54,12 +54,12 @@ class MainModel(Model):
         'show_adjustments' : False,
         'available_scanners' : [], # Tuples: (display_name, sane_name)
         'active_scanner' : None, # Tuple, also
-        'is_scanner_in_use' : True,
-        'is_document_empty' : True,
         'valid_modes' : [],
         'valid_resolutions' : [],
         'active_mode' : None,
         'active_resolution' : None,
+        'is_scanner_in_use' : True,
+        'is_document_empty' : True,
     }
 
     def __init__(self):
@@ -77,11 +77,6 @@ class MainModel(Model):
         self.preferences_model = PreferencesModel()
         self.save_model = SaveModel()
         
-        # Register as a self-observer so that changes to properties
-        # can be persisted to the StateManager.  The Model is always
-        # the first consumer of its own property signals.
-        self.register_observer(self)
-        
         # TODO: Wtf am I doing here, solves a bug, but why?
         self.accepts_spurious_change = lambda : True
         
@@ -91,7 +86,6 @@ class MainModel(Model):
         """
         Load persisted state from the StateManager.
         """
-        # Load persistent state variables
         self.show_toolbar = StateManager.init_state(
             'show_toolbar', constants.DEFAULT_SHOW_TOOLBAR, 
             self.state_show_toolbar_change)
@@ -107,20 +101,92 @@ class MainModel(Model):
         self.show_adjustments = StateManager.init_state(
             'show_adjustments', constants.DEFAULT_SHOW_ADJUSTMENTS, 
             self.state_show_adjustments_change)
+
+        self._prop_active_scanner = StateManager.init_state(
+            'active_scanner', constants.DEFAULT_ACTIVE_SCANNER, 
+            self.state_active_scanner_change)
         
-        #self.active_scanner = StateManager.init_state(
-        #    'active_scanner', constants.DEFAULT_ACTIVE_SCANNER, 
-        #    self.state_active_scanner_change)
-        
-        # The next two states get applied to the null_scanner initially
-        # but are copied over to the actual device when it is loaded
-        self.active_mode = StateManager.init_state(
+        self._prop_active_mode = StateManager.init_state(
             'scan_mode', constants.DEFAULT_SCAN_MODE, 
             self.state_scan_mode_change)
         
-        self.active_resolution = StateManager.init_state(
+        self._prop_active_resolution = StateManager.init_state(
             'scan_resolution', constants.DEFAULT_SCAN_RESOLUTION, 
             self.state_scan_resolution_change)
+        
+    # Property setters
+    # (see gtkmvc.support.metaclass_base.py for the origin of these accessors)
+    
+    def set_prop_show_toolbar(self, value):
+        """Write state."""
+        old_value = self._prop_show_toolbar
+        self._prop_show_toolbar = value
+        StateManager['show_toolbar'] = value
+        self.notify_property_value_change(
+            'show_toolbar', old_value, value)
+    
+    def set_prop_show_statusbar(self, value):
+        """Write state."""
+        old_value = self._prop_show_statusbar
+        self._prop_show_statusbar = value
+        StateManager['show_statusbar'] = value
+        self.notify_property_value_change(
+            'show_statusbar', old_value, value)
+    
+    def set_prop_show_thumbnails(self, value):
+        """Write state."""
+        old_value = self._prop_show_thumbnails
+        self._prop_show_thumbnails = value
+        StateManager['show_thumbnails'] = value
+        self.notify_property_value_change(
+            'show_thumbnails', old_value, value)
+    
+    def set_prop_show_adjustments(self, value):
+        """Write state."""
+        old_value = self._prop_show_adjustments
+        self._prop_show_adjustments = value
+        StateManager['show_adjustments'] = value
+        self.notify_property_value_change(
+            'show_adjustments', old_value, value)
+        
+    def set_prop_active_scanner(self, value):
+        """Write state."""
+        old_value = self._prop_active_scanner
+        self._prop_active_scanner = value
+        if value is not None:
+            StateManager['active_scanner'] = value
+        self.notify_property_value_change(
+            'active_scanner', old_value, value)
+        
+    def set_prop_active_mode(self, value):
+        """Write state."""
+        old_value = self._prop_active_mode
+        self._prop_active_mode = value
+        if value is not None:
+            StateManager['scan_mode'] = value
+        self.notify_property_value_change(
+            'active_mode', old_value, value)
+        
+    def set_prop_active_resolution(self, value):
+        """Write state."""
+        old_value = self._prop_active_resolution
+        self._prop_active_resolution = value
+        if value is not None:
+            StateManager['scan_resolution'] = value
+        self.notify_property_value_change(
+            'active_resolution', old_value, value)
+        
+#    def property_available_scanners_value_change(self, model, old_value, new_value):
+#        """
+#        TODO
+#        """        
+#        if len(list(new_value)) == 0:
+#            self.active_scanner = self.null_scanner
+#        else:                   
+#            # Select the first scanner if the previously selected scanner
+#            # is not in the list
+#            if self.active_scanner not in self.model.available_scanners:
+#                self.active_scanner = self.model.available_scanners[0]    
         
     # State callbacks
     
@@ -141,53 +207,25 @@ class MainModel(Model):
         self.show_adjustments = StateManager['show_adjustments']
         
     def state_active_scanner_change(self):
-        """TODO"""
-        pass
+        """Read state, validating the input."""
+        if StateManager['active_scanner'] in self.available_scanners:
+            self.active_scanner = StateManager['active_scanner']
+        else:
+            StateManager['active_scanner'] = self.active_scanner
         
     def state_scan_mode_change(self):
-        """Read state"""
-        self.active_mode = StateManager['scan_mode']
+        """Read state, validating the input."""
+        if StateManager['scan_mode'] in self.valid_modes:
+            self.active_mode = StateManager['scan_mode']
+        else:
+            StateManager['scan_mode'] = self.active_mode
         
     def state_scan_resolution_change(self):
-        """Read state"""
-        self.active_resolution = StateManager['scan_resolution']
-        
-    # Self property callbacks
-        
-    def property_show_toolbar_value_change(self, model, old_value, new_value):
-        """Write state."""  
-        StateManager['show_toolbar'] = new_value
-        
-    def property_show_statusbar_value_change(self, model, old_value, new_value):
-        """Write state."""
-        StateManager['show_statusbar'] = new_value
-        
-    def property_show_thumbnails_value_change(self, model, old_value, new_value):
-        """Write state."""
-        StateManager['show_thumbnails'] = new_value
-        
-    def property_show_adjustments_value_change(self, model, old_value, new_value):
-        """Write state."""
-        StateManager['show_adjustments'] = new_value
-        
-    def property_active_scanner_value_change(self, model, old_value, new_value):
-        """
-        Update scanner that is being observed for state changes.
-        TODO: write state
-        """
-        pass
-        
-#    def property_available_scanners_value_change(self, model, old_value, new_value):
-#        """
-#        TODO
-#        """        
-#        if len(list(new_value)) == 0:
-#            self.active_scanner = self.null_scanner
-#        else:                   
-#            # Select the first scanner if the previously selected scanner
-#            # is not in the list
-#            if self.active_scanner not in self.model.available_scanners:
-#                self.active_scanner = self.model.available_scanners[0]
+        """Read state, validating the input."""
+        if StateManager['scan_resolution'] in self.valid_resolutions:
+            self.active_resolution = StateManager['scan_resolution']
+        else:
+            StateManager['scan_resolution'] = self.active_resolution
      
     # ScannerModel PROPERTY CALLBACKS
         
