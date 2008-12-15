@@ -26,22 +26,22 @@ from reportlab.lib.pagesizes import A0, A1, A2, A3, A4, A5, A6, \
     B0, B1, B2, B3, B4, B5, B6, LETTER, LEGAL, ELEVENSEVENTEEN
 
 PAGESIZES = {'A0' : A0, 
-                        'A1' : A1, 
-                        'A2' : A2, 
-                        'A3' : A3,
-                        'A4' : A4, 
-                        'A5' : A5, 
-                        'A6' : A6,
-                        'B0' : B0, 
-                        'B1' : B1, 
-                        'B2' : B2, 
-                        'B3' : B3, 
-                        'B4' : B4, 
-                        'B5' : B5, 
-                        'B6' : B6,
-                        'LETTER' : LETTER, 
-                        'LEGAL' : LEGAL, 
-                        'ELEVENSEVENTEEN' : ELEVENSEVENTEEN}
+                'A1' : A1, 
+                'A2' : A2, 
+                'A3' : A3,
+                'A4' : A4, 
+                'A5' : A5, 
+                'A6' : A6,
+                'B0' : B0, 
+                'B1' : B1, 
+                'B2' : B2, 
+                'B3' : B3, 
+                'B4' : B4, 
+                'B5' : B5, 
+                'B6' : B6,
+                'LETTER' : LETTER, 
+                'LEGAL' : LEGAL, 
+                'ELEVENSEVENTEEN' : ELEVENSEVENTEEN}
 
 DEFAULT_SHOW_TOOLBAR = True
 DEFAULT_SHOW_STATUSBAR = True
@@ -51,6 +51,7 @@ DEFAULT_ACTIVE_SCANNER = ''
 DEFAULT_SCAN_MODE = 'Color'
 DEFAULT_SCAN_RESOLUTION = '75'
 
+# TODO: make a configurable preference
 DEFAULT_THUMBNAIL_SIZE = 128
 
 STATUSBAR_BASE_CONTEXT_ID = 0
@@ -65,9 +66,10 @@ SCAN_SUCCESS = 1
 
 GCONF_DIRECTORY = "/apps/nostaples"
 
+# TODO: no longer needed?
 TEMP_IMAGES_DIRECTORY = os.path.expanduser('~/.nostaples')
 LOGGING_CONFIG = os.path.join(os.path.dirname(__file__), 'logging.config')
-GLADE_CONFIG = os.path.join(os.path.dirname(__file__), 'nostaples.glade')
+GUI_DIRECTORY = os.path.join(os.path.dirname(__file__), 'gui')
 
 PREVIEW_MODE_NEAREST = 'Nearest (Fastest)'
 PREVIEW_MODE_BILINEAR = 'Bilinear'

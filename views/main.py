@@ -21,6 +21,7 @@ window.
 """
 
 import logging
+import os
 
 import gtk
 from gtkmvc.view import View
@@ -39,8 +40,10 @@ class MainView(View):
         Constructs the MainView, including setting up controls that could
         not be configured in Glade and constructing sub-views.
         """
+        scan_window_glade = os.path.join(
+            constants.GUI_DIRECTORY, 'scan_window.glade')
         View.__init__(
-            self, controller, constants.GLADE_CONFIG, 
+            self, controller, scan_window_glade,
             'scan_window', None, False)
             
         self.log = logging.getLogger(self.__class__.__name__)

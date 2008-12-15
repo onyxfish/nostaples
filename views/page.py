@@ -21,6 +21,7 @@ currently selected as a preview image.
 """
 
 import logging
+import os
 
 import gtk
 from gtkmvc.view import View
@@ -37,8 +38,10 @@ class PageView(View):
         Constructs the PageView, including setting up controls that could
         not be configured in Glade.
         """
+        page_view_glade = os.path.join(
+            constants.GUI_DIRECTORY, 'page_view.glade')
         View.__init__(
-            self, controller, constants.GLADE_CONFIG, 
+            self, controller, page_view_glade, 
             'dummy_page_view_window', None, False)
             
         self.log = logging.getLogger(self.__class__.__name__)

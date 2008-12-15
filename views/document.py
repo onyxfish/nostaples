@@ -21,6 +21,7 @@ scanned as a thumbnail list.
 """
 
 import logging
+import os
 
 import gtk
 from gtkmvc.view import View
@@ -38,8 +39,10 @@ class DocumentView(View):
         Constructs the DocumentView, including setting up controls that could
         not be configured in Glade and constructing sub-views.
         """
+        document_view_glade = os.path.join(
+            constants.GUI_DIRECTORY, 'document_view.glade')
         View.__init__(
-            self, controller, constants.GLADE_CONFIG, 
+            self, controller, document_view_glade, 
             'dummy_document_view_window', None, False)
             
         self.log = logging.getLogger(self.__class__.__name__)

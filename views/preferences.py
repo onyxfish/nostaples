@@ -21,6 +21,7 @@ through a dialog seperate from the main application window.
 """
 
 import logging
+import os
 
 import gtk
 from gtkmvc.view import View
@@ -33,15 +34,16 @@ class PreferencesView(View):
     Exposes user settings through a dialog seperate from the main
     application window.
     """
-
     def __init__(self, controller, parent):
         """
         Constructs the PreferencesView, including setting up controls that 
         could not be configured in Glade.
         """
+        preferences_dialog_glade = os.path.join(
+            constants.GUI_DIRECTORY, 'preferences_dialog.glade')
         View.__init__(
-            self, controller, constants.GLADE_CONFIG, 'preferences_dialog', 
-            parent, False)
+            self, controller, preferences_dialog_glade,
+            'preferences_dialog', parent, False)
             
         self.log = logging.getLogger(self.__class__.__name__)
         
