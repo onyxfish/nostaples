@@ -59,18 +59,6 @@ class MainView(View):
         self.document_view['document_view_horizontal_box'].reparent(
              self['document_view_docking_viewport'])
         self['document_view_docking_viewport'].show_all()
-                
-#        if self.app.state_manager['show_toolbar'] == False:
-#            self.show_toolbar_menu_item.set_active(False)
-#            self.toolbar.hide()
-#        
-#        if self.app.state_manager['show_thumbnails'] == False:
-#            self.show_thumbnails_menu_item.set_active(False)
-#            self.thumbnails_scrolled_window.hide()
-#        
-#        if self.app.state_manager['show_statusbar'] == False:
-#            self.show_statusbar_menu_item.set_active(False)
-#            self.statusbar.hide()
 
         # All controls are disabled by default, they become
         # avaiable when an event indicates that they should be.
@@ -101,14 +89,17 @@ class MainView(View):
         self['insert_scan_menu_item'].set_sensitive(sensitive)
         self['scan_button'].set_sensitive(sensitive)
         
-        for child in self['scanner_sub_menu'].get_children():
-            child.set_sensitive(sensitive)
+        self['scanner_menu_item'].set_sensitive(sensitive)
+        #for child in self['scanner_sub_menu'].get_children():
+        #    child.set_sensitive(sensitive)
             
-        for child in self['scan_mode_sub_menu'].get_children():
-            child.set_sensitive(sensitive)
-            
-        for child in self['scan_resolution_sub_menu'].get_children():
-            child.set_sensitive(sensitive)
+        self['scan_mode_menu_item'].set_sensitive(sensitive)
+        #for child in self['scan_mode_sub_menu'].get_children():
+        #    child.set_sensitive(sensitive)
+        
+        self['scan_resolution_menu_item'].set_sensitive(sensitive)
+        #for child in self['scan_resolution_sub_menu'].get_children():
+        #    child.set_sensitive(sensitive)
             
     def set_delete_controls_sensitive(self, sensitive):
         """
@@ -141,6 +132,7 @@ class MainView(View):
         self['rotate_counter_clockwise_button'].set_sensitive(sensitive)
         self['rotate_clockwise_button'].set_sensitive(sensitive)
         
+        # TODO
         #self['brightness_scale'].set_sensitive(sensitive)
         #self['contrast_scale'].set_sensitive(sensitive)
         #self['sharpness_scale'].set_sensitive(sensitive)

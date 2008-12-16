@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Sun Dec 14 08:41:56 2008 -->
+<!--Generated with glade3 3.4.5 on Mon Dec 15 21:41:01 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="scan_window">
     <property name="visible">True</property>
@@ -293,7 +293,7 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkMenuItem" id="scan_mode__menu_item">
+                      <widget class="GtkMenuItem" id="scan_mode_menu_item">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Mode</property>
                         <property name="use_underline">True</property>
@@ -313,7 +313,7 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkMenuItem" id="scan_resolution_docking_menu_item">
+                      <widget class="GtkMenuItem" id="scan_resolution_menu_item">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Resolution</property>
                         <property name="use_underline">True</property>

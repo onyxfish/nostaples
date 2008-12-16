@@ -87,6 +87,8 @@ class MainController(Controller):
         self.log.debug('Adapters registered.')
         
     # USER INTERFACE CALLBACKS
+    
+    # Menu Items
         
     def on_scan_window_destroy(self, window):
         """Exits the application."""
@@ -147,7 +149,7 @@ class MainController(Controller):
         """
         Set the active scanner.
         
-        TODO: Need a second scanner to test this...
+        TODO: Need a second scanner to properly test this...
         """
         if menu_item.get_active():
             for scanner in self.model.available_scanners:
@@ -194,6 +196,8 @@ class MainController(Controller):
     def on_about_menu_item_activate(self, menu_item):
         """TODO"""
         pass
+        
+    # Toolbar Buttons
         
     def on_scan_button_clicked(self, button):
         """Scan a page into the current document."""
@@ -277,49 +281,56 @@ class MainController(Controller):
         menu_item = self.view['show_adjustments_menu_item']
         menu_item.set_active(new_value)
         
-        self.document_controller.toggle_adjustments_visible(new_value)       
+        self.document_controller.toggle_adjustments_visible(new_value)    
+        
+    def property_active_scanner_value_change(self, model, old_value, new_value):
+        """
+        Update the menu and valid scanner options to match the new device.
+        """
+        for menu_item in self.view['scanner_sub_menu'].get_children():
+            if menu_item.get_children()[0].get_text() == new_value[0]:
+                menu_item.set_active(True)
+                break
+        
+        self._update_scanner_options()
+        
+    def property_active_mode_value_change(self, model, old_value, new_value):
+        """Select the active mode from in the menu."""
+        for menu_item in self.view['scan_mode_sub_menu'].get_children():
+            if menu_item.get_children()[0].get_text() == new_value:
+                menu_item.set_active(True)
+                break
+    
+    def property_active_resolution_value_change(self, model, old_value, new_value):
+        """Select the active resolution from in the menu."""
+        for menu_item in self.view['scan_resolution_sub_menu'].get_children():
+            if menu_item.get_children()[0].get_text() == new_value:
+                menu_item.set_active(True)
+                break
             
     def property_available_scanners_value_change(self, model, old_value, new_value):
         """
-        Updates the menu listing of available scanners.
+        Update the menu of available scanners.
         """
-        # Clear existing menu items
-        for child in self.view['scanner_sub_menu'].get_children():
-            self.view['scanner_sub_menu'].remove(child)
+        self._clear_available_scanners_sub_menu()
         
-        if len(list(self.model.available_scanners)) == 0:
-            self.model.active_scanner = None
+        # Generate the new menu
+        if len(new_value) == 0:
             menu_item = gtk.MenuItem('No Scanners Connected')
             menu_item.set_sensitive(False)
             self.view['scanner_sub_menu'].append(menu_item)
         else:
             first_item = None
-    
-            # Note the cast to list() as available_scanners is wrapped in
-            # gtkmvc's ObsListWrapper.
-            for i in range(len(list(self.model.available_scanners))):
+
+            for i in range(len(new_value)):
                 # The first menu item defines the group
                 if i == 0:
                     menu_item = gtk.RadioMenuItem(
-                        None, self.model.available_scanners[i][0])
+                        None, new_value[i][0])
                     first_item = menu_item
                 else:
-                    menu_item = gtk.RadioMenuItem(first_item,
-                        self.model.available_scanners[i][0])
-                    
-                # Select the first scanner if the previously selected scanner
-                # is not in the list
-                if i == 0 and self.model.active_scanner not in self.model.available_scanners:
-                    menu_item.set_active(True)
-                    self.model.active_scanner = self.model.available_scanners[i]
-                
-                if self.model.available_scanners[i] == self.model.active_scanner:
-                    # Force update of scanner options
-                    # This is NECESSARY, as the "pre-selected" scanner may have been
-                    # loaded from persisted state, in which case the options will not
-                    # yet have been parsed.
-                    self._update_scanner_options()
-                    menu_item.set_active(True)
+                    menu_item = gtk.RadioMenuItem(
+                        first_item, new_value[i][0])
                 
                 self.view['scanner_sub_menu'].append(menu_item)
         
@@ -338,47 +349,30 @@ class MainController(Controller):
 #            self.gui.statusbar.pop(
 #            constants.STATUSBAR_SCANNER_STATUS_CONTEXT_ID)
         
-    def property_active_scanner_value_change(self, model, old_value, new_value):
-        """Update the available options to reflect the new device."""
-        self._update_scanner_options()
-        
     def property_valid_modes_value_change(self, model, old_value, new_value):
         """
         Updates the list of valid scan modes for the current scanner.
         """
         self._clear_scan_modes_sub_menu()
         
-        # Generate new scan mode menu
-        if (len(list(self.model.valid_modes)) == 0):
-            self.model.active_scan_mode = None
+        if len(new_value) == 0:
             menu_item = gtk.MenuItem("No Scan Modes")
             menu_item.set_sensitive(False)
             self.view['scan_mode_sub_menu'].append(menu_item)
         else:        
-            for i in range(len(list(self.model.valid_modes))):
+            for i in range(len(new_value)):
                 if i == 0:
                     menu_item = gtk.RadioMenuItem(
-                        None, self.model.valid_modes[i])
+                        None, new_value[i])
                     first_item = menu_item
                 else:
                     menu_item = gtk.RadioMenuItem(
-                        first_item, self.model.valid_modes[i])
-                    
-                if i == 0 and self.model.active_mode not in self.model.valid_modes:
-                    menu_item.set_active(True)
-                    self.model.active_mode = self.model.valid_modes[i]
-                
-                if self.model.valid_modes[i] == self.model.active_mode:
-                    menu_item.set_active(True)
+                        first_item, new_value[i])
                 
                 menu_item.connect('toggled', self.on_valid_mode_menu_item_toggled)
                 self.view['scan_mode_sub_menu'].append(menu_item)
             
         self.view['scan_mode_sub_menu'].show_all()
-        
-        # NB: Only do this if everything else has succeeded, 
-        # otherwise a crash could repeat everytime the app is started
-        #self.state_manager['active_scanner'] = self.active_scanner
     
     def property_valid_resolutions_value_change(self, model, old_value, new_value):
         """
@@ -386,52 +380,36 @@ class MainController(Controller):
         """
         self._clear_scan_resolutions_sub_menu()
         
-        # Generate new scan mode menu
-        if (len(list(self.model.valid_resolutions)) == 0):
-            self.model.active_resolution = None
+        if len(new_value) == 0:
             menu_item = gtk.MenuItem("No Scan Resolutions")
             menu_item.set_sensitive(False)
             self.view['scan_resolution_sub_menu'].append(menu_item)
         else:        
-            for i in range(len(list(self.model.valid_resolutions))):
+            for i in range(len(new_value)):
                 if i == 0:
                     menu_item = gtk.RadioMenuItem(
-                        None, self.model.valid_resolutions[i])
+                        None, new_value[i])
                     first_item = menu_item
                 else:
                     menu_item = gtk.RadioMenuItem(
-                        first_item, self.model.valid_resolutions[i])
-                    
-                if i == 0 and self.model.active_resolution not in self.model.valid_resolutions:
-                    menu_item.set_active(True)
-                    self.model.active_resolution = self.model.valid_resolutions[i]
-                
-                if self.model.valid_resolutions[i] == self.model.active_resolution:
-                    menu_item.set_active(True)
+                        first_item, new_value[i])
                 
                 menu_item.connect('toggled', self.on_valid_resolution_menu_item_toggled)
                 self.view['scan_resolution_sub_menu'].append(menu_item)
             
         self.view['scan_resolution_sub_menu'].show_all()
         
-        # NB: Only do this if everything else has succeeded, 
-        # otherwise a crash could repeat everytime the app is started
-        #self.state_manager['active_scanner'] = self.active_scanner
+    def property_scan_in_progress_value_change(self, model, old_value, new_value):
+        """Disable or re-enable scan controls."""
+        self._toggle_scan_controls()
         
-    def property_active_mode_value_change(self, model, old_value, new_value):
-        """TODO: scan mode set from state mananger (or elsewhere!)"""
-        pass
+    def property_updating_available_scanners_value_change(self, model, old_value, new_value):
+        """Disable or re-enable scan controls."""
+        self._toggle_scan_controls()
     
-    def property_active_resolution_value_change(self, model, old_value, new_value):
-        """TODO: resolution set from state mananger (or elsewhere!)"""
-        pass
-        
-    def property_is_scanner_in_use_value_change(self, model, old_value, new_value):
-        """
-        Disable scan controls if the scanner is being accessed, renable if it is not.
-        """
-        # TODO: only if doc not empty and scanner options parsed
-        self.view.set_scan_controls_sensitive(not new_value)
+    def property_updating_scan_options_value_change(self, model, old_value, new_value):
+        """Disable or re-enable scan controls."""
+        self._toggle_scan_controls()
         
     def property_is_document_empty_value_change(self, model, old_value, new_value):
         """
@@ -450,17 +428,17 @@ class MainController(Controller):
         """Append the new page to the current document."""
         new_page = PageModel(filename, int(self.model.active_resolution))
         self.model.document_model.append(new_page)
-        self.model.is_scanner_in_use = False
+        self.model.scan_in_progress = False
     
     def on_scan_failed(self, scanning_thread):
         # TODO: check if the scanner has been disconnected
         # TODO: docstring
-        self.model.is_scanner_in_use = False
+        self.model.scan_in_progress = False
         
     def on_update_available_scanners_thread_finished(self, update_thread, scanner_list):
         """Set the new list of available scanners."""
         self.model.available_scanners = scanner_list
-        self.model.is_scanner_in_use = False
+        self.model.updating_available_scanners = False
             
     def on_update_scanner_options_thread_finished(self, update_thread, mode_list, resolution_list):
         """
@@ -469,6 +447,7 @@ class MainController(Controller):
         """
         self.model.valid_modes = mode_list
         self.model.valid_resolutions = resolution_list
+        self.model.updating_scan_options = False
         
     # PUBLIC METHODS
         
@@ -504,21 +483,32 @@ class MainController(Controller):
         
         preferences_view.show()
         
+    def _clear_available_scanners_sub_menu(self):
+        """Clear the menu of available scanners."""
+        for child in self.view['scanner_sub_menu'].get_children():
+            self.view['scanner_sub_menu'].remove(child)
+        
     def _clear_scan_modes_sub_menu(self):
-        """TODO"""
+        """Clear the menu of valid scan modes."""
         for child in self.view['scan_mode_sub_menu'].get_children():
             self.view['scan_mode_sub_menu'].remove(child)
     
     def _clear_scan_resolutions_sub_menu(self):
-        """TODO"""
+        """Clear the menu of valid scan resolutions."""
         for child in self.view['scan_resolution_sub_menu'].get_children():
             self.view['scan_resolution_sub_menu'].remove(child)
+            
+    def _toggle_scan_controls(self):
+        """Toggle whether or not the scan controls or accessible."""
+        if self.model.scan_in_progress or self.model.updating_available_scanners or \
+            self.model.updating_scan_options:
+            self.view.set_scan_controls_sensitive(False)
+        else:
+            self.view.set_scan_controls_sensitive(True)
     
     def _scan(self):
-        """
-        Begin a scan.
-        """
-        self.model.is_scanner_in_use = True
+        """Begin a scan."""
+        self.model.scan_in_progress = True
         scanning_thread = ScanningThread(self.model)
         scanning_thread.connect("succeeded", self.on_scan_succeeded)
         scanning_thread.connect("failed", self.on_scan_failed)
@@ -527,34 +517,15 @@ class MainController(Controller):
     def _update_available_scanners(self):
         """
         Start a new update thread to query for available scanners.
-        
-        TODO: clear scanner options until update is finished
-        """
-        self.model.is_scanner_in_use = True
+        """        
+        self.model.updating_available_scanners = True
         update_thread = UpdateAvailableScannersThread(self.model)
         update_thread.connect("finished", self.on_update_available_scanners_thread_finished)
         update_thread.start()
     
     def _update_scanner_options(self):
-        """TODO"""
-        self._clear_scan_modes_sub_menu()
-            
-        self.model.active_scan_mode = None
-        menu_item = gtk.MenuItem("Updating scan modes...")
-        # TODO: why doesn't this work...?
-        menu_item.set_sensitive(False)
-        self.view['scan_mode_sub_menu'].append(menu_item)
-        self.view['scan_mode_sub_menu'].show_all()
-        
-        self._clear_scan_resolutions_sub_menu()
-            
-        self.model.active_scan_resolutions = None
-        menu_item = gtk.MenuItem("Updating scan resolutions...")
-        menu_item.set_sensitive(False)    
-        self.view['scan_resolution_sub_menu'].append(menu_item)
-        self.view['scan_resolution_sub_menu'].show_all()
-            
-        self.model.is_scanner_in_use = True
+        """Determine the valid options for the current scanner."""            
+        self.model.updating_scan_options = True
         update_thread = UpdateScannerOptionsThread(self.model)
         update_thread.connect("finished", self.on_update_scanner_options_thread_finished)
         update_thread.start()
