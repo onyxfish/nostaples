@@ -37,8 +37,8 @@ class DocumentModel(ListStoreModel):
     __properties__ = \
     {
         'count' : 0,
-         'adjust_all_pages' : False,
-         'manually_updating_row' : False,
+        'adjust_all_pages' : False,
+        'manually_updating_row' : False,
     }
     
     def __init__(self):
@@ -49,8 +49,8 @@ class DocumentModel(ListStoreModel):
         
         self.log = logging.getLogger(self.__class__.__name__)
         
-        # Create an empty page to use as a placeholder when none have been
-        # scanned.
+        # Create an empty page to use as a placeholder when
+        # none have been scanned.
         self.null_page = PageModel()
         
         self.log.debug('Created.')

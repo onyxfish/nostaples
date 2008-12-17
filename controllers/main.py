@@ -61,6 +61,7 @@ class MainController(Controller):
         
         self.document_controller = DocumentController(
             self.model.document_model)
+        self.model.document_model.register_observer(self)
 
     def register_view(self, view):
         """
@@ -340,15 +341,6 @@ class MainController(Controller):
         
         self.view['scanner_sub_menu'].show_all()
         
-        # Notify user if no scanners are connected
-#        if selected_item == None:
-#            self.gui.statusbar.push(
-#                constants.STATUSBAR_SCANNER_STATUS_CONTEXT_ID, 
-#                'No scanners available')
-#        else:
-#            self.gui.statusbar.pop(
-#            constants.STATUSBAR_SCANNER_STATUS_CONTEXT_ID)
-        
     def property_valid_modes_value_change(self, model, old_value, new_value):
         """
         Updates the list of valid scan modes for the current scanner.
@@ -402,25 +394,29 @@ class MainController(Controller):
     def property_scan_in_progress_value_change(self, model, old_value, new_value):
         """Disable or re-enable scan controls."""
         self._toggle_scan_controls()
+        self._toggle_document_controls()
         
     def property_updating_available_scanners_value_change(self, model, old_value, new_value):
         """Disable or re-enable scan controls."""
         self._toggle_scan_controls()
+        self._toggle_document_controls()
     
     def property_updating_scan_options_value_change(self, model, old_value, new_value):
         """Disable or re-enable scan controls."""
         self._toggle_scan_controls()
+        self._toggle_document_controls()
         
     def property_is_document_empty_value_change(self, model, old_value, new_value):
         """
         Disable file and page manipulation controls if no pages have been scanned.
         """
-        if self.view:
-            self.view.set_file_controls_sensitive(not new_value)
-            self.view.set_delete_controls_sensitive(not new_value)
-            self.view.set_zoom_controls_sensitive(not new_value)
-            self.view.set_adjustment_controls_sensitive(not new_value)        
-            self.view.set_navigation_controls_sensitive(not new_value)
+        self._toggle_document_controls()
+        
+    def property_is_document_multiple_pages_value_change(self, model, old_value, new_value):
+        """
+        Disable navigation controls if only one page has been scanned.
+        """
+        self._toggle_document_controls()
     
     # THREAD CALLBACKS
     
@@ -431,8 +427,11 @@ class MainController(Controller):
         self.model.scan_in_progress = False
     
     def on_scan_failed(self, scanning_thread):
-        # TODO: check if the scanner has been disconnected
-        # TODO: docstring
+        """
+        Set that scan is complete.
+        
+        TODO: check if the scanner has been disconnected
+        """
         self.model.scan_in_progress = False
         
     def on_update_available_scanners_thread_finished(self, update_thread, scanner_list):
@@ -505,6 +504,38 @@ class MainController(Controller):
             self.view.set_scan_controls_sensitive(False)
         else:
             self.view.set_scan_controls_sensitive(True)
+            
+    def _toggle_document_controls(self):
+        """TODO"""
+        print self.model.is_document_multiple_pages
+        # Disable all controls when the scanner is in use
+        if self.model.scan_in_progress or self.model.updating_available_scanners or \
+            self.model.updating_scan_options:
+            self.view.set_file_controls_sensitive(False)
+            self.view.set_delete_controls_sensitive(False)
+            self.view.set_zoom_controls_sensitive(False)
+            self.view.set_adjustment_controls_sensitive(False)        
+            self.view.set_navigation_controls_sensitive(False)
+        else:
+            # Disable all controls if no pages are scanned
+            if self.model.is_document_empty:
+                self.view.set_file_controls_sensitive(False)
+                self.view.set_delete_controls_sensitive(False)
+                self.view.set_zoom_controls_sensitive(False)
+                self.view.set_adjustment_controls_sensitive(False)        
+                self.view.set_navigation_controls_sensitive(False)
+            else:
+                # Enable most controls if any pages scanned
+                self.view.set_file_controls_sensitive(True)
+                self.view.set_delete_controls_sensitive(True)
+                self.view.set_zoom_controls_sensitive(True)
+                self.view.set_adjustment_controls_sensitive(True)  
+                
+                # Only enable navigation if more than one page scanned
+                if self.model.is_document_multiple_pages:      
+                    self.view.set_navigation_controls_sensitive(True)
+                else:
+                    self.view.set_navigation_controls_sensitive(False)                    
     
     def _scan(self):
         """Begin a scan."""

@@ -66,7 +66,7 @@ class MainView(View):
         self.set_file_controls_sensitive(False)
         self.set_delete_controls_sensitive(False)
         self.set_zoom_controls_sensitive(False)
-        self.set_adjustment_controls_sensitive(False)  
+        self.set_adjustment_controls_sensitive(False)
         self.set_navigation_controls_sensitive(False)
         
         controller.register_view(self)
@@ -90,16 +90,8 @@ class MainView(View):
         self['scan_button'].set_sensitive(sensitive)
         
         self['scanner_menu_item'].set_sensitive(sensitive)
-        #for child in self['scanner_sub_menu'].get_children():
-        #    child.set_sensitive(sensitive)
-            
         self['scan_mode_menu_item'].set_sensitive(sensitive)
-        #for child in self['scan_mode_sub_menu'].get_children():
-        #    child.set_sensitive(sensitive)
-        
         self['scan_resolution_menu_item'].set_sensitive(sensitive)
-        #for child in self['scan_resolution_sub_menu'].get_children():
-        #    child.set_sensitive(sensitive)
             
     def set_delete_controls_sensitive(self, sensitive):
         """
@@ -132,11 +124,7 @@ class MainView(View):
         self['rotate_counter_clockwise_button'].set_sensitive(sensitive)
         self['rotate_clockwise_button'].set_sensitive(sensitive)
         
-        # TODO
-        #self['brightness_scale'].set_sensitive(sensitive)
-        #self['contrast_scale'].set_sensitive(sensitive)
-        #self['sharpness_scale'].set_sensitive(sensitive)
-        #self['color_all_pages_check'].set_sensitive(sensitive)
+        self.document_view.set_adjustments_sensitive(sensitive)
 
     def set_navigation_controls_sensitive(self, sensitive):
         """

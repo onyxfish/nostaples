@@ -51,6 +51,8 @@ class DocumentController(Controller):
         
         self.model.connect(
           'row-changed', self.on_document_model_row_changed)
+        #self.model.connect(
+        #  'row-deleted', self.on_document_model_row_deleted)
 
     def register_view(self, view):
         """
@@ -83,8 +85,6 @@ class DocumentController(Controller):
             self.view['brightness_scale'].set_value(page_model.brightness)
             self.view['contrast_scale'].set_value(page_model.contrast)
             self.view['sharpness_scale'].set_value(page_model.sharpness)
-        else:
-            self.page_controller.set_model(self.model.null_page)
         
     def on_document_model_row_changed(self, model, path, iter):
         """
@@ -104,11 +104,23 @@ class DocumentController(Controller):
         thumbnail_pixbuf to be updated should be preceeded by
         setting the manually_updating_row flag so that this event
         can bypass them appropriately.
-        """
+        """        
         if self.model.manually_updating_row:
             self.model.manually_updating_row = False
         else:
             self.view['thumbnails_tree_view'].get_selection().select_path(path)
+            
+    def on_document_model_row_deleted(self, model, path):
+        """TODO: this method doesn't even remotely work as intended..."""        
+        row = path[0]
+        
+        if self.model.count == 1:
+            return
+        
+        if row == self.model.count - 1:
+            self.view['thumbnails_tree_view'].get_selection().select_path(row - 1)
+        else:        
+            self.view['thumbnails_tree_view'].get_selection().select_path(row + 1)
     
     def on_brightness_scale_value_changed(self, widget):
         """
@@ -205,9 +217,6 @@ class DocumentController(Controller):
         """
         if new_value == 0:
             self.page_controller.set_model(self.model.null_page)
-            self.view.set_adjustments_sensitive(False)
-        else:
-            self.view.set_adjustments_sensitive(True)
     
     # UTILITY METHODS
         
@@ -226,10 +235,34 @@ class DocumentController(Controller):
             self.view['adjustments_alignment'].hide()
             
     def delete_selected(self):
-        """Delete the currently selected page."""
+        """
+        Move the selection to the next page and delete the
+        currently selected page.
+        
+        Selection is done here in place of catching the model's row-deleted
+        signal, which seems like it I{should} be the proper way to
+        do it.  Unfortunantly, when trying to do it that way it
+        was impossible to actually select another row as part of
+        the event.  This seems to work much more reliably.
+        """
         selection_iter = self.view['thumbnails_tree_view'].get_selection().get_selected()[1]
         
         if selection_iter:
+            # Get the row element of the path
+            row = self.model.get_path(selection_iter)[0]
+        
+            # Don't switch selections if this is the only page
+            if self.model.count == 1:
+                pass
+            else:
+                # Select previous row if deleting the last page
+                if row == self.model.count - 1:
+                    self.view['thumbnails_tree_view'].get_selection().select_path(row - 1)
+                # Otherwise select next row
+                else:        
+                    self.view['thumbnails_tree_view'].get_selection().select_path(row + 1)            
+            
+            # Remove the row that was selected when the delete request was made
             self.model.remove(selection_iter)
         else:
             self.log.warn('Method delete_selected was called, but no selection has been made.')

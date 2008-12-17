@@ -60,6 +60,7 @@ class MainModel(Model):
         'updating_scan_options' : False,
         
         'is_document_empty' : True,
+        'is_document_multiple_pages': False,
     }
 
     def __init__(self):
@@ -235,7 +236,7 @@ class MainModel(Model):
             # until after the menu has been updated.
             if self._prop_active_scanner not in value:
                 self._prop_active_scanner = value[0]
-                StateManager['active_scanner'] = value
+                StateManager['active_scanner'] = value[0]
             # Otherwise maintain current selection
             else:
                 pass
@@ -268,7 +269,7 @@ class MainModel(Model):
         else:
             if self._prop_active_mode not in value:
                 self._prop_active_mode = value[0]
-                StateManager['scan_mode'] = value
+                StateManager['scan_mode'] = value[0]
             else:
                 pass
         
@@ -294,7 +295,7 @@ class MainModel(Model):
         else:
             if self._prop_active_resolution not in value:
                 self._prop_active_resolution = value[0]
-                StateManager['scan_resolution'] = value
+                StateManager['scan_resolution'] = value[0]
             else:
                 pass
         
@@ -350,8 +351,13 @@ class MainModel(Model):
     def property_count_value_change(self, model, old_value, new_value):
         """
         Toggle whether or not the document is empty.
-        """
+        """        
         if new_value == 0:
             self.is_document_empty = True
+            self.is_document_multiple_pages = False
+        elif new_value == 1:
+            self.is_document_empty = False
+            self.is_document_multiple_pages = False
         else:
             self.is_document_empty = False
+            self.is_document_multiple_pages = True
