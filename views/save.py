@@ -55,4 +55,4 @@ class SaveView(View):
         
         controller.register_view(self)
         
-        self.log.debug('Created.') 
+        self.log.debug('Created.')

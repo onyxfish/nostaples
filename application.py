@@ -16,9 +16,9 @@
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-This module holds the top-level Application class, which handles
-the instantiation of MVC objects and communication between them
-when it is necessary.
+This module holds NoStaples' main method which handles
+the instantiation of MVC objects and then starts the gtk
+main loop.
 """
 
 import logging.config

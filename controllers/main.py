@@ -35,7 +35,6 @@ from controllers.page import PageController
 from controllers.preferences import PreferencesController
 from controllers.save import SaveController
 from models.page import PageModel
-from models.scanner import ScannerModel
 from utils.scanning import *
 from views.preferences import PreferencesView
 from views.save import SaveView
