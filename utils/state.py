@@ -15,8 +15,16 @@
 #~ You should have received a copy of the GNU General Public License
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+This module holds a utility class which manages persisting state to
+a gconf backend and processing callbacks when that state has changed.
+
+Note that a module-scoped StateManager variable is declared at the
+end of this module so that can be effectively used as a Singleton.
+"""
+
 import logging
-from types import IntType, StringType, FloatType, BooleanType
+from types import IntType, StringType, FloatType, BooleanType, TupleType
 
 import gconf
 
@@ -48,24 +56,30 @@ class GConfState():
             self.gconf_type = gconf.VALUE_FLOAT
         elif self.python_type is BooleanType:
             self.gconf_type = gconf.VALUE_BOOL
+        elif self.python_type is TupleType:
+            self.gconf_type = gconf.VALUE_STRING
         else:
-            # TODO: lists?
-            logging.getLogger().error(
-                'Type %s is not supported GConf.' % str(self.python_type))
             raise TypeError
 
 class GConfStateManager(dict):
     '''
     Persists application settings using GNOME's GConf configuration
-    system.  Handles most validation of values automatically.
+    system.  Handles type validation automatically.
+    
+    TODO: use pygtkmvc base classes instead of rolling custom observor pattern
+    and property management
+    TODO: should really observe models and in turn be observed by them,
+    rather than having them do both parts.  Right?
     '''
     
     def __init__(self):
         '''
         Grabs a reference to the default GConf client and 
         initializes a dictionary of states that will be managed.
+        
+        The dictionary is formatted this way:
+        states["state_name"] = GConfState()
         '''
-        # states["state_name"] = State()
         self.states = {}
         
         self.gconf_client = gconf.client_get_default()
@@ -82,9 +96,11 @@ class GConfStateManager(dict):
         '''
         dict.__init__(self)
         
+        self.log = logging.getLogger(self.__class__.__name__)
+        
         # Check that a state is not initialized twice
         if state_name in self.states.keys():
-            logging.getLogger().error(
+            self.log.error(
                 'State %s already exists in state manager.' % state_name)
             return
         
@@ -95,6 +111,8 @@ class GConfStateManager(dict):
         except TypeError:
             # This error is rethrown so it can be handled at the interface level
             # as it is probably breaking and should absolutely never happen
+            self.log.error(
+                'Type %s is not supported GConf.' % str(self.python_type))
             raise            
     
         # Load any value already stored in GConf
@@ -109,10 +127,13 @@ class GConfStateManager(dict):
                 state.value = stored_value.get_float()
             elif state.python_type is BooleanType:
                 state.value = stored_value.get_bool()
+            elif state.python_type is TupleType:
+                state.value = tuple(stored_value.get_string().split(
+                    constants.GCONF_TUPLE_SEPARATOR))
             else:
                 # It should not be possible to get here due to previous
                 # error-checking.
-                logging.getLogger().error(
+                self.log.error(
                     'Type %s is not supported GConf.' % str(state.python_type))
                 raise TypeError
         # If there was not a state stored, then set the default
@@ -125,15 +146,22 @@ class GConfStateManager(dict):
                 self.gconf_client.set_float(state.path, default_value)
             elif state.python_type is BooleanType:
                 self.gconf_client.set_bool(state.path, default_value)
+            elif state.python_type is TupleType:
+                packed_tuple = constants.GCONF_TUPLE_SEPARATOR.join(
+                    default_value)
+                self.gconf_client.set_string(state.path, packed_tuple)
             else:
                 # It should not be possible to get here due to previous
                 # error-checking.
-                logging.getLogger().error(
+                self.log.error(
                     'Type %s is not supported GConf.' % str(state.python_type))
                 raise TypeError
         
         # Add generic state callback
         self.gconf_client.notify_add(state.path, self.__gconf_value_changed)
+        
+        # Return either the stored value or the default value
+        return state.value
     
     def __getitem__(self, state_name):
         '''
@@ -146,7 +174,7 @@ class GConfStateManager(dict):
             state = self.states[state_name]
         except IndexError:
             # When a state has not been initialized raise a breaking error
-            logging.getLogger().error(
+            self.log.error(
                 'State %s does not exist in the state manager.' % state_name)
             raise KeyError
 
@@ -161,7 +189,7 @@ class GConfStateManager(dict):
             state = self.states[state_name]
         except IndexError:
             # When a state has not been initialized raise a breaking error
-            logging.getLogger().error(
+            self.log.error(
                 'State %s does not exist in the state manager.' % state_name)
             raise KeyError
             
@@ -172,14 +200,13 @@ class GConfStateManager(dict):
         # Validate that the new value matches the type of the value
         # originally specified for this state.
         if type(new_value) != state.python_type:
-            logging.getLogger().error(
-                'Type %s is not the correct type for state %s. \
-                It should be %s.' % 
-                    str(type(new_value)), state_name, str(state.python_type))
+            self.log.error(
+                'Type %s is not the correct type for state %s.  It should be %s.' % 
+                    (str(type(new_value)), state_name, str(state.python_type)))
             # When a wrong type is assigned raise a breaking error
             raise TypeError
         
-        logging.getLogger().debug(
+        self.log.debug(
             'Updating state %s with new value %s.' %
                 (state_name, str(new_value)))
             
@@ -193,10 +220,14 @@ class GConfStateManager(dict):
             self.gconf_client.set_float(state.path, new_value)
         elif state.python_type is BooleanType:
             self.gconf_client.set_bool(state.path, new_value)
+        elif state.python_type is TupleType:
+            packed_tuple = constants.GCONF_TUPLE_SEPARATOR.join(
+                new_value)
+            self.gconf_client.set_string(state.path, packed_tuple)
         else:
             # It should not be possible to get here due to error-checking
             # when the state was initialized.
-            logging.getLogger().error(
+            self.log.error(
                 'Type %s is not supported GConf.' % str(state.python_type))
             raise TypeError
         
@@ -214,7 +245,7 @@ class GConfStateManager(dict):
         except IndexError:
             # Treat this as a non-breaking error since it should be impossible
             # anyway.
-            logging.getLogger().error(
+            self.log.error(
                 'A callback was handled for non-initialized state %s.  \
                 (How could this ever happen?)' % state_name)
             return
@@ -227,7 +258,7 @@ class GConfStateManager(dict):
         # to revert to the previous setting.
         if new_value.type is not state.gconf_type:
             # ERROR: not the correct type, reset old value
-            logging.getLogger().error(
+            self.log.error(
                 'An invalid value was set for state %s.  \
                 The state has been reset to its previous value.' % state_name)
             self[state_name] = state.value
@@ -242,9 +273,12 @@ class GConfStateManager(dict):
             new_value_typed = new_value.get_float()
         elif state.python_type is BooleanType:
             new_value_typed = new_value.get_bool()
+        elif state.python_type is TupleType:
+            new_value_typed = tuple(new_value.get_string().split(
+                constants.GCONF_TUPLE_SEPARATOR))
         else:
             # It should not be possible to get here due to prior error-checking
-            logging.getLogger().error(
+            self.log.error(
                 'Type %s is not supported GConf.' % str(state.python_type))
             raise TypeError   
             
@@ -258,7 +292,7 @@ class GConfStateManager(dict):
         
         state.value = new_value_typed
         
-        logging.getLogger().debug(
+        self.log.debug(
             'An external operation has updated state %s with value %s.' %
                 (state_name, str(new_value_typed)))
         

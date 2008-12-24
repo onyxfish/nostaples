@@ -1,0 +1,618 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
+<!--Generated with glade3 3.4.5 on Mon Dec 15 21:41:01 2008 -->
+<glade-interface>
+  <widget class="GtkWindow" id="scan_window">
+    <property name="visible">True</property>
+    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+    <property name="title" translatable="yes">NoStaples</property>
+    <property name="window_position">GTK_WIN_POS_CENTER</property>
+    <property name="default_width">600</property>
+    <property name="default_height">400</property>
+    <signal name="destroy" handler="on_scan_window_destroy"/>
+    <signal name="size_allocate" handler="on_scan_window_size_allocate"/>
+    <child>
+      <widget class="GtkVBox" id="vbox1">
+        <property name="visible">True</property>
+        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+        <child>
+          <widget class="GtkMenuBar" id="menubar1">
+            <property name="visible">True</property>
+            <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+            <child>
+              <widget class="GtkMenuItem" id="menuitem1">
+                <property name="visible">True</property>
+                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                <property name="label" translatable="yes">_File</property>
+                <property name="use_underline">True</property>
+                <child>
+                  <widget class="GtkMenu" id="menu1">
+                    <property name="visible">True</property>
+                    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="scan_menu_item">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">S_can</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_scan_menu_item_activate"/>
+                        <child internal-child="image">
+                          <widget class="GtkImage" id="menu-item-image2">
+                            <property name="visible">True</property>
+                            <property name="icon_name">scanner</property>
+                          </widget>
+                        </child>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkSeparatorMenuItem" id="separatormenuitem7">
+                        <property name="visible">True</property>
+                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="save_as_menu_item">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Save _As...</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_save_as_menu_item_activate"/>
+                        <accelerator key="S" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                        <child internal-child="image">
+                          <widget class="GtkImage" id="menu-item-image1">
+                            <property name="stock">gtk-save-as</property>
+                          </widget>
+                        </child>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkSeparatorMenuItem" id="separatormenuitem1">
+                        <property name="visible">True</property>
+                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="quit_menu_item">
+                        <property name="visible">True</property>
+                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                        <property name="label" translatable="yes">gtk-quit</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="activate" handler="on_quit_menu_item_activate"/>
+                      </widget>
+                    </child>
+                  </widget>
+                </child>
+              </widget>
+            </child>
+            <child>
+              <widget class="GtkMenuItem" id="menuitem2">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">_Edit</property>
+                <property name="use_underline">True</property>
+                <child>
+                  <widget class="GtkMenu" id="menu4">
+                    <property name="visible">True</property>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="delete_menu_item">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">gtk-delete</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="activate" handler="on_delete_menu_item_activate"/>
+                        <accelerator key="Delete" modifiers="" signal="activate"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkSeparatorMenuItem" id="separatormenuitem4">
+                        <property name="visible">True</property>
+                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="insert_scan_menu_item">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Insert Scan</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_insert_scan_menu_item_activate"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkSeparatorMenuItem" id="separatormenuitem3">
+                        <property name="visible">True</property>
+                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="preferences_menu_item">
+                        <property name="visible">True</property>
+                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                        <property name="label" translatable="yes">gtk-preferences</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="activate" handler="on_preferences_menu_item_activate"/>
+                      </widget>
+                    </child>
+                  </widget>
+                </child>
+              </widget>
+            </child>
+            <child>
+              <widget class="GtkMenuItem" id="view_menu">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">_View</property>
+                <property name="use_underline">True</property>
+                <child>
+                  <widget class="GtkMenu" id="menu2">
+                    <property name="visible">True</property>
+                    <child>
+                      <widget class="GtkCheckMenuItem" id="show_toolbar_menu_item">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">_Toolbar</property>
+                        <property name="use_underline">True</property>
+                        <property name="active">True</property>
+                        <signal name="toggled" handler="on_show_toolbar_menu_item_toggled"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkCheckMenuItem" id="show_statusbar_menu_item">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">_Statusbar</property>
+                        <property name="use_underline">True</property>
+                        <property name="active">True</property>
+                        <signal name="toggled" handler="on_show_statusbar_menu_item_toggled"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkCheckMenuItem" id="show_thumbnails_menu_item">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Thumb_nails</property>
+                        <property name="use_underline">True</property>
+                        <property name="active">True</property>
+                        <signal name="toggled" handler="on_show_thumbnails_menu_item_toggled"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkCheckMenuItem" id="show_adjustments_menu_item">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">_Adjustments</property>
+                        <property name="use_underline">True</property>
+                        <signal name="toggled" handler="on_show_adjustments_menu_item_toggled"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkSeparatorMenuItem" id="separatormenuitem5">
+                        <property name="visible">True</property>
+                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="zoom_in_menu_item">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">gtk-zoom-in</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="activate" handler="on_zoom_in_menu_item_activate"/>
+                        <accelerator key="plus" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="zoom_out_menu_item">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">gtk-zoom-out</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="activate" handler="on_zoom_out_menu_item_activate"/>
+                        <accelerator key="minus" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="zoom_one_to_one_menu_item">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">gtk-zoom-100</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="activate" handler="on_zoom_one_to_one_menu_item_activate"/>
+                        <accelerator key="1" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="zoom_best_fit_menu_item">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">gtk-zoom-fit</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="activate" handler="on_zoom_best_fit_menu_item_activate"/>
+                        <accelerator key="F" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                      </widget>
+                    </child>
+                  </widget>
+                </child>
+              </widget>
+            </child>
+            <child>
+              <widget class="GtkMenuItem" id="menuitem9">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">_Tools</property>
+                <property name="use_underline">True</property>
+                <child>
+                  <widget class="GtkMenu" id="menu6">
+                    <property name="visible">True</property>
+                    <child>
+                      <widget class="GtkMenuItem" id="rotate_clockwise_menu_item">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">_Rotate Clockwise</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_rotate_clockwise_menu_item_activate"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="rotate_counter_clockwise_menu_item">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Rotate _Counterclockwise</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_rotate_counter_clockwise_menu_item_activate"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkCheckMenuItem" id="rotate_all_pages_menu_item">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Apply rotation to all _pages?</property>
+                        <property name="use_underline">True</property>
+                        <signal name="toggled" handler="on_rotate_all_pages_menu_item_toggled"/>
+                      </widget>
+                    </child>
+                  </widget>
+                </child>
+              </widget>
+            </child>
+            <child>
+              <widget class="GtkMenuItem" id="options_menu">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">_Options</property>
+                <property name="use_underline">True</property>
+                <child>
+                  <widget class="GtkMenu" id="menu7">
+                    <property name="visible">True</property>
+                    <child>
+                      <widget class="GtkMenuItem" id="scanner_menu_item">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">_Scanner</property>
+                        <property name="use_underline">True</property>
+                        <child>
+                          <widget class="GtkMenu" id="scanner_sub_menu">
+                            <property name="visible">True</property>
+                            <child>
+                              <widget class="GtkMenuItem" id="menuitem5">
+                                <property name="visible">True</property>
+                                <property name="sensitive">False</property>
+                                <property name="label" translatable="yes">None</property>
+                                <property name="use_underline">True</property>
+                              </widget>
+                            </child>
+                          </widget>
+                        </child>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="scan_mode_menu_item">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">_Mode</property>
+                        <property name="use_underline">True</property>
+                        <child>
+                          <widget class="GtkMenu" id="scan_mode_sub_menu">
+                            <property name="visible">True</property>
+                            <child>
+                              <widget class="GtkMenuItem" id="menuitem8">
+                                <property name="visible">True</property>
+                                <property name="sensitive">False</property>
+                                <property name="label" translatable="yes">None</property>
+                                <property name="use_underline">True</property>
+                              </widget>
+                            </child>
+                          </widget>
+                        </child>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="scan_resolution_menu_item">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">_Resolution</property>
+                        <property name="use_underline">True</property>
+                        <child>
+                          <widget class="GtkMenu" id="scan_resolution_sub_menu">
+                            <property name="visible">True</property>
+                            <child>
+                              <widget class="GtkMenuItem" id="menuitem10">
+                                <property name="visible">True</property>
+                                <property name="sensitive">False</property>
+                                <property name="label" translatable="yes">None</property>
+                                <property name="use_underline">True</property>
+                              </widget>
+                            </child>
+                          </widget>
+                        </child>
+                      </widget>
+                    </child>
+                  </widget>
+                </child>
+              </widget>
+            </child>
+            <child>
+              <widget class="GtkMenuItem" id="menuitem3">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">_Go</property>
+                <property name="use_underline">True</property>
+                <child>
+                  <widget class="GtkMenu" id="menu5">
+                    <property name="visible">True</property>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="go_first_menu_item">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">gtk-goto-first</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="activate" handler="on_go_first_menu_item_activate"/>
+                        <accelerator key="Home" modifiers="" signal="activate"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="go_previous_menu_item">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">gtk-go-back</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="activate" handler="on_go_previous_menu_item_activate"/>
+                        <accelerator key="Left" modifiers="GDK_MOD1_MASK" signal="activate"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="go_next_menu_item">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">gtk-go-forward</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="activate" handler="on_go_next_menu_item_activate"/>
+                        <accelerator key="Right" modifiers="GDK_MOD1_MASK" signal="activate"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="go_last_menu_item">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">gtk-goto-last</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="activate" handler="on_go_last_menu_item_activate"/>
+                        <accelerator key="End" modifiers="" signal="activate"/>
+                      </widget>
+                    </child>
+                  </widget>
+                </child>
+              </widget>
+            </child>
+            <child>
+              <widget class="GtkMenuItem" id="menuitem4">
+                <property name="visible">True</property>
+                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                <property name="label" translatable="yes">_Help</property>
+                <property name="use_underline">True</property>
+                <child>
+                  <widget class="GtkMenu" id="menu3">
+                    <property name="visible">True</property>
+                    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="contents_menu_item">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">_Contents</property>
+                        <property name="use_underline">True</property>
+                        <accelerator key="F1" modifiers="" signal="activate"/>
+                        <child internal-child="image">
+                          <widget class="GtkImage" id="menu-item-image3">
+                            <property name="visible">True</property>
+                            <property name="stock">gtk-help</property>
+                          </widget>
+                        </child>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="about_menu_item">
+                        <property name="visible">True</property>
+                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                        <property name="label" translatable="yes">gtk-about</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="activate" handler="on_about_menu_item_activate"/>
+                      </widget>
+                    </child>
+                  </widget>
+                </child>
+              </widget>
+            </child>
+          </widget>
+          <packing>
+            <property name="expand">False</property>
+          </packing>
+        </child>
+        <child>
+          <widget class="GtkToolbar" id="main_toolbar">
+            <property name="visible">True</property>
+            <property name="toolbar_style">GTK_TOOLBAR_BOTH_HORIZ</property>
+            <property name="icon_size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
+            <child>
+              <widget class="GtkToolButton" id="scan_button">
+                <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">Scan</property>
+                <property name="label" translatable="yes">Scan</property>
+                <property name="icon_name">scanner</property>
+                <signal name="clicked" handler="on_scan_button_clicked"/>
+              </widget>
+              <packing>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkToolButton" id="save_as_button">
+                <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">Save As...</property>
+                <property name="icon_name">document-save-as</property>
+                <signal name="clicked" handler="on_save_as_button_clicked"/>
+              </widget>
+              <packing>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkSeparatorToolItem" id="toolbutton1">
+                <property name="visible">True</property>
+              </widget>
+            </child>
+            <child>
+              <widget class="GtkToolButton" id="zoom_in_button">
+                <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">Zoom In</property>
+                <property name="icon_name">zoom-in</property>
+                <signal name="clicked" handler="on_zoom_in_button_clicked"/>
+              </widget>
+              <packing>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkToolButton" id="zoom_out_button">
+                <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">Zoom Out</property>
+                <property name="icon_name">zoom-out</property>
+                <signal name="clicked" handler="on_zoom_out_button_clicked"/>
+              </widget>
+              <packing>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkToolButton" id="zoom_one_to_one_button">
+                <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">Normal Size</property>
+                <property name="icon_name">zoom-original</property>
+                <signal name="clicked" handler="on_zoom_one_to_one_button_clicked"/>
+              </widget>
+              <packing>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkToolButton" id="zoom_best_fit_button">
+                <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">Best Fit</property>
+                <property name="icon_name">zoom-fit-best</property>
+                <signal name="clicked" handler="on_zoom_best_fit_button_clicked"/>
+              </widget>
+              <packing>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkSeparatorToolItem" id="toolbutton2">
+                <property name="visible">True</property>
+              </widget>
+            </child>
+            <child>
+              <widget class="GtkToolButton" id="rotate_counter_clockwise_button">
+                <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">Rotate Counterclockwise</property>
+                <property name="icon_name">object-rotate-left</property>
+                <signal name="clicked" handler="on_rotate_counter_clockwise_button_clicked"/>
+              </widget>
+              <packing>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkToolButton" id="rotate_clockwise_button">
+                <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">Rotate Clockwise</property>
+                <property name="icon_name">object-rotate-right</property>
+                <signal name="clicked" handler="on_rotate_clockwise_button_clicked"/>
+              </widget>
+              <packing>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkSeparatorToolItem" id="toolbutton4">
+                <property name="visible">True</property>
+              </widget>
+            </child>
+            <child>
+              <widget class="GtkToolButton" id="go_first_button">
+                <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">First</property>
+                <property name="stock_id">gtk-goto-first</property>
+                <signal name="clicked" handler="on_go_first_button_clicked"/>
+              </widget>
+              <packing>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkToolButton" id="go_previous_button">
+                <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">Back</property>
+                <property name="stock_id">gtk-go-back</property>
+                <signal name="clicked" handler="on_go_previous_button_clicked"/>
+              </widget>
+              <packing>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkToolButton" id="go_next_button">
+                <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">Forward</property>
+                <property name="stock_id">gtk-go-forward</property>
+                <signal name="clicked" handler="on_go_next_button_clicked"/>
+              </widget>
+              <packing>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkToolButton" id="go_last_button">
+                <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">Last</property>
+                <property name="stock_id">gtk-goto-last</property>
+                <signal name="clicked" handler="on_go_last_button_clicked"/>
+              </widget>
+              <packing>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+          </widget>
+          <packing>
+            <property name="expand">False</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <widget class="GtkViewport" id="document_view_docking_viewport">
+            <property name="visible">True</property>
+            <property name="resize_mode">GTK_RESIZE_QUEUE</property>
+            <child>
+              <placeholder/>
+            </child>
+          </widget>
+          <packing>
+            <property name="position">2</property>
+          </packing>
+        </child>
+        <child>
+          <widget class="GtkStatusbar" id="scan_window_statusbar">
+            <property name="visible">True</property>
+            <property name="spacing">2</property>
+          </widget>
+          <packing>
+            <property name="expand">False</property>
+            <property name="position">3</property>
+          </packing>
+        </child>
+      </widget>
+    </child>
+  </widget>
+</glade-interface>

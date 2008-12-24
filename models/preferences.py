@@ -15,16 +15,31 @@
 #~ You should have received a copy of the GNU General Public License
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
-'''
-This module holds the main loop which instantiates the NoStaples
-application.
-'''
+"""
+This module holds the PreferencesModel, which manages user settings.
+"""
 
-import gtk
+import logging
 
-try:
-    from nostaples import application
-except ImportError:
-    import application
-    
-application.run()
+from gtkmvc.model import Model
+
+import constants
+
+class PreferencesModel(Model):
+    """
+    Manages user settings.
+    """
+    __properties__ = \
+    {
+        'preview_mode' : constants.PREVIEW_MODE_ANTIALIAS,
+    }
+
+    def __init__(self):
+        """
+        Constructs the PreferencesModel.
+        """
+        Model.__init__(self)
+        
+        self.log = logging.getLogger(self.__class__.__name__)
+        
+        self.log.debug('Created.')
