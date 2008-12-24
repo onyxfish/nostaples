@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Sun Dec 14 08:41:56 2008 -->
+<!--Generated with glade3 3.4.5 on Wed Dec 24 09:14:42 2008 -->
 <glade-interface>
- <widget class="GtkAboutDialog" id="about_dialog">
+  <widget class="GtkAboutDialog" id="about_dialog">
     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
     <property name="border_width">5</property>
     <property name="title" translatable="yes">About NoStaples</property>
@@ -13,7 +13,6 @@
     <property name="type_hint">GDK_WINDOW_TYPE_HINT_DIALOG</property>
     <property name="skip_taskbar_hint">True</property>
     <property name="skip_pager_hint">True</property>
-    <property name="transient_for">scan_window</property>
     <property name="has_separator">False</property>
     <property name="program_name">NoStaples</property>
     <property name="copyright" translatable="yes">Copyright © 2008 Christopher Groskopf </property>
@@ -34,6 +33,9 @@ You should have received a copy of the GNU General Public License
 along with NoStaples.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</property>
     <property name="authors">Christopher Groskopf  &lt;staringmonkey@gmail.com&gt;</property>
     <property name="documenters"></property>
+    <signal name="close" handler="on_about_dialog_close"/>
+    <signal name="delete_event" handler="on_about_dialog_delete_event"/>
+    <signal name="response" handler="on_about_dialog_response"/>
     <child internal-child="vbox">
       <widget class="GtkVBox" id="dialog-vbox1">
         <property name="visible">True</property>

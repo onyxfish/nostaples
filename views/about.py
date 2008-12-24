@@ -16,8 +16,8 @@
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-This module holds the MainView which exposes the application's main 
-window.
+This module holds the AboutView which exposes the application's
+about dialog.
 """
 
 import logging
@@ -28,37 +28,27 @@ from gtkmvc.view import View
 
 import constants
 
-class SaveView(View):
+class AboutView(View):
     """
     Exposes the application's main window.
     """
 
     def __init__(self, application):
-        """
-        Constructs the MainView, including setting up controls that could
-        not be configured in Glade and constructing sub-views.
-        """
+        """Constructs the AboutView."""
         self.application = application
-        save_dialog_glade = os.path.join(
-            constants.GUI_DIRECTORY, 'save_dialog.glade')
+        about_dialog_glade = os.path.join(
+            constants.GUI_DIRECTORY, 'about_dialog.glade')
         View.__init__(
-            self, self.application.get_save_controller(), 
-            save_dialog_glade, ['save_dialog', 'pdf_dialog'], 
+            self, self.application.get_about_controller(), 
+            about_dialog_glade, 'about_dialog', 
             self.application.get_main_view(), False)
             
         self.log = logging.getLogger(self.__class__.__name__)
         
-        # Setup filename filter
-        filename_filter = gtk.FileFilter()
-        filename_filter.set_name('PDF Files')
-        filename_filter.add_mime_type('application/pdf')
-        filename_filter.add_pattern('*.pdf')
-        self['save_dialog'].add_filter(filename_filter)
-        
-        self.application.get_save_controller().register_view(self)
+        self.application.get_about_controller().register_view(self)
         
         self.log.debug('Created.')
         
     def run(self):
-        """Run the modal save dialog."""
-        self['save_dialog'].run()
+        """Run this modal dialog."""
+        self['about_dialog'].run()

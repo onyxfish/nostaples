@@ -67,6 +67,7 @@ class SaveController(Controller):
         Determine the selected file type and invoke the method
         that saves that file type.
         """
+        # TODO: dont need the bracketed part
         self.view['save_dialog'].hide()
         
         if response != gtk.RESPONSE_ACCEPT:
@@ -126,10 +127,6 @@ class SaveController(Controller):
                 int(current_page.width / current_page.resolution)
             height_in_inches = \
                 int(current_page.height / current_page.resolution)
-                
-            print current_page.width
-            print current_page.height
-            print current_page.resolution
             
             # NB: Because not all SANE backends support specifying the size
             # of the scan area, the best we can do is scan at the default
@@ -169,9 +166,10 @@ class SaveController(Controller):
     
     def run(self):
         """Run the save dialog."""
-        self.view['save_dialog'].set_current_folder(self.model.save_path)
-        self.view['save_dialog'].set_current_name('')
-        response = self.view['save_dialog'].run()
+        view = self.application.get_save_view()
+        view['save_dialog'].set_current_folder(self.model.save_path)
+        view['save_dialog'].set_current_name('')
+        view.run()
         
     # UTILITY METHODS
     
@@ -194,9 +192,6 @@ class SaveController(Controller):
         """        
         image_width_in_points = width_in_inches * points_per_inch
         image_height_in_points = height_in_inches * points_per_inch
-        
-        print image_width_in_points
-        print image_height_in_points
         
         nearest_size = None
         nearest_distance = sys.maxint

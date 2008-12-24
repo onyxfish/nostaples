@@ -94,7 +94,7 @@ class MainController(Controller):
     
     def on_save_as_menu_item_activate(self, menu_item):
         """Saves the current document to a file."""
-        self._save_as()
+        self.application.show_save_dialog()
     
     def on_delete_menu_item_activate(self, menu_item):
         self.application.get_document_controller().delete_selected()
@@ -105,7 +105,7 @@ class MainController(Controller):
     
     def on_preferences_menu_item_activate(self, menu_item):
         """Creates and displays a preferences dialog."""
-        self._show_preferences()
+        self.application.show_preferences_dialog()
         
     def on_quit_menu_item_activate(self, menu_item):
         """Exits the application."""
@@ -188,8 +188,8 @@ class MainController(Controller):
         pass
     
     def on_about_menu_item_activate(self, menu_item):
-        """TODO"""
-        pass
+        """Show the about dialog."""
+        self.application.show_about_dialog()
         
     # Toolbar Buttons
         
@@ -199,7 +199,7 @@ class MainController(Controller):
         
     def on_save_as_button_clicked(self, button):
         """Saves the current document to a file."""
-        self._save_as()
+        self.application.show_save_dialog()
     
     def on_zoom_in_button_clicked(self, button):
         """Zooms the page preview in."""
@@ -443,14 +443,6 @@ class MainController(Controller):
         gtk.main_quit()
 
     # PRIVATE METHODS
-
-    def _save_as(self):
-        """Save the current document."""
-        self.application.show_save_dialog()
-        
-    def _show_preferences(self):
-        """Show the Preferences dialog."""
-        self.application.show_preferences_dialog()
         
     def _clear_available_scanners_sub_menu(self):
         """Clear the menu of available scanners."""

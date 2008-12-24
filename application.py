@@ -27,6 +27,7 @@ import os
 import gtk
 
 import constants
+from controllers.about import AboutController
 from controllers.document import DocumentController
 from controllers.main import MainController
 from controllers.page import PageController
@@ -38,6 +39,7 @@ from models.page import PageModel
 from models.preferences import PreferencesModel
 from models.save import SaveModel
 from utils.state import GConfStateManager
+from views.about import AboutView
 from views.document import DocumentView
 from views.main import MainView
 from views.page import PageView
@@ -81,6 +83,9 @@ class Application(object):
     _save_model = None
     _save_controller = None
     _save_view = None
+    
+    _about_controller = None
+    _about_view = None
 
     def __init__(self):
         """
@@ -142,11 +147,10 @@ class Application(object):
         return self._preferences_view
     
     def show_preferences_dialog(self):
-        """Show the preferences dialog.
+        """
+        Show the preferences dialog.
         
-        This is a convenience function.  It is
-        short-hand for
-        C{get_preferences_view().show()}.
+        This is a convenience function.
         """
         self.get_preferences_view().show()
     
@@ -187,9 +191,7 @@ class Application(object):
         """
         Return the current/active L{PageModel} object.
         
-        This is a convenience function.  It is
-        short-hand for 
-        C{get_page_controller().get_current_page_model()}.
+        This is a convenience function.
         """
         return self.get_page_controller().get_current_page_model()
     
@@ -229,13 +231,34 @@ class Application(object):
         return self._save_view
     
     def show_save_dialog(self):
-        """Show the save dialog.
-        
-        This is a convenience function.  It is
-        short-hand for
-        C{get_save_view().show()}.
         """
-        self.get_save_view().show()
+        Show the save dialog.
+        
+        This is a convenience function.
+        """
+        self.get_save_controller().run()
+    
+    def get_about_controller(self):
+        """Return the L{SaveController} component."""
+        if not self._about_controller:            
+            self._about_controller = AboutController(self)
+                    
+        return self._about_controller
+    
+    def get_about_view(self):
+        """Return the L{SaveView} component."""
+        if not self._about_view:            
+            self._about_view = AboutView(self)
+                    
+        return self._about_view
+    
+    def show_about_dialog(self):
+        """
+        Show the about dialog.
+        
+        This is a convenience function.
+        """
+        self.get_about_controller().run()
         
     def run(self):
         """Execute the GTK main loop."""
