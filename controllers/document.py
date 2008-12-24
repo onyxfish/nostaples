@@ -64,9 +64,6 @@ class DocumentController(Controller):
         self.view['thumbnails_tree_view'].get_selection().connect(
           'changed', self.on_thumbnails_tree_view_selection_changed)
         
-        # TODO: temp?
-        self.view['thumbnails_tree_view'].get_selection().select_path(0)
-        
         self.log.debug('%s registered.', view.__class__.__name__)
         
     # USER INTERFACE CALLBACKS

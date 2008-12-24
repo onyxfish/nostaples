@@ -65,7 +65,10 @@ class SaveController(Controller):
     # USER INTERFACE CALLBACKS
         
     def on_save_dialog_response(self, dialog, response):
-        # TODO: docstring
+        """
+        Determine the selected file type and invoke the method
+        that saves that file type.
+        """
         self.view['save_dialog'].hide()
         
         if response != gtk.RESPONSE_ACCEPT:
@@ -74,18 +77,20 @@ class SaveController(Controller):
         self.model.filename = self.view['save_dialog'].get_filename()
         filename_filter = self.view['save_dialog'].get_filter()
         
-        # TODO: infer file type from extension?
-        if filename_filter.get_name() == 'PDF Files' and \
-           self.model.filename[-4:] != '.pdf':
+        if self.model.filename[-4:] == '.pdf':
+            self._save_pdf()
+        elif filename_filter.get_name() == 'PDF Files':
             self.model.filename = ''.join([self.model.filename, '.pdf'])
             self._save_pdf()
         else:
-            self.log.error('Unknown file type.')
+            self.log.error('Unknown file type: %s.' % self.model.filename)
             
         self.model.save_path = self.view['save_dialog'].get_current_folder()
         
     def on_pdf_dialog_response(self, dialog, response):
-        # TODO: docstring
+        """
+        Output the current document to a PDF file using ReportLab.
+        """
         self.view['pdf_dialog'].window.set_cursor(gtk.gdk.Cursor(gtk.gdk.WATCH))
         gtk.gdk.flush()
             
@@ -164,7 +169,7 @@ class SaveController(Controller):
     # PUBLIC METHODS
     
     def run(self):
-        # TODO: docstring
+        """Run the save dialog."""
         self.view['save_dialog'].set_current_folder(self.model.save_path)
         self.view['save_dialog'].set_current_name('')
         response = self.view['save_dialog'].run()
@@ -172,7 +177,7 @@ class SaveController(Controller):
     # UTILITY METHODS
     
     def _save_pdf(self):
-        # TODO: docstring
+        """Run the dialog to get PDF metadata."""
         title = self.model.filename.split('/')[-1][0:-4]
         author = self.model.author
         keywords = ''
@@ -184,10 +189,10 @@ class SaveController(Controller):
         self.view['pdf_dialog'].run()
     
     def _determine_best_fitting_pagesize(self, width_in_inches, height_in_inches):
-        '''
+        """
         Searches through the possible page sizes and finds the smallest one that
         will contain the image without cropping.
-        '''        
+        """        
         image_width_in_points = width_in_inches * points_per_inch
         image_height_in_points = height_in_inches * points_per_inch
         

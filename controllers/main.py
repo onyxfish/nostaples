@@ -57,7 +57,6 @@ class MainController(Controller):
         self.log.debug('Created.')
         
         # Sub-controllers
-        
         self.document_controller = DocumentController(
             self.model.document_model)
         self.model.document_model.register_observer(self)
@@ -65,12 +64,15 @@ class MainController(Controller):
     def register_view(self, view):
         """
         Registers this controller with a view.
+        
+        Also, invokes the L{MainModel.load_state} which will
+        pull in any persisted values and then calls
+        L{_update_available_scanners} to poll for devices and
+        create relevant widgets in the view.
         """
         Controller.register_view(self, view)
         
-        # Load persistent state from backend
-        self.model.load_state()
-        
+        self.model.load_state()        
         self._update_available_scanners()
         
         self.log.debug('%s registered.', view.__class__.__name__)
