@@ -26,8 +26,6 @@ import gobject
 import gtk
 from gtkmvc.model import ListStoreModel
 
-from models.page import PageModel
-
 class DocumentModel(ListStoreModel):
     """
     Represents a multi-page document in the process of being scanned.
@@ -41,17 +39,14 @@ class DocumentModel(ListStoreModel):
         'manually_updating_row' : False,
     }
     
-    def __init__(self):
+    def __init__(self, application):
         """
         Constructs the DocumentModel.
         """
+        self.application = application
         ListStoreModel.__init__(self, gobject.TYPE_PYOBJECT)
         
         self.log = logging.getLogger(self.__class__.__name__)
-        
-        # Create an empty page to use as a placeholder when
-        # none have been scanned.
-        self.null_page = PageModel()
         
         self.log.debug('Created.')
     
@@ -73,7 +68,7 @@ class DocumentModel(ListStoreModel):
             iter = self.iter_next(iter)
             
     # PUBLIC METHODS
-        
+            
     def append(self, page_model):
         """Adds a page to the end of the document."""
         super(DocumentModel, self).append([page_model])

@@ -33,7 +33,6 @@ from reportlab.lib.pagesizes import landscape, portrait
 from reportlab.lib.units import inch as points_per_inch
 
 import constants
-from models.save import SaveModel
 
 class SaveController(Controller):
     """
@@ -43,13 +42,12 @@ class SaveController(Controller):
     
     # SETUP METHODS
     
-    def __init__(self, model, document_model):
+    def __init__(self, application):
         """
         Constructs the SaveController.
         """
-        Controller.__init__(self, model)
-        
-        self.document_model = document_model
+        self.application = application
+        Controller.__init__(self, application.get_save_model())
 
         self.log = logging.getLogger(self.__class__.__name__)
         self.log.debug('Created.')
@@ -112,9 +110,10 @@ class SaveController(Controller):
         pdf.setKeywords(keywords)
             
         # Generate pages
-        page_iter = self.document_model.get_iter_first()
+        document_model = self.application.get_document_model()
+        page_iter = document_model.get_iter_first()
         while page_iter:
-            current_page = self.document_model.get_value(page_iter, 0)
+            current_page = document_model.get_value(page_iter, 0)
             
             # Write transformed image
             temp_file_path = ''.join([tempfile.mktemp(), '.bmp'])
@@ -147,7 +146,7 @@ class SaveController(Controller):
                 preserveAspectRatio=True)
             pdf.showPage()
             
-            page_iter = self.document_model.iter_next(page_iter)
+            page_iter = document_model.iter_next(page_iter)
             
         # Save complete PDF
         pdf.save()
@@ -155,13 +154,13 @@ class SaveController(Controller):
         assert os.path.exists(self.model.filename), \
             'Final PDF file was not created by ReportLab.'
                     
-        page_iter = self.document_model.get_iter_first()
+        page_iter = document_model.get_iter_first()
         while page_iter:
             # TODO: try block
-            os.remove(self.document_model.get_value(page_iter, 0).path)
-            page_iter = self.document_model.iter_next(page_iter)
+            os.remove(document_model.get_value(page_iter, 0).path)
+            page_iter = document_model.iter_next(page_iter)
             
-        self.document_model.clear()
+        document_model.clear()
         
         self.view['pdf_dialog'].window.set_cursor(None)
         self.view['pdf_dialog'].hide()

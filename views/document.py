@@ -27,23 +27,24 @@ import gtk
 from gtkmvc.view import View
 
 import constants
-from views.page import PageView
 
 class DocumentView(View):
     """
     Exposes the document being scanned as a thumbnail list.
     """
 
-    def __init__(self, controller):
+    def __init__(self, application):
         """
         Constructs the DocumentView, including setting up controls that could
         not be configured in Glade and constructing sub-views.
         """
+        self.application = application
         document_view_glade = os.path.join(
             constants.GUI_DIRECTORY, 'document_view.glade')
         View.__init__(
-            self, controller, document_view_glade, 
-            'dummy_document_view_window', None, False)
+            self, application.get_document_controller(), 
+            document_view_glade, 'dummy_document_view_window', 
+            None, False)
             
         self.log = logging.getLogger(self.__class__.__name__)
         
@@ -67,13 +68,12 @@ class DocumentView(View):
 
         self['thumbnails_scrolled_window'].add(self['thumbnails_tree_view'])
 
-        # Setup sub-views
-        self.page_view = PageView(controller.page_controller)
-        
-        self.page_view['page_view_table'].reparent(
+        # Dock sub-views
+        page_view = self.application.get_page_view()
+        page_view['page_view_table'].reparent(
             self['page_view_docking_viewport'])
         
-        controller.register_view(self)
+        application.get_document_controller().register_view(self)
         
         self.log.debug('Created.')
         

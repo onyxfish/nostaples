@@ -35,11 +35,12 @@ class PreferencesController(Controller):
     
     # SETUP METHODS
     
-    def __init__(self, model):
+    def __init__(self, application):
         """
         Constructs the PreferencesController.
         """
-        Controller.__init__(self, model)
+        self.application = application
+        Controller.__init__(self, application.get_preferences_model())
 
         self.log = logging.getLogger(self.__class__.__name__)
         self.log.debug('Created.')
@@ -81,10 +82,5 @@ class PreferencesController(Controller):
     # UTILITY METHODS
     
     def close(self):
-        """Closes the preferences dialog and destroy its MVC components."""
-        self.model.unregister_observer(self)
-        self.view.get_top_widget().destroy()
-        self.view = None
-        self.model = None
-                
-        self.log.debug('Destroyed.')
+        """Close the preferences dialog."""
+        self.view.hide()

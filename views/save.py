@@ -33,16 +33,18 @@ class SaveView(View):
     Exposes the application's main window.
     """
 
-    def __init__(self, controller, parent):
+    def __init__(self, application):
         """
         Constructs the MainView, including setting up controls that could
         not be configured in Glade and constructing sub-views.
         """
+        self.application = application
         save_dialog_glade = os.path.join(
             constants.GUI_DIRECTORY, 'save_dialog.glade')
         View.__init__(
-            self, controller, save_dialog_glade, 
-            ['save_dialog', 'pdf_dialog'], parent, False)
+            self, self.application.get_save_controller(), 
+            save_dialog_glade, ['save_dialog', 'pdf_dialog'], 
+            self.application.get_main_view(), False)
             
         self.log = logging.getLogger(self.__class__.__name__)
         
@@ -53,6 +55,6 @@ class SaveView(View):
         filename_filter.add_pattern('*.pdf')
         self['save_dialog'].add_filter(filename_filter)
         
-        controller.register_view(self)
+        self.application.get_save_controller().register_view(self)
         
         self.log.debug('Created.')

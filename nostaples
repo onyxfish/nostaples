@@ -20,11 +20,10 @@ This module holds the main loop which instantiates the NoStaples
 application.
 '''
 
-import gtk
-
 try:
     from nostaples import application
 except ImportError:
     import application
     
-application.run()
+nostaples = application.Application()
+nostaples.run()

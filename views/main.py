@@ -27,24 +27,24 @@ import gtk
 from gtkmvc.view import View
 
 import constants
-from views.document import DocumentView
-from views.page import PageView
 
 class MainView(View):
     """
     Exposes the application's main window.
     """
 
-    def __init__(self, controller):
+    def __init__(self, application):
         """
         Constructs the MainView, including setting up controls that could
         not be configured in Glade and constructing sub-views.
-        """
+        """        
+        self.application = application
         scan_window_glade = os.path.join(
             constants.GUI_DIRECTORY, 'scan_window.glade')
         View.__init__(
-            self, controller, scan_window_glade,
-            'scan_window', None, False)
+            self, application.get_main_controller(), 
+            scan_window_glade, 'scan_window', 
+            None, False)
             
         self.log = logging.getLogger(self.__class__.__name__)
         
@@ -55,8 +55,8 @@ class MainView(View):
             constants.STATUSBAR_BASE_CONTEXT_ID, 'Ready')
         
         # Setup sub views
-        self.document_view = DocumentView(controller.document_controller)
-        self.document_view['document_view_horizontal_box'].reparent(
+        document_view = self.application.get_document_view()
+        document_view['document_view_horizontal_box'].reparent(
              self['document_view_docking_viewport'])
         self['document_view_docking_viewport'].show_all()
 
@@ -68,8 +68,9 @@ class MainView(View):
         self.set_zoom_controls_sensitive(False)
         self.set_adjustment_controls_sensitive(False)
         self.set_navigation_controls_sensitive(False)
+        document_view.set_adjustments_sensitive(False)
         
-        controller.register_view(self)
+        application.get_main_controller().register_view(self)
         
         self.log.debug('Created.')
         
@@ -124,7 +125,7 @@ class MainView(View):
         self['rotate_counter_clockwise_button'].set_sensitive(sensitive)
         self['rotate_clockwise_button'].set_sensitive(sensitive)
         
-        self.document_view.set_adjustments_sensitive(sensitive)
+        self.application.get_document_view().set_adjustments_sensitive(sensitive)
 
     def set_navigation_controls_sensitive(self, sensitive):
         """

@@ -32,11 +32,12 @@ class PageController(Controller):
     
     # SETUP METHODS
     
-    def __init__(self, model):
+    def __init__(self, application):
         """
         Constructs the PageController.
         """
-        Controller.__init__(self, model)
+        self.application = application
+        Controller.__init__(self, application.get_null_page_model())
 
         self.log = logging.getLogger(self.__class__.__name__)
         
@@ -70,9 +71,6 @@ class PageController(Controller):
         Registers this controller with a view.
         """
         Controller.register_view(self, view)
-        
-        # TODO: temp
-        #self._update_preview()
         
         self.log.debug('%s registered.', view.__class__.__name__)
         
@@ -167,7 +165,15 @@ class PageController(Controller):
     
     # PUBLIC METHODS
     
-    def set_model(self, page_model):
+    def get_current_page_model(self):
+        """
+        Return the currently visible/selected page model.
+        
+        This may be the null page model.
+        """
+        return self.model
+    
+    def set_current_page_model(self, page_model):
         """
         Sets the PageModel that is currently being displayed in the preview area.
         """

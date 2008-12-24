@@ -33,16 +33,18 @@ class PageView(View):
     Exposes the scanned page that is currently selected as a preview 
     image.
     """
-    def __init__(self, controller):
+    def __init__(self, application):
         """
         Constructs the PageView, including setting up controls that could
         not be configured in Glade.
         """
+        self.application = application
         page_view_glade = os.path.join(
             constants.GUI_DIRECTORY, 'page_view.glade')
         View.__init__(
-            self, controller, page_view_glade, 
-            'dummy_page_view_window', None, False)
+            self, application.get_page_controller(), 
+            page_view_glade, 'dummy_page_view_window', 
+            None, False)
             
         self.log = logging.getLogger(self.__class__.__name__)
 
@@ -56,6 +58,6 @@ class PageView(View):
             gtk.gdk.colormap_get_system().alloc_color(
                 gtk.gdk.Color(0, 0, 0), False, True))
         
-        controller.register_view(self)
+        application.get_page_controller().register_view(self)
         
         self.log.debug('Created.')

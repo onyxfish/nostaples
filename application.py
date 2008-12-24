@@ -23,27 +23,221 @@ main loop.
 
 import logging.config
 import os
-import sys
-import threading
 
 import gtk
 
 import constants
-
-from models.main import MainModel
-from views.main import MainView
+from controllers.document import DocumentController
 from controllers.main import MainController
+from controllers.page import PageController
+from controllers.preferences import PreferencesController
+from controllers.save import SaveController
+from models.document import DocumentModel
+from models.main import MainModel
+from models.page import PageModel
+from models.preferences import PreferencesModel
+from models.save import SaveModel
+from utils.state import GConfStateManager
+from views.document import DocumentView
+from views.main import MainView
+from views.page import PageView
+from views.preferences import PreferencesView
+from views.save import SaveView
 
+class Application(object):
+    """
+    A 'front controller' class that stores references to all
+    top-level components of the application and facilitates
+    communication between them.
+    
+    A reference to this class is injected into each controller
+    component of the application via its constructor.  These 
+    components then query the application object when they
+    need to access other parts of the system.
+    
+    TODO: remove model/controller parameters from all component contstructuters.
+    they are already getting a reference to application so they can just query
+    for those other components
+    """
+    
+    _state_manager = None
+    
+    _main_model = None
+    _main_controller = None
+    _main_view = None
+    
+    _preferences_model = None
+    _preferences_controller = None
+    _preferences_view = None
+    
+    _document_model = None
+    _document_controller = None
+    _document_view = None
+    
+    _null_page_model = None
+    _page_controller = None
+    _page_view = None
+    
+    _save_model = None
+    _save_controller = None
+    _save_view = None
 
-def run():
-    if not os.path.exists(constants.TEMP_IMAGES_DIRECTORY):
-        os.mkdir(constants.TEMP_IMAGES_DIRECTORY)
+    def __init__(self):
+        """
+        Set up the config directory, logging, and state
+        persistence.  Construct the Main MVC component triplet
+        (which will in turn construct all sub components).
+        """
+        
+        if not os.path.exists(constants.TEMP_IMAGES_DIRECTORY):
+            os.mkdir(constants.TEMP_IMAGES_DIRECTORY)
+        
+        logging.config.fileConfig(constants.LOGGING_CONFIG)
+        
+        self._state_manager = GConfStateManager()
+        
+        self._main_model = MainModel(self)
+        self._main_controller = MainController(self)
+        self._main_view = MainView(self)
+        
+    def get_state_manager(self):
+        """Return the L{GConfStateManager} component."""
+        assert isinstance(self._state_manager, GConfStateManager)
+        return self._state_manager
+        
+    def get_main_model(self):
+        """Return the L{MainModel} component."""
+        assert self._main_model
+        return self._main_model
     
-    logging.config.fileConfig(constants.LOGGING_CONFIG)
+    def get_main_controller(self):
+        """Return the L{MainController} component."""
+        assert self._main_controller
+        return self._main_controller
     
-    main_model = MainModel()
-    main_controller = MainController(main_model)
-    main_view = MainView(main_controller)
+    def get_main_view(self):
+        """Return the L{MainView} component."""
+        assert self._main_view
+        return self._main_view
     
-    gtk.gdk.threads_init()
-    gtk.main()
+    def get_preferences_model(self):
+        """Return the L{PreferencesModel} component."""
+        if not self._preferences_model:
+            self._preferences_model = PreferencesModel(self)
+        
+        return self._preferences_model
+    
+    def get_preferences_controller(self):
+        """Return the L{PreferencesController} component."""
+        if not self._preferences_controller:            
+            self._preferences_controller = PreferencesController(self)
+                    
+        return self._preferences_controller
+    
+    def get_preferences_view(self):
+        """Return the L{PreferencesView} component."""
+        if not self._preferences_view:            
+            self._preferences_view = PreferencesView(self)
+                    
+        return self._preferences_view
+    
+    def show_preferences_dialog(self):
+        """Show the preferences dialog.
+        
+        This is a convenience function.  It is
+        short-hand for
+        C{get_preferences_view().show()}.
+        """
+        self.get_preferences_view().show()
+    
+    def get_document_model(self):
+        """Return the L{DocumentModel} component."""
+        if not self._document_model:
+            self._document_model = DocumentModel(self)
+        
+        return self._document_model
+    
+    def get_document_controller(self):
+        """Return the L{DocumentController} component."""
+        if not self._document_controller:            
+            self._document_controller = DocumentController(self)
+                    
+        return self._document_controller
+    
+    def get_document_view(self):
+        """Return the L{DocumentView} component."""
+        if not self._document_view:            
+            self._document_view = DocumentView(self)
+                    
+        return self._document_view
+    
+    def get_null_page_model(self):
+        """
+        Return an empty L{PageModel} object.
+        
+        This is the PageModel that is used when no
+        pages have been scanned.
+        """
+        if not self._null_page_model:
+            self._null_page_model = PageModel()
+        
+        return self._null_page_model
+    
+    def get_current_page_model(self):
+        """
+        Return the current/active L{PageModel} object.
+        
+        This is a convenience function.  It is
+        short-hand for 
+        C{get_page_controller().get_current_page_model()}.
+        """
+        return self.get_page_controller().get_current_page_model()
+    
+    def get_page_controller(self):
+        """Return the L{PageController} component."""
+        if not self._page_controller:            
+            self._page_controller = PageController(self)
+                    
+        return self._page_controller
+    
+    def get_page_view(self):
+        """Return the L{PageView} component."""
+        if not self._page_view:            
+            self._page_view = PageView(self)
+                    
+        return self._page_view
+    
+    def get_save_model(self):
+        """Return the L{SaveModel} component."""
+        if not self._save_model:
+            self._save_model = SaveModel(self)
+        
+        return self._save_model
+    
+    def get_save_controller(self):
+        """Return the L{SaveController} component."""
+        if not self._save_controller:            
+            self._save_controller = SaveController(self)
+                    
+        return self._save_controller
+    
+    def get_save_view(self):
+        """Return the L{SaveView} component."""
+        if not self._save_view:            
+            self._save_view = SaveView(self)
+                    
+        return self._save_view
+    
+    def show_save_dialog(self):
+        """Show the save dialog.
+        
+        This is a convenience function.  It is
+        short-hand for
+        C{get_save_view().show()}.
+        """
+        self.get_save_view().show()
+        
+    def run(self):
+        """Execute the GTK main loop."""
+        gtk.gdk.threads_init()
+        gtk.main()

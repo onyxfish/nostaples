@@ -30,14 +30,8 @@ import gobject
 import gtk
 from gtkmvc.controller import Controller
 
-from controllers.document import DocumentController
-from controllers.page import PageController
-from controllers.preferences import PreferencesController
-from controllers.save import SaveController
 from models.page import PageModel
 from utils.scanning import *
-from views.preferences import PreferencesView
-from views.save import SaveView
 
 class MainController(Controller):
     """
@@ -46,20 +40,18 @@ class MainController(Controller):
     
     # SETUP METHODS
     
-    def __init__(self, model):
+    def __init__(self, application):
         """
         Constructs the MainController, as well as necessary sub-controllers 
         and services.
         """
-        Controller.__init__(self, model)
+        self.application = application
+        Controller.__init__(self, application.get_main_model())
 
         self.log = logging.getLogger(self.__class__.__name__)
-        self.log.debug('Created.')
+        self.log.debug('Created.')        
         
-        # Sub-controllers
-        self.document_controller = DocumentController(
-            self.model.document_model)
-        self.model.document_model.register_observer(self)
+        application.get_document_model().register_observer(self)
 
     def register_view(self, view):
         """
@@ -105,7 +97,7 @@ class MainController(Controller):
         self._save_as()
     
     def on_delete_menu_item_activate(self, menu_item):
-        self.document_controller.delete_selected()
+        self.application.get_document_controller().delete_selected()
     
     def on_insert_scan_menu_item_activate(self, menu_item):
         """Scan a page into the current document."""
@@ -121,27 +113,27 @@ class MainController(Controller):
             
     def on_zoom_in_menu_item_activate(self, menu_item):
         """Zooms the page preview in."""
-        self.document_controller.page_controller.zoom_in()
+        self.application.get_page_controller().zoom_in()
     
     def on_zoom_out_menu_item_activate(self, menu_item):
         """Zooms the page preview out."""
-        self.document_controller.page_controller.zoom_out()
+        self.application.get_page_controller().zoom_out()
     
     def on_zoom_one_to_one_menu_item_activate(self, menu_item):
         """Zooms the page preview to the true size of the scanned image."""
-        self.document_controller.page_controller.zoom_one_to_one()
+        self.application.get_page_controller().zoom_one_to_one()
         
     def on_zoom_best_fit_menu_item_activate(self, menu_item):
         """Zooms the page preview to best fit within the preview window."""
-        self.document_controller.page_controller.zoom_best_fit()
+        self.application.get_page_controller().zoom_best_fit()
         
     def on_rotate_clockwise_menu_item_activate(self, menu_item):
         """Rotates the visible page ninety degress clockwise."""
-        self.document_controller.page_controller.rotate_clockwise()
+        self.application.get_page_controller().rotate_clockwise()
         
     def on_rotate_counter_clockwise_menu_item_activate(self, menu_item):
         """Rotates the visible page ninety degress counter-clockwise."""
-        self.document_controller.page_controller.rotate_counter_clockwise()
+        self.application.get_page_controller().rotate_counter_clockwise()
         
     def on_rotate_all_pages_menu_item_toggled(self, menu_item):
         """TODO"""
@@ -177,19 +169,19 @@ class MainController(Controller):
                 
     def on_go_first_menu_item_activate(self, menu_item):
         """Selects the first scanned page."""
-        self.document_controller.goto_first_page()
+        self.application.get_document_controller().goto_first_page()
         
     def on_go_previous_menu_item_activate(self, menu_item):
         """Selects the scanned page before to the currently selected one."""
-        self.document_controller.goto_previous_page()
+        self.application.get_document_controller().goto_previous_page()
     
     def on_go_next_menu_item_activate(self, menu_item):
         """Selects the scanned page after to the currently selected one."""
-        self.document_controller.goto_next_page()
+        self.application.get_document_controller().goto_next_page()
     
     def on_go_last_menu_item_activate(self, menu_item):
         """Selects the last scanned page."""
-        self.document_controller.goto_last_page()
+        self.application.get_document_controller().goto_last_page()
         
     def on_contents_menu_item_clicked(self, menu_item):
         """TODO"""
@@ -211,43 +203,43 @@ class MainController(Controller):
     
     def on_zoom_in_button_clicked(self, button):
         """Zooms the page preview in."""
-        self.document_controller.page_controller.zoom_in()
+        self.application.get_page_controller().zoom_in()
     
     def on_zoom_out_button_clicked(self, button):
         """Zooms the page preview out."""
-        self.document_controller.page_controller.zoom_out()
+        self.application.get_page_controller().zoom_out()
     
     def on_zoom_one_to_one_button_clicked(self, button):
         """Zooms the page preview to the true size of the scanned image."""
-        self.document_controller.page_controller.zoom_one_to_one()
+        self.application.get_page_controller().zoom_one_to_one()
     
     def on_zoom_best_fit_button_clicked(self, button):
         """Zooms the page preview to best fit within the preview window."""
-        self.document_controller.page_controller.zoom_best_fit()
+        self.application.get_page_controller().zoom_best_fit()
         
     def on_rotate_clockwise_button_clicked(self, button):
         """Rotates the visible page ninety degress clockwise."""
-        self.document_controller.page_controller.rotate_clockwise()
+        self.application.get_page_controller().rotate_clockwise()
         
     def on_rotate_counter_clockwise_button_clicked(self, button):
         """Rotates the visible page ninety degress counter-clockwise."""
-        self.document_controller.page_controller.rotate_counter_clockwise()
+        self.application.get_page_controller().rotate_counter_clockwise()
         
     def on_go_first_button_clicked(self, button):
         """Selects the first scanned page."""
-        self.document_controller.goto_first_page()
+        self.application.get_document_controller().goto_first_page()
         
     def on_go_previous_button_clicked(self, button):
         """Selects the scanned page before to the currently selected one."""
-        self.document_controller.goto_previous_page()
+        self.application.get_document_controller().goto_previous_page()
     
     def on_go_next_button_clicked(self, button):
         """Selects the scanned page after to the currently selected one."""
-        self.document_controller.goto_next_page()
+        self.application.get_document_controller().goto_next_page()
     
     def on_go_last_button_clicked(self, button):
         """Selects the last scanned page."""
-        self.document_controller.goto_last_page()
+        self.application.get_document_controller().goto_last_page()
     
     # PROPERTY CALLBACKS
     
@@ -276,14 +268,14 @@ class MainController(Controller):
         menu_item = self.view['show_thumbnails_menu_item']
         menu_item.set_active(new_value)
         
-        self.document_controller.toggle_thumbnails_visible(new_value)
+        self.application.get_document_controller().toggle_thumbnails_visible(new_value)
 
     def property_show_adjustments_value_change(self, model, old_value, new_value):
         """Update the visibility of the adjustments controls."""
         menu_item = self.view['show_adjustments_menu_item']
         menu_item.set_active(new_value)
         
-        self.document_controller.toggle_adjustments_visible(new_value)    
+        self.application.get_document_controller().toggle_adjustments_visible(new_value)    
         
     def property_active_scanner_value_change(self, model, old_value, new_value):
         """
@@ -424,7 +416,7 @@ class MainController(Controller):
     def on_scan_succeeded(self, scanning_thread, filename):
         """Append the new page to the current document."""
         new_page = PageModel(filename, int(self.model.active_resolution))
-        self.model.document_model.append(new_page)
+        self.application.get_document_model().append(new_page)
         self.model.scan_in_progress = False
     
     def on_scan_failed(self, scanning_thread):
@@ -459,29 +451,12 @@ class MainController(Controller):
     # PRIVATE METHODS
 
     def _save_as(self):
-        """
-        Save the current document.
-        """
-        save_controller = SaveController(
-            self.model.save_model,
-            self.model.document_model)
-            
-        save_view = SaveView(
-            save_controller, self.view)
-        
-        save_controller.run()
+        """Save the current document."""
+        self.application.show_save_dialog()
         
     def _show_preferences(self):
-        """
-        Shows the Preferences dialog.
-        """
-        preferences_controller = PreferencesController(
-            self.model.preferences_model)
-            
-        preferences_view = PreferencesView(
-            preferences_controller, self.view)
-        
-        preferences_view.show()
+        """Show the Preferences dialog."""
+        self.application.show_preferences_dialog()
         
     def _clear_available_scanners_sub_menu(self):
         """Clear the menu of available scanners."""

@@ -25,9 +25,6 @@ import logging
 import gtk
 from gtkmvc.controller import Controller
 
-from controllers.page import PageController
-from models.page import PageModel
-
 class DocumentController(Controller):
     """
     Manages interaction between the L{DocumentModel} and
@@ -36,18 +33,16 @@ class DocumentController(Controller):
     
     # SETUP METHODS
     
-    def __init__(self, model):
+    def __init__(self, application):
         """
         Constructs the DocumentsController, as well as necessary
         sub-controllers.
         """
-        Controller.__init__(self, model)
+        self.application = application
+        Controller.__init__(self, application.get_document_model())
 
         self.log = logging.getLogger(self.__class__.__name__)
         self.log.debug('Created.')
-
-        # Sub-controllers
-        self.page_controller = PageController(self.model.null_page)
         
         self.model.connect(
           'row-changed', self.on_document_model_row_changed)
@@ -78,7 +73,7 @@ class DocumentController(Controller):
         # the current scale values should be applied to it.
         if selection_iter:
             page_model = self.model.get_value(selection_iter, 0)
-            self.page_controller.set_model(page_model)
+            self.application.get_page_controller().set_current_page_model(page_model)
             self.view['brightness_scale'].set_value(page_model.brightness)
             self.view['contrast_scale'].set_value(page_model.contrast)
             self.view['sharpness_scale'].set_value(page_model.sharpness)
@@ -137,7 +132,7 @@ class DocumentController(Controller):
                     self.view['brightness_scale'].get_value()
                 page_iter = self.model.iter_next(page_iter)
         else:
-            self.page_controller.model.brightness = \
+            self.application.get_current_page_model().brightness = \
                 self.view['brightness_scale'].get_value()
     
     def on_contrast_scale_value_changed(self, widget):
@@ -158,7 +153,7 @@ class DocumentController(Controller):
                     self.view['contrast_scale'].get_value()
                 page_iter = self.model.iter_next(page_iter)
         else:
-            self.page_controller.model.contrast = \
+            self.application.get_current_page_model().contrast = \
                 self.view['contrast_scale'].get_value()
     
     def on_sharpness_scale_value_changed(self, widget):
@@ -179,7 +174,7 @@ class DocumentController(Controller):
                     self.view['sharpness_scale'].get_value()
                 page_iter = self.model.iter_next(page_iter)
         else:
-            self.page_controller.model.sharpness = \
+            self.application.get_current_page_model().sharpness = \
                 self.view['sharpness_scale'].get_value()
                 
     def on_adjust_all_pages_check_toggled(self, checkbox):
@@ -213,10 +208,11 @@ class DocumentController(Controller):
         model for display.
         """
         if new_value == 0:
-            self.page_controller.set_model(self.model.null_page)
+            self.application.get_page_controller().set_current_page_model(
+                self.application.get_null_page_model())
     
-    # UTILITY METHODS
-        
+    # PUBLIC METHODS
+            
     def toggle_thumbnails_visible(self, visible):
         """Toggles the visibility of the thumbnails view."""
         if visible:
