@@ -92,18 +92,50 @@ class Application(object):
         Set up the config directory, logging, and state
         persistence.  Construct the Main MVC component triplet
         (which will in turn construct all sub components).
+        Per
         """
-        
+        self._init_config()
+        self._init_logging()
+        self._init_state()
+        self._init_main_components()
+        self._init_settings()
+
+    def _init_config(self):
+        """Setup the config directory."""
         if not os.path.exists(constants.TEMP_IMAGES_DIRECTORY):
             os.mkdir(constants.TEMP_IMAGES_DIRECTORY)
-        
+            
+    def _init_logging(self):
+        """Setup logging for the application."""
         logging.config.fileConfig(constants.LOGGING_CONFIG)
         
+    def _init_state(self):
+        """Setup the state manager."""
         self._state_manager = GConfStateManager()
         
+    def _init_main_components(self):
+        """
+        Create the main application components, which will
+        request creation of other components as necessary.
+        """
         self._main_model = MainModel(self)
         self._main_controller = MainController(self)
         self._main_view = MainView(self)
+        
+    def _init_settings(self):
+        """
+        Load current settings from the state manager and
+        poll for available scanners.
+        """
+        self._main_model.load_state()        
+        self._main_controller._update_available_scanners()
+        
+    # PUBLIC METHODS
+        
+    def run(self):
+        """Execute the GTK main loop."""
+        gtk.gdk.threads_init()
+        gtk.main()
         
     def get_state_manager(self):
         """Return the L{GConfStateManager} component."""
@@ -259,8 +291,3 @@ class Application(object):
         This is a convenience function.
         """
         self.get_about_controller().run()
-        
-    def run(self):
-        """Execute the GTK main loop."""
-        gtk.gdk.threads_init()
-        gtk.main()

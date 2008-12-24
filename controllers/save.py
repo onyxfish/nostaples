@@ -67,51 +67,56 @@ class SaveController(Controller):
         Determine the selected file type and invoke the method
         that saves that file type.
         """
-        # TODO: dont need the bracketed part
-        self.view['save_dialog'].hide()
+        save_model = self.application.get_save_model()
+        save_view = self.application.get_save_view()
+        
+        save_view['save_dialog'].hide()
         
         if response != gtk.RESPONSE_ACCEPT:
             return
         
-        self.model.filename = self.view['save_dialog'].get_filename()
-        filename_filter = self.view['save_dialog'].get_filter()
+        save_model.filename = save_view['save_dialog'].get_filename()
+        filename_filter = save_view['save_dialog'].get_filter()
         
-        if self.model.filename[-4:] == '.pdf':
+        if save_model.filename[-4:] == '.pdf':
             self._save_pdf()
         elif filename_filter.get_name() == 'PDF Files':
-            self.model.filename = ''.join([self.model.filename, '.pdf'])
+            save_model.filename = ''.join([save_model.filename, '.pdf'])
             self._save_pdf()
         else:
-            self.log.error('Unknown file type: %s.' % self.model.filename)
+            self.log.error('Unknown file type: %s.' % save_model.filename)
             
-        self.model.save_path = self.view['save_dialog'].get_current_folder()
+        save_model.save_path = save_view['save_dialog'].get_current_folder()
         
     def on_pdf_dialog_response(self, dialog, response):
         """
         Output the current document to a PDF file using ReportLab.
         """
-        self.view['pdf_dialog'].window.set_cursor(gtk.gdk.Cursor(gtk.gdk.WATCH))
+        save_model = self.application.get_save_model()
+        save_view = self.application.get_save_view()
+        document_model = self.application.get_document_model()
+        
+        save_view['pdf_dialog'].window.set_cursor(gtk.gdk.Cursor(gtk.gdk.WATCH))
         gtk.gdk.flush()
             
         if response != gtk.RESPONSE_APPLY:
             return
         
-        title = unicode(self.view['title_entry'].get_text())
-        author = unicode(self.view['author_entry'].get_text())
-        keywords = unicode(self.view['keywords_entry'].get_text())
+        title = unicode(save_view['title_entry'].get_text())
+        author = unicode(save_view['author_entry'].get_text())
+        keywords = unicode(save_view['keywords_entry'].get_text())
         
-        self.model.author = str(author)
+        save_model.author = str(author)
         
         # TODO: seperate saving code into its own thread
         
         # Setup output pdf
-        pdf = PdfCanvas(self.model.filename)
+        pdf = PdfCanvas(save_model.filename)
         pdf.setTitle(title)
         pdf.setAuthor(author)
         pdf.setKeywords(keywords)
             
         # Generate pages
-        document_model = self.application.get_document_model()
         page_iter = document_model.get_iter_first()
         while page_iter:
             current_page = document_model.get_value(page_iter, 0)
@@ -148,7 +153,7 @@ class SaveController(Controller):
         # Save complete PDF
         pdf.save()
             
-        assert os.path.exists(self.model.filename), \
+        assert os.path.exists(save_model.filename), \
             'Final PDF file was not created by ReportLab.'
                     
         page_iter = document_model.get_iter_first()
@@ -159,31 +164,36 @@ class SaveController(Controller):
             
         document_model.clear()
         
-        self.view['pdf_dialog'].window.set_cursor(None)
-        self.view['pdf_dialog'].hide()
+        save_view['pdf_dialog'].window.set_cursor(None)
+        save_view['pdf_dialog'].hide()
         
     # PUBLIC METHODS
     
     def run(self):
         """Run the save dialog."""
-        view = self.application.get_save_view()
-        view['save_dialog'].set_current_folder(self.model.save_path)
-        view['save_dialog'].set_current_name('')
-        view.run()
+        save_model = self.application.get_save_model()
+        save_view = self.application.get_save_view()
+        
+        save_view['save_dialog'].set_current_folder(save_model.save_path)
+        save_view['save_dialog'].set_current_name('')
+        save_view.run()
         
     # UTILITY METHODS
     
     def _save_pdf(self):
         """Run the dialog to get PDF metadata."""
-        title = self.model.filename.split('/')[-1][0:-4]
-        author = self.model.author
+        save_model = self.application.get_save_model()
+        save_view = self.application.get_save_view()
+        
+        title = save_model.filename.split('/')[-1][0:-4]
+        author = save_model.author
         keywords = ''
         
-        self.view['title_entry'].set_text(title)
-        self.view['author_entry'].set_text(author)
-        self.view['keywords_entry'].set_text(keywords)
+        save_view['title_entry'].set_text(title)
+        save_view['author_entry'].set_text(author)
+        save_view['keywords_entry'].set_text(keywords)
         
-        self.view['pdf_dialog'].run()
+        save_view['pdf_dialog'].run()
     
     def _determine_best_fitting_pagesize(self, width_in_inches, height_in_inches):
         """
