@@ -36,6 +36,9 @@ from controllers.main import MainController
 
 
 def run():
+    if not os.path.exists(constants.TEMP_IMAGES_DIRECTORY):
+        os.mkdir(constants.TEMP_IMAGES_DIRECTORY)
+    
     logging.config.fileConfig(constants.LOGGING_CONFIG)
     
     main_model = MainModel()

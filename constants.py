@@ -67,7 +67,7 @@ SCAN_SUCCESS = 1
 GCONF_DIRECTORY = '/apps/nostaples'
 GCONF_TUPLE_SEPARATOR = '|'
 
-# TODO: no longer needed?
+# TODO: rename to CONFIG_DIRECTORY
 TEMP_IMAGES_DIRECTORY = os.path.expanduser('~/.nostaples')
 LOGGING_CONFIG = os.path.join(os.path.dirname(__file__), 'logging.config')
 GUI_DIRECTORY = os.path.join(os.path.dirname(__file__), 'gui')
