@@ -52,9 +52,6 @@ class MainModel(Model):
         'scan_in_progress' : False,
         'updating_available_scanners' : False,
         'updating_scan_options' : False,
-        
-        'is_document_empty' : True,
-        'is_document_multiple_pages': False,
     }
 
     def __init__(self, application):
@@ -65,9 +62,6 @@ class MainModel(Model):
         Model.__init__(self)
         
         self.log = logging.getLogger(self.__class__.__name__)
-        
-        # TODO: this is WRONG, the MainController should be the observing class
-        application.get_document_model().register_observer(self)
         
         self.log.debug('Created.')
         
@@ -300,7 +294,7 @@ class MainModel(Model):
         self.notify_property_value_change(
             'active_resolution', None, self._prop_active_resolution)
         
-    # State callbacks
+    # STATE CALLBACKS
     
     def state_show_toolbar_change(self):
         """Read state."""
@@ -338,19 +332,3 @@ class MainModel(Model):
             self.active_resolution = self.application.get_state_manager()['scan_resolution']
         else:
             self.application.get_state_manager()['scan_resolution'] = self.active_resolution
-
-    # DocumentModel PROPERTY CALLBACKS
-    
-    def property_count_value_change(self, model, old_value, new_value):
-        """
-        Toggle whether or not the document is empty.
-        """        
-        if new_value == 0:
-            self.is_document_empty = True
-            self.is_document_multiple_pages = False
-        elif new_value == 1:
-            self.is_document_empty = False
-            self.is_document_multiple_pages = False
-        else:
-            self.is_document_empty = False
-            self.is_document_multiple_pages = True
