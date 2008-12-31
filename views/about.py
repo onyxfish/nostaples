@@ -16,33 +16,39 @@
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-This module holds the SaveModel, which manages data related to
-saving documents.
+This module holds the AboutView which exposes the application's
+about dialog.
 """
 
 import logging
+import os
 
-from gtkmvc.model import Model
+import gtk
+from gtkmvc.view import View
 
-class SaveModel(Model):
+import constants
+
+class AboutView(View):
     """
-    Handles data the metadata associated with saving documents.
+    Exposes the application's main window.
     """
-    __properties__ = \
-    {
-         # TODO
-        'save_path' : '',
-        'filename' : '',
-        'author' : 'TODO author',
-    }
 
     def __init__(self, application):
-        """
-        Constructs the SaveModel.
-        """
+        """Constructs the AboutView."""
         self.application = application
-        Model.__init__(self)
-        
+        about_dialog_glade = os.path.join(
+            constants.GUI_DIRECTORY, 'about_dialog.glade')
+        View.__init__(
+            self, self.application.get_about_controller(), 
+            about_dialog_glade, 'about_dialog', 
+            self.application.get_main_view(), False)
+            
         self.log = logging.getLogger(self.__class__.__name__)
         
+        self.application.get_about_controller().register_view(self)
+        
         self.log.debug('Created.')
+        
+    def run(self):
+        """Run this modal dialog."""
+        self['about_dialog'].run()

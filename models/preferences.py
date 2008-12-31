@@ -34,11 +34,12 @@ class PreferencesModel(Model):
         'preview_mode' : constants.PREVIEW_MODE_ANTIALIAS,
     }
 
-    def __init__(self):
+    def __init__(self, application):
         """
         Constructs the PreferencesModel.
         """
         Model.__init__(self)
+        self.application = application
         
         self.log = logging.getLogger(self.__class__.__name__)
         

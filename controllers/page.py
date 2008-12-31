@@ -32,11 +32,12 @@ class PageController(Controller):
     
     # SETUP METHODS
     
-    def __init__(self, model):
+    def __init__(self, application):
         """
         Constructs the PageController.
         """
-        Controller.__init__(self, model)
+        self.application = application
+        Controller.__init__(self, application.get_null_page_model())
 
         self.log = logging.getLogger(self.__class__.__name__)
         
@@ -70,9 +71,6 @@ class PageController(Controller):
         Registers this controller with a view.
         """
         Controller.register_view(self, view)
-        
-        # TODO: temp
-        #self._update_preview()
         
         self.log.debug('%s registered.', view.__class__.__name__)
         
@@ -167,7 +165,15 @@ class PageController(Controller):
     
     # PUBLIC METHODS
     
-    def set_model(self, page_model):
+    def get_current_page_model(self):
+        """
+        Return the currently visible/selected page model.
+        
+        This may be the null page model.
+        """
+        return self.model
+    
+    def set_current_page_model(self, page_model):
         """
         Sets the PageModel that is currently being displayed in the preview area.
         """
@@ -248,18 +254,22 @@ class PageController(Controller):
         Determines if there is anything to be dragged and if so, sets the
         'drag' cursor.
         """
-        if self.view['page_view_horizontal_scrollbar'].get_property('visible') and \
-           self.view['page_view_vertical_scrollbar'].get_property('visible'):
+        page_view = self.application.get_page_view()
+        
+        if page_view['page_view_horizontal_scrollbar'].get_property('visible') and \
+           page_view['page_view_vertical_scrollbar'].get_property('visible'):
                return
            
-        self.view['page_view_image'].get_parent_window().set_cursor(
+        page_view['page_view_image'].get_parent_window().set_cursor(
             gtk.gdk.Cursor(gtk.gdk.FLEUR))
                 
     def _begin_zoom(self, x, y):
         """
         Saves the starting position of the zoom and sets the 'zoom' cursor.
         """
-        self.view['page_view_image'].get_parent_window().set_cursor(
+        page_view = self.application.get_page_view()
+        
+        page_view['page_view_image'].get_parent_window().set_cursor(
             gtk.gdk.Cursor(gtk.gdk.CROSS))
             
         self.zoom_drag_start_x = x
@@ -269,8 +279,10 @@ class PageController(Controller):
         """
         Moves/drags the preview in response to mouse movement.
         """
+        page_view = self.application.get_page_view()
+        
         horizontal_adjustment = \
-            self.view['page_view_image_layout'].get_hadjustment()
+            page_view['page_view_image_layout'].get_hadjustment()
         
         new_x = horizontal_adjustment.value + \
             (self.move_drag_start_x - x)
@@ -280,7 +292,7 @@ class PageController(Controller):
             horizontal_adjustment.set_value(new_x)
             
         vertical_adjustment = \
-            self.view['page_view_image_layout'].get_vadjustment()
+            page_view['page_view_image_layout'].get_vadjustment()
             
         new_y = vertical_adjustment.value + \
                 (self.move_drag_start_y - y)
@@ -290,53 +302,59 @@ class PageController(Controller):
             vertical_adjustment.set_value(new_y)
     
     def _update_zoom(self, x, y):
-            """
-            Renders a box around the zoom region the user has specified
-            by dragging the mouse.
-            """
-            start_x = self.zoom_drag_start_x
-            start_y = self.zoom_drag_start_y
-            end_x = x
-            end_y = y
+        """
+        Renders a box around the zoom region the user has specified
+        by dragging the mouse.
+        """
+        page_view = self.application.get_page_view()
+    
+        start_x = self.zoom_drag_start_x
+        start_y = self.zoom_drag_start_y
+        end_x = x
+        end_y = y
+        
+        if end_x < start_x:
+            start_x, end_x = end_x, start_x
             
-            if end_x < start_x:
-                start_x, end_x = end_x, start_x
-                
-            if end_y < start_y:
-                start_y, end_y = end_y, start_y
-            
-            width = end_x - start_x
-            height = end_y - start_y
+        if end_y < start_y:
+            start_y, end_y = end_y, start_y
+        
+        width = end_x - start_x
+        height = end_y - start_y
 
-            self.view['page_view_image'].set_from_pixbuf(self.preview_pixbuf)
-            self.view['page_view_image'].get_parent_window().invalidate_rect(
-                (0, 0, self.preview_width, self.preview_height), 
-                False)
-            self.view['page_view_image'].get_parent_window(). \
-                process_updates(False)
+        page_view['page_view_image'].set_from_pixbuf(self.preview_pixbuf)
+        page_view['page_view_image'].get_parent_window().invalidate_rect(
+            (0, 0, self.preview_width, self.preview_height), 
+            False)
+        page_view['page_view_image'].get_parent_window(). \
+            process_updates(False)
+        
+        graphics_context = \
+            page_view['page_view_image'].get_parent_window().new_gc(
+                foreground=self.preview_zoom_rect_color, 
+                line_style=gtk.gdk.LINE_ON_OFF_DASH, 
+                line_width=2)
             
-            graphics_context = \
-                self.view['page_view_image'].get_parent_window().new_gc(
-                    foreground=self.preview_zoom_rect_color, 
-                    line_style=gtk.gdk.LINE_ON_OFF_DASH, 
-                    line_width=2)
-                
-            self.view['page_view_image'].get_parent_window().draw_rectangle(
-                graphics_context, 
-                False, 
-                int(start_x), int(start_y), 
-                int(width), int(height))
+        page_view['page_view_image'].get_parent_window().draw_rectangle(
+            graphics_context, 
+            False, 
+            int(start_x), int(start_y), 
+            int(width), int(height))
             
     def _end_move(self):
         """
         Resets to the default cursor.
         """
-        self.view['page_view_image'].get_parent_window().set_cursor(None)
+        page_view = self.application.get_page_view()
+    
+        page_view['page_view_image'].get_parent_window().set_cursor(None)
         
     def _end_zoom(self, x, y):
         """
         Calculates and applies zoom to the preview and updates the display.
-        """        
+        """   
+        page_view = self.application.get_page_view()
+         
         # Transform to absolute coords
         start_x = self.zoom_drag_start_x / self.preview_zoom
         start_y = self.zoom_drag_start_y / self.preview_zoom
@@ -396,27 +414,25 @@ class PageController(Controller):
         self.preview_is_best_fit = False
         self._update_preview()
         
-        self.view['page_view_image_layout'].get_hadjustment().set_value(
+        page_view['page_view_image_layout'].get_hadjustment().set_value(
             transform_x)
-        self.view['page_view_image_layout'].get_vadjustment().set_value(
+        page_view['page_view_image_layout'].get_vadjustment().set_value(
             transform_y)
         
         #self.update_status()
         
-        self.view['page_view_image'].get_parent_window().set_cursor(None)        
+        page_view['page_view_image'].get_parent_window().set_cursor(None)        
         
     def _update_preview(self):
         """
         Render the current page to the preview display.
         """
-        # Short circuit if the view has not been created yet.
-        if not self.view:
-            return
+        page_view = self.application.get_page_view()
         
         # Short circuit if the PageModel does not have a pixbuf 
-        # (such as DocumentModel.null_page).
+        # (such as the null page).
         if not self.model.pixbuf:
-            self.view['page_view_image'].clear()
+            page_view['page_view_image'].clear()
             return
         
         # Fit if necessary
@@ -445,7 +461,7 @@ class PageController(Controller):
             self.preview_pixbuf = self.model.pixbuf
         
         # Resize preview area
-        self.view['page_view_image_layout'].set_size(
+        page_view['page_view_image_layout'].set_size(
             target_width, target_height)
         
         # Center preview
@@ -455,19 +471,19 @@ class PageController(Controller):
         shift_y = int((self.preview_height - target_height) / 2)
         if shift_y < 0:
             shift_y = 0
-        self.view['page_view_image_layout'].move(
-            self.view['page_view_image'], shift_x, shift_y)
+        page_view['page_view_image_layout'].move(
+            page_view['page_view_image'], shift_x, shift_y)
         
         # Show/hide scrollbars
         if target_width > self.preview_width:
-            self.view['page_view_horizontal_scrollbar'].show()
+            page_view['page_view_horizontal_scrollbar'].show()
         else:
-            self.view['page_view_horizontal_scrollbar'].hide()
+            page_view['page_view_horizontal_scrollbar'].hide()
             
         if target_height > self.preview_height:
-            self.view['page_view_vertical_scrollbar'].show()
+            page_view['page_view_vertical_scrollbar'].show()
         else:
-            self.view['page_view_vertical_scrollbar'].hide()
+            page_view['page_view_vertical_scrollbar'].hide()
         
         # Render updated preview
-        self.view['page_view_image'].set_from_pixbuf(self.preview_pixbuf)
+        page_view['page_view_image'].set_from_pixbuf(self.preview_pixbuf)

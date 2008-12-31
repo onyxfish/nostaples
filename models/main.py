@@ -25,11 +25,6 @@ import logging
 from gtkmvc.model import Model
 
 import constants
-from models.document import DocumentModel
-from models.page import PageModel
-from models.preferences import PreferencesModel
-from models.save import SaveModel
-from utils.state import GConfStateManager
 
 class MainModel(Model):
     """
@@ -57,24 +52,16 @@ class MainModel(Model):
         'scan_in_progress' : False,
         'updating_available_scanners' : False,
         'updating_scan_options' : False,
-        
-        'is_document_empty' : True,
-        'is_document_multiple_pages': False,
     }
 
-    def __init__(self):
+    def __init__(self, application):
         """
         Constructs the MainModel, as well as necessary sub-models.
         """
+        self.application = application
         Model.__init__(self)
         
         self.log = logging.getLogger(self.__class__.__name__)
-        
-        # Sub-models
-        self.document_model = DocumentModel()
-        self.document_model.register_observer(self)
-        self.preferences_model = PreferencesModel()
-        self.save_model = SaveModel()
         
         self.log.debug('Created.')
         
@@ -82,33 +69,33 @@ class MainModel(Model):
         """
         Load persisted state from the self.state_manager.
         """
-        self.state_manager = GConfStateManager()
+        state_manager = self.application.get_state_manager()
         
-        self.show_toolbar = self.state_manager.init_state(
+        self.show_toolbar = state_manager.init_state(
             'show_toolbar', constants.DEFAULT_SHOW_TOOLBAR, 
             self.state_show_toolbar_change)
         
-        self.show_statusbar = self.state_manager.init_state(
+        self.show_statusbar = state_manager.init_state(
             'show_statusbar', constants.DEFAULT_SHOW_STATUSBAR, 
             self.state_show_statusbar_change)
         
-        self.show_thumbnails = self.state_manager.init_state(
+        self.show_thumbnails = state_manager.init_state(
             'show_thumbnails', constants.DEFAULT_SHOW_THUMBNAILS, 
             self.state_show_thumbnails_change)
         
-        self.show_adjustments = self.state_manager.init_state(
+        self.show_adjustments = state_manager.init_state(
             'show_adjustments', constants.DEFAULT_SHOW_ADJUSTMENTS, 
             self.state_show_adjustments_change)
 
-        self._prop_active_scanner = self.state_manager.init_state(
+        self._prop_active_scanner = state_manager.init_state(
             'active_scanner', constants.DEFAULT_ACTIVE_SCANNER, 
             self.state_active_scanner_change)
         
-        self._prop_active_mode = self.state_manager.init_state(
+        self._prop_active_mode = state_manager.init_state(
             'scan_mode', constants.DEFAULT_SCAN_MODE, 
             self.state_scan_mode_change)
         
-        self._prop_active_resolution = self.state_manager.init_state(
+        self._prop_active_resolution = state_manager.init_state(
             'scan_resolution', constants.DEFAULT_SCAN_RESOLUTION, 
             self.state_scan_resolution_change)
         
@@ -124,7 +111,7 @@ class MainModel(Model):
         if old_value == value:
             return
         self._prop_show_toolbar = value
-        self.state_manager['show_toolbar'] = value
+        self.application.get_state_manager()['show_toolbar'] = value
         self.notify_property_value_change(
             'show_toolbar', old_value, value)
     
@@ -137,7 +124,7 @@ class MainModel(Model):
         if old_value == value:
             return
         self._prop_show_statusbar = value
-        self.state_manager['show_statusbar'] = value
+        self.application.get_state_manager()['show_statusbar'] = value
         self.notify_property_value_change(
             'show_statusbar', old_value, value)
     
@@ -150,7 +137,7 @@ class MainModel(Model):
         if old_value == value:
             return
         self._prop_show_thumbnails = value
-        self.state_manager['show_thumbnails'] = value
+        self.application.get_state_manager()['show_thumbnails'] = value
         self.notify_property_value_change(
             'show_thumbnails', old_value, value)
     
@@ -163,7 +150,7 @@ class MainModel(Model):
         if old_value == value:
             return
         self._prop_show_adjustments = value
-        self.state_manager['show_adjustments'] = value
+        self.application.get_state_manager()['show_adjustments'] = value
         self.notify_property_value_change(
             'show_adjustments', old_value, value)
         
@@ -185,7 +172,7 @@ class MainModel(Model):
         # value in the state backend and also allows for smooth
         # transitions if a scanner is disconnecte and reconnected.
         if value is not None:
-            self.state_manager['active_scanner'] = value
+            self.application.get_state_manager()['active_scanner'] = value
             
         # Emit the property change notification to all observers.
         self.notify_property_value_change(
@@ -201,7 +188,7 @@ class MainModel(Model):
             return
         self._prop_active_mode = value
         if value is not None:
-            self.state_manager['scan_mode'] = value
+            self.application.get_state_manager()['scan_mode'] = value
         self.notify_property_value_change(
             'active_mode', old_value, value)
         
@@ -215,7 +202,7 @@ class MainModel(Model):
             return
         self._prop_active_resolution = value
         if value is not None:
-            self.state_manager['scan_resolution'] = value
+            self.application.get_state_manager()['scan_resolution'] = value
         self.notify_property_value_change(
             'active_resolution', old_value, value)
         
@@ -236,7 +223,7 @@ class MainModel(Model):
             # until after the menu has been updated.
             if self._prop_active_scanner not in value:
                 self._prop_active_scanner = value[0]
-                self.state_manager['active_scanner'] = value[0]
+                self.application.get_state_manager()['active_scanner'] = value[0]
             # Otherwise maintain current selection
             else:
                 pass
@@ -269,7 +256,7 @@ class MainModel(Model):
         else:
             if self._prop_active_mode not in value:
                 self._prop_active_mode = value[0]
-                self.state_manager['scan_mode'] = value[0]
+                self.application.get_state_manager()['scan_mode'] = value[0]
             else:
                 pass
         
@@ -295,7 +282,7 @@ class MainModel(Model):
         else:
             if self._prop_active_resolution not in value:
                 self._prop_active_resolution = value[0]
-                self.state_manager['scan_resolution'] = value[0]
+                self.application.get_state_manager()['scan_resolution'] = value[0]
             else:
                 pass
         
@@ -307,57 +294,41 @@ class MainModel(Model):
         self.notify_property_value_change(
             'active_resolution', None, self._prop_active_resolution)
         
-    # State callbacks
+    # STATE CALLBACKS
     
     def state_show_toolbar_change(self):
         """Read state."""
-        self.show_toolbar = self.state_manager['show_toolbar']
+        self.show_toolbar = self.application.get_state_manager()['show_toolbar']
     
     def state_show_statusbar_change(self):
         """Read state."""
-        self.show_statusbar = self.state_manager['show_statusbar']
+        self.show_statusbar = self.application.get_state_manager()['show_statusbar']
     
     def state_show_thumbnails_change(self):
         """Read state."""
-        self.show_thumbnails = self.state_manager['show_thumbnails']
+        self.show_thumbnails = self.application.get_state_manager()['show_thumbnails']
     
     def state_show_adjustments_change(self):
         """Read state."""
-        self.show_adjustments = self.state_manager['show_adjustments']
+        self.show_adjustments = self.application.get_state_manager()['show_adjustments']
         
     def state_active_scanner_change(self):
         """Read state, validating the input."""
-        if self.state_manager['active_scanner'] in self.available_scanners:
-            self.active_scanner = self.state_manager['active_scanner']
+        if self.application.get_state_manager()['active_scanner'] in self.available_scanners:
+            self.active_scanner = self.application.get_state_manager()['active_scanner']
         else:
-            self.state_manager['active_scanner'] = self.active_scanner
+            self.application.get_state_manager()['active_scanner'] = self.active_scanner
         
     def state_scan_mode_change(self):
         """Read state, validating the input."""
-        if self.state_manager['scan_mode'] in self.valid_modes:
-            self.active_mode = self.state_manager['scan_mode']
+        if self.application.get_state_manager()['scan_mode'] in self.valid_modes:
+            self.active_mode = self.application.get_state_manager()['scan_mode']
         else:
-            self.state_manager['scan_mode'] = self.active_mode
+            self.application.get_state_manager()['scan_mode'] = self.active_mode
         
     def state_scan_resolution_change(self):
         """Read state, validating the input."""
-        if self.state_manager['scan_resolution'] in self.valid_resolutions:
-            self.active_resolution = self.state_manager['scan_resolution']
+        if self.application.get_state_manager()['scan_resolution'] in self.valid_resolutions:
+            self.active_resolution = self.application.get_state_manager()['scan_resolution']
         else:
-            self.state_manager['scan_resolution'] = self.active_resolution
-
-    # DocumentModel PROPERTY CALLBACKS
-    
-    def property_count_value_change(self, model, old_value, new_value):
-        """
-        Toggle whether or not the document is empty.
-        """        
-        if new_value == 0:
-            self.is_document_empty = True
-            self.is_document_multiple_pages = False
-        elif new_value == 1:
-            self.is_document_empty = False
-            self.is_document_multiple_pages = False
-        else:
-            self.is_document_empty = False
-            self.is_document_multiple_pages = True
+            self.application.get_state_manager()['scan_resolution'] = self.active_resolution

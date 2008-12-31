@@ -25,9 +25,6 @@ import logging
 import gtk
 from gtkmvc.controller import Controller
 
-from controllers.page import PageController
-from models.page import PageModel
-
 class DocumentController(Controller):
     """
     Manages interaction between the L{DocumentModel} and
@@ -36,22 +33,20 @@ class DocumentController(Controller):
     
     # SETUP METHODS
     
-    def __init__(self, model):
+    def __init__(self, application):
         """
         Constructs the DocumentsController, as well as necessary
         sub-controllers.
         """
-        Controller.__init__(self, model)
+        self.application = application
+        Controller.__init__(self, application.get_document_model())
 
         self.log = logging.getLogger(self.__class__.__name__)
         self.log.debug('Created.')
-
-        # Sub-controllers
-        self.page_controller = PageController(self.model.null_page)
         
-        self.model.connect(
+        application.get_document_model().connect(
           'row-changed', self.on_document_model_row_changed)
-        #self.model.connect(
+        #application.get_document_model().connect(
         #  'row-deleted', self.on_document_model_row_deleted)
 
     def register_view(self, view):
@@ -60,8 +55,9 @@ class DocumentController(Controller):
         """
         Controller.register_view(self, view)
         
-        self.view['thumbnails_tree_view'].set_model(self.model)
-        self.view['thumbnails_tree_view'].get_selection().connect(
+        view['thumbnails_tree_view'].set_model(
+            self.application.get_document_model())
+        view['thumbnails_tree_view'].get_selection().connect(
           'changed', self.on_thumbnails_tree_view_selection_changed)
         
         self.log.debug('%s registered.', view.__class__.__name__)
@@ -72,16 +68,20 @@ class DocumentController(Controller):
         """
         Set the current visible page to the be newly selected one.
         """
+        document_model = self.application.get_document_model()
+        document_view = self.application.get_document_view()
+        page_controller = self.application.get_page_controller()
+        
         selection_iter = selection.get_selected()[1]
         
         # TODO: when a new row is added, if adjust_all is checked
         # the current scale values should be applied to it.
         if selection_iter:
-            page_model = self.model.get_value(selection_iter, 0)
-            self.page_controller.set_model(page_model)
-            self.view['brightness_scale'].set_value(page_model.brightness)
-            self.view['contrast_scale'].set_value(page_model.contrast)
-            self.view['sharpness_scale'].set_value(page_model.sharpness)
+            page_model = document_model.get_value(selection_iter, 0)
+            page_controller.set_current_page_model(page_model)
+            document_view['brightness_scale'].set_value(page_model.brightness)
+            document_view['contrast_scale'].set_value(page_model.contrast)
+            document_view['sharpness_scale'].set_value(page_model.sharpness)
         
     def on_document_model_row_changed(self, model, path, iter):
         """
@@ -101,23 +101,29 @@ class DocumentController(Controller):
         thumbnail_pixbuf to be updated should be preceeded by
         setting the manually_updating_row flag so that this event
         can bypass them appropriately.
-        """        
-        if self.model.manually_updating_row:
-            self.model.manually_updating_row = False
+        """
+        document_model = self.application.get_document_model()
+        document_view = self.application.get_document_view()
+        
+        if document_model.manually_updating_row:
+            document_model.manually_updating_row = False
         else:
-            self.view['thumbnails_tree_view'].get_selection().select_path(path)
+            document_view['thumbnails_tree_view'].get_selection().select_path(path)
             
     def on_document_model_row_deleted(self, model, path):
-        """TODO: this method doesn't even remotely work as intended..."""        
+        """TODO: this method doesn't even remotely work as intended..."""   
+        document_model = self.application.get_document_model()    
+        document_view = self.application.get_document_view()
+         
         row = path[0]
         
-        if self.model.count == 1:
+        if document_model.count == 1:
             return
         
-        if row == self.model.count - 1:
-            self.view['thumbnails_tree_view'].get_selection().select_path(row - 1)
+        if row == document_model.count - 1:
+            document_view['thumbnails_tree_view'].get_selection().select_path(row - 1)
         else:        
-            self.view['thumbnails_tree_view'].get_selection().select_path(row + 1)
+            document_view['thumbnails_tree_view'].get_selection().select_path(row + 1)
     
     def on_brightness_scale_value_changed(self, widget):
         """
@@ -127,18 +133,21 @@ class DocumentController(Controller):
         
         See L{on_document_model_row_changed} for an
         explanation of the voodoo in this method.
-        """
-        if self.model.adjust_all_pages:
-            page_iter = self.model.get_iter_first()
+        """ 
+        document_model = self.application.get_document_model()
+        document_view = self.application.get_document_view()
+        
+        if document_model.adjust_all_pages:
+            page_iter = document_model.get_iter_first()
             while page_iter:
-                page = self.model.get(page_iter, 0)[0]
-                self.model.manually_updating_row = True
+                page = document_model.get(page_iter, 0)[0]
+                document_model.manually_updating_row = True
                 page.brightness = \
-                    self.view['brightness_scale'].get_value()
-                page_iter = self.model.iter_next(page_iter)
+                    document_view['brightness_scale'].get_value()
+                page_iter = document_model.iter_next(page_iter)
         else:
-            self.page_controller.model.brightness = \
-                self.view['brightness_scale'].get_value()
+            self.application.get_current_page_model().brightness = \
+                document_view['brightness_scale'].get_value()
     
     def on_contrast_scale_value_changed(self, widget):
         """
@@ -149,17 +158,20 @@ class DocumentController(Controller):
         See L{on_document_model_row_changed} for an
         explanation of the voodoo in this method.
         """
-        if self.model.adjust_all_pages:
-            page_iter = self.model.get_iter_first()
+        document_model = self.application.get_document_model()
+        document_view = self.application.get_document_view()
+        
+        if document_model.adjust_all_pages:
+            page_iter = document_model.get_iter_first()
             while page_iter:
-                page = self.model.get(page_iter, 0)[0]
-                self.model.manually_updating_row = True
+                page = document_model.get(page_iter, 0)[0]
+                document_model.manually_updating_row = True
                 page.contrast = \
-                    self.view['contrast_scale'].get_value()
-                page_iter = self.model.iter_next(page_iter)
+                    document_view['contrast_scale'].get_value()
+                page_iter = document_model.iter_next(page_iter)
         else:
-            self.page_controller.model.contrast = \
-                self.view['contrast_scale'].get_value()
+            self.application.get_current_page_model().contrast = \
+                document_view['contrast_scale'].get_value()
     
     def on_sharpness_scale_value_changed(self, widget):
         """
@@ -170,17 +182,20 @@ class DocumentController(Controller):
         See L{on_document_model_row_changed} for an
         explanation of the voodoo in this method.
         """
-        if self.model.adjust_all_pages:
-            page_iter = self.model.get_iter_first()
+        document_model = self.application.get_document_model()
+        document_view = self.application.get_document_view()
+        
+        if document_model.adjust_all_pages:
+            page_iter = document_model.get_iter_first()
             while page_iter:
-                page = self.model.get(page_iter, 0)[0]
-                self.model.manually_updating_row = True
+                page = document_model.get(page_iter, 0)[0]
+                document_model.manually_updating_row = True
                 page.sharpness = \
-                    self.view['sharpness_scale'].get_value()
-                page_iter = self.model.iter_next(page_iter)
+                    document_view['sharpness_scale'].get_value()
+                page_iter = document_model.iter_next(page_iter)
         else:
-            self.page_controller.model.sharpness = \
-                self.view['sharpness_scale'].get_value()
+            self.application.get_current_page_model().sharpness = \
+                document_view['sharpness_scale'].get_value()
                 
     def on_adjust_all_pages_check_toggled(self, checkbox):
         """
@@ -192,18 +207,21 @@ class DocumentController(Controller):
         
         # TODO: should set hourglass cursor
         """
-        self.model.adjust_all_pages = checkbox.get_active()
+        document_model = self.application.get_document_model()
+        document_view = self.application.get_document_view()
         
-        if self.model.adjust_all_pages:
-            page_iter = self.model.get_iter_first()
+        document_model.adjust_all_pages = checkbox.get_active()
+        
+        if document_model.adjust_all_pages:
+            page_iter = document_model.get_iter_first()
             while page_iter:
-                page = self.model.get(page_iter, 0)[0]
-                self.model.manually_updating_row = True
+                page = document_model.get(page_iter, 0)[0]
+                document_model.manually_updating_row = True
                 page.set_adjustments(
-                    self.view['brightness_scale'].get_value(),
-                    self.view['contrast_scale'].get_value(),
-                    self.view['sharpness_scale'].get_value())
-                page_iter = self.model.iter_next(page_iter)
+                    document_view['brightness_scale'].get_value(),
+                    document_view['contrast_scale'].get_value(),
+                    document_view['sharpness_scale'].get_value())
+                page_iter = document_model.iter_next(page_iter)
     
     # PROPERTY CALLBACKS
     
@@ -213,23 +231,28 @@ class DocumentController(Controller):
         model for display.
         """
         if new_value == 0:
-            self.page_controller.set_model(self.model.null_page)
+            self.application.get_page_controller().set_current_page_model(
+                self.application.get_null_page_model())
     
-    # UTILITY METHODS
-        
+    # PUBLIC METHODS
+            
     def toggle_thumbnails_visible(self, visible):
         """Toggles the visibility of the thumbnails view."""
+        document_view = self.application.get_document_view()
+        
         if visible:
-            self.view['thumbnails_scrolled_window'].show()
+            document_view['thumbnails_scrolled_window'].show()
         else:
-            self.view['thumbnails_scrolled_window'].hide()
+            document_view['thumbnails_scrolled_window'].hide()
         
     def toggle_adjustments_visible(self, visible):
         """Toggles the visibility of the adjustments view."""
+        document_view = self.application.get_document_view()
+        
         if visible:
-            self.view['adjustments_alignment'].show()
+            document_view['adjustments_alignment'].show()
         else:
-            self.view['adjustments_alignment'].hide()
+            document_view['adjustments_alignment'].hide()
             
     def delete_selected(self):
         """
@@ -242,52 +265,66 @@ class DocumentController(Controller):
         was impossible to actually select another row as part of
         the event.  This seems to work much more reliably.
         """
-        selection_iter = self.view['thumbnails_tree_view'].get_selection().get_selected()[1]
+        document_model = self.application.get_document_model()
+        document_view = self.application.get_document_view()
+        
+        selection_iter = document_view['thumbnails_tree_view'].get_selection().get_selected()[1]
         
         if selection_iter:
             # Get the row element of the path
-            row = self.model.get_path(selection_iter)[0]
+            row = document_model.get_path(selection_iter)[0]
         
             # Don't switch selections if this is the only page
-            if self.model.count == 1:
+            if document_model.count == 1:
                 pass
             else:
                 # Select previous row if deleting the last page
-                if row == self.model.count - 1:
-                    self.view['thumbnails_tree_view'].get_selection().select_path(row - 1)
+                if row == document_model.count - 1:
+                    document_view['thumbnails_tree_view'].get_selection().select_path(row - 1)
                 # Otherwise select next row
                 else:        
-                    self.view['thumbnails_tree_view'].get_selection().select_path(row + 1)            
+                    document_view['thumbnails_tree_view'].get_selection().select_path(row + 1)            
             
             # Remove the row that was selected when the delete request was made
-            self.model.remove(selection_iter)
+            document_model.remove(selection_iter)
         else:
             self.log.warn('Method delete_selected was called, but no selection has been made.')
             
     def goto_first_page(self):
         """Select the first scanned page."""
-        self.view['thumbnails_tree_view'].get_selection().select_path(0)
+        document_view = self.application.get_document_view()
+        
+        document_view['thumbnails_tree_view'].get_selection().select_path(0)
     
     def goto_previous_page(self):
         """Select the previous scanned page."""
-        iter = self.view['thumbnails_tree_view'].get_selection().get_selected()[1]
-        row = self.model.get_path(iter)[0]
+        document_model = self.application.get_document_model()
+        document_view = self.application.get_document_view()
+        
+        iter = document_view['thumbnails_tree_view'].get_selection().get_selected()[1]
+        row = document_model.get_path(iter)[0]
         
         if row == 0:
             return
         
-        self.view['thumbnails_tree_view'].get_selection().select_path(row - 1)
+        document_view['thumbnails_tree_view'].get_selection().select_path(row - 1)
     
     def goto_next_page(self):
         """Select the next scanned page."""
-        iter = self.view['thumbnails_tree_view'].get_selection().get_selected()[1]
-        row = self.model.get_path(iter)[0]
-        self.view['thumbnails_tree_view'].get_selection().select_path(row + 1)
+        document_model = self.application.get_document_model()
+        document_view = self.application.get_document_view()
+        
+        iter = document_view['thumbnails_tree_view'].get_selection().get_selected()[1]
+        row = document_model.get_path(iter)[0]
+        document_view['thumbnails_tree_view'].get_selection().select_path(row + 1)
     
     def goto_last_page(self):
         """
         Select the last scanned page.
         
         Handles invalid paths gracefully without an exception case.
-        """        
-        self.view['thumbnails_tree_view'].get_selection().select_path(len(self.model) - 1)
+        """
+        document_model = self.application.get_document_model()
+        document_view = self.application.get_document_view()
+        
+        document_view['thumbnails_tree_view'].get_selection().select_path(len(document_model) - 1)

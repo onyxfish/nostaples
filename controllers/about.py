@@ -16,31 +16,39 @@
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-This module holds the L{PreferencesController}, which manages interaction 
-between the L{PreferencesModel} and L{PreferencesView}.
+This module holds the L{AboutController}, which manages interaction 
+between the user and the L{AboutView}.
 """
 
 import logging
 
-import gtk
 from gtkmvc.controller import Controller
+from gtkmvc.model import Model
 
-from utils.gui import read_combobox
+import constants
 
-class PreferencesController(Controller):
+class AboutController(Controller):
     """
-    Manages interaction between the L{PreferencesModel} and 
-    L{PreferencesView}.
+    Manages interaction between the user and the
+    L{AboutView}.
+    
+    See U{http://faq.pygtk.org/index.py?req=show&file=faq10.013.htp}
+    for an explanation of all the GTK signal handling voodoo in this
+    class.
     """
     
     # SETUP METHODS
     
     def __init__(self, application):
         """
-        Constructs the PreferencesController.
+        Constructs the AboutController.
+        
+        Note that About has no model, an empty model is
+        passed to the super constructor to avoid assertion
+        failures later on.
         """
         self.application = application
-        Controller.__init__(self, application.get_preferences_model())
+        Controller.__init__(self, Model())
 
         self.log = logging.getLogger(self.__class__.__name__)
         self.log.debug('Created.')
@@ -53,29 +61,23 @@ class PreferencesController(Controller):
         
         self.log.debug('%s registered.', view.__class__.__name__)
         
-    def register_adapters(self):
-        """
-        Registers adapters for property/widget pairs that do not require 
-        complex processing.
-        """
-        pass
-    
     # USER INTERFACE CALLBACKS
-
-    def on_preferences_dialog_close(self, dialog):
-        """Close the preferences dialog."""
-        self.view.hide()
         
-    def on_preview_mode_combobox_changed(self, combobox):
-        """Registers changes in the preview rendering mode."""
-        preferences_model = self.application.get_preferences_model()
-        preferences_view = self.application.get_preferences_view()
+    def on_about_dialog_close(self, dialog):
+        """Hide the about dialog."""
+        dialog.hide()
         
-        preferences_model.preview_mode = read_combobox(
-            preferences_view['preview_mode_combobox'])
-            
-        # TODO: where and when does display get updated?
+    def on_about_dialog_response(self, dialog, response):
+        """Hide the about dialog."""
+        dialog.hide()
+        
+    def on_about_dialog_delete_event(self, dialog, event):
+        """Hide the about dialog."""
+        dialog.hide()
+        return True
     
-    def on_preferences_close_button_clicked(self, button):
-        """Close the preferences dialog."""
-        self.view.hide()
+    # PUBLIC METHODS
+    
+    def run(self):
+        """Run the modal about dialog."""
+        self.application.get_about_view().run()

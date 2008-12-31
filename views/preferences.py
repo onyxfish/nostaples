@@ -34,16 +34,18 @@ class PreferencesView(View):
     Exposes user settings through a dialog seperate from the main
     application window.
     """
-    def __init__(self, controller, parent):
+    def __init__(self, application):
         """
         Constructs the PreferencesView, including setting up controls that 
         could not be configured in Glade.
         """
+        self.application = application
         preferences_dialog_glade = os.path.join(
             constants.GUI_DIRECTORY, 'preferences_dialog.glade')
         View.__init__(
-            self, controller, preferences_dialog_glade,
-            'preferences_dialog', parent, False)
+            self, application.get_preferences_controller(), 
+            preferences_dialog_glade, 'preferences_dialog', 
+            application.get_main_view(), False)
             
         self.log = logging.getLogger(self.__class__.__name__)
         
@@ -56,6 +58,6 @@ class PreferencesView(View):
                 constants.PREVIEW_MODE_ANTIALIAS], 
             constants.PREVIEW_MODE_ANTIALIAS)
         
-        controller.register_view(self)
+        application.get_preferences_controller().register_view(self)
         
         self.log.debug('Created.')
