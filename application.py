@@ -134,6 +134,7 @@ class Application(object):
         
     def run(self):
         """Execute the GTK main loop."""
+        self._main_view.show()
         gtk.gdk.threads_init()
         gtk.main()
         

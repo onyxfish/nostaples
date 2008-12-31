@@ -223,7 +223,8 @@ class MainModel(Model):
             # until after the menu has been updated.
             if self._prop_active_scanner not in value:
                 self._prop_active_scanner = value[0]
-                self.application.get_state_manager()['active_scanner'] = value[0]
+                self.application.get_state_manager()['active_scanner'] = \
+                    value[0]
             # Otherwise maintain current selection
             else:
                 pass
@@ -282,7 +283,8 @@ class MainModel(Model):
         else:
             if self._prop_active_resolution not in value:
                 self._prop_active_resolution = value[0]
-                self.application.get_state_manager()['scan_resolution'] = value[0]
+                self.application.get_state_manager()['scan_resolution'] = \
+                    value[0]
             else:
                 pass
         
@@ -298,37 +300,47 @@ class MainModel(Model):
     
     def state_show_toolbar_change(self):
         """Read state."""
-        self.show_toolbar = self.application.get_state_manager()['show_toolbar']
+        self.show_toolbar = \
+            self.application.get_state_manager()['show_toolbar']
     
     def state_show_statusbar_change(self):
         """Read state."""
-        self.show_statusbar = self.application.get_state_manager()['show_statusbar']
+        self.show_statusbar = \
+            self.application.get_state_manager()['show_statusbar']
     
     def state_show_thumbnails_change(self):
         """Read state."""
-        self.show_thumbnails = self.application.get_state_manager()['show_thumbnails']
+        self.show_thumbnails = \
+            self.application.get_state_manager()['show_thumbnails']
     
     def state_show_adjustments_change(self):
         """Read state."""
-        self.show_adjustments = self.application.get_state_manager()['show_adjustments']
+        self.show_adjustments = \
+            self.application.get_state_manager()['show_adjustments']
         
     def state_active_scanner_change(self):
         """Read state, validating the input."""
-        if self.application.get_state_manager()['active_scanner'] in self.available_scanners:
-            self.active_scanner = self.application.get_state_manager()['active_scanner']
+        state_manager = self.application.get_state_manager()
+        
+        if state_manager['active_scanner'] in self.available_scanners:
+            self.active_scanner = state_manager['active_scanner']
         else:
-            self.application.get_state_manager()['active_scanner'] = self.active_scanner
+            state_manager['active_scanner'] = self.active_scanner
         
     def state_scan_mode_change(self):
         """Read state, validating the input."""
-        if self.application.get_state_manager()['scan_mode'] in self.valid_modes:
-            self.active_mode = self.application.get_state_manager()['scan_mode']
+        state_manager = self.application.get_state_manager()
+        
+        if state_manager['scan_mode'] in self.valid_modes:
+            self.active_mode = state_manager['scan_mode']
         else:
-            self.application.get_state_manager()['scan_mode'] = self.active_mode
+            state_manager['scan_mode'] = self.active_mode
         
     def state_scan_resolution_change(self):
         """Read state, validating the input."""
-        if self.application.get_state_manager()['scan_resolution'] in self.valid_resolutions:
-            self.active_resolution = self.application.get_state_manager()['scan_resolution']
+        state_manager = self.application.get_state_manager()
+        
+        if state_manager['scan_resolution'] in self.valid_resolutions:
+            self.active_resolution = state_manager['scan_resolution']
         else:
-            self.application.get_state_manager()['scan_resolution'] = self.active_resolution
+            state_manager['scan_resolution'] = self.active_resolution

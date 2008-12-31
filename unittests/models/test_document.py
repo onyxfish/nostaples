@@ -1,13 +1,18 @@
 import unittest
 
+from mock import Mock
+
+from application import Application
 from models.document import DocumentModel
 from models.page import PageModel
 
 class TestDocumentModel(unittest.TestCase):
     def setUp(self):
-        self.document_model = DocumentModel()
+        self.mock_application = Mock(spec=Application)
+        self.document_model = DocumentModel(self.mock_application)
     
     def tearDown(self):
+        self.mock_application = None
         self.document_model = None
     
     def test_append(self):

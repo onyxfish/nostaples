@@ -23,7 +23,6 @@ document in the process of being scanned.
 import logging
 
 import gobject
-import gtk
 from gtkmvc.model import ListStoreModel
 
 class DocumentModel(ListStoreModel):
@@ -58,14 +57,14 @@ class DocumentModel(ListStoreModel):
         changed and issues its row's row_changed event so that its display
         will be updated.
         """
-        iter = self.get_iter_first()
+        search_iter = self.get_iter_first()
         
-        while iter:
-            if self.get_value(iter, 0) == model:
-                self.row_changed(self.get_path(iter), iter)
+        while search_iter:
+            if self.get_value(search_iter, 0) == model:
+                self.row_changed(self.get_path(search_iter), search_iter)
                 return
                 
-            iter = self.iter_next(iter)
+            search_iter = self.iter_next(search_iter)
             
     # PUBLIC METHODS
             
@@ -87,22 +86,22 @@ class DocumentModel(ListStoreModel):
         page_model.register_observer(self)
         self.count += 1
     
-    def insert_before(self, iter, page_model):
+    def insert_before(self, loc_iter, page_model):
         """Insert a page in the doucument before the iter."""
-        super(DocumentModel, self).insert_before(iter, [page_model])
+        super(DocumentModel, self).insert_before(loc_iter, [page_model])
         page_model.register_observer(self)
         self.count += 1
     
-    def insert_after(self, iter, page_model):
+    def insert_after(self, loc_iter, page_model):
         """Insert a page in the doucument after the iter."""
-        super(DocumentModel, self).insert_after(iter, [page_model])
+        super(DocumentModel, self).insert_after(loc_iter, [page_model])
         page_model.register_observer(self)
         self.count += 1
         
-    def remove(self, iter):
+    def remove(self, loc_iter):
         """Remove a page from the doucument."""
-        self.get_value(iter, 0).unregister_observer(self)
-        super(DocumentModel, self).remove(iter)
+        self.get_value(loc_iter, 0).unregister_observer(self)
+        super(DocumentModel, self).remove(loc_iter)
         self.count -= 1
         
     def clear(self):
