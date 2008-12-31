@@ -25,6 +25,8 @@ import gtk
 from gtkmvc.model import Model
 import Image, ImageEnhance
 
+from utils.graphics import *
+
 # TODO: temp
 THUMBNAIL_SIZE = 128
 
@@ -92,13 +94,13 @@ class PageModel(Model):
     
     @property
     def pil_image(self):
-        '''
+        """
         Returns a PIL version of the transformed pixbuf for this page.
         
         This could be sped up by bypassing the conversion to and from
         a PIL image in L{pixbuf}, but this is not a speed intensive 
         routine and requires less maintenance this way.
-        '''
+        """
         return convert_pixbuf_to_pil_image(self.pixbuf)
     
     # PROPERTY CALLBACKS
@@ -240,29 +242,3 @@ class PageModel(Model):
             
         self.thumbnail_pixbuf = pixbuf.scale_simple(
             target_width, target_height, gtk.gdk.INTERP_BILINEAR)
-
-# TODO: move these utility functions into own module? 
-def convert_pil_image_to_pixbuf(image):
-    '''
-    Utility function to quickly convert a PIL Image to a GTK Pixbuf.
-    Adapted from Comix by Pontus Ekberg. (http://comix.sourceforge.net/)
-    '''
-    image_string = image.tostring()            
-    pixbuf = gtk.gdk.pixbuf_new_from_data(
-        image_string, gtk.gdk.COLORSPACE_RGB, 
-        False, 8, image.size[0], image.size[1], 3 * image.size[0])
-    
-    return pixbuf
-
-def convert_pixbuf_to_pil_image(pixbuf):
-    '''
-    Utility function to quickly convert a GTK Pixbuf to a PIL Image.
-    Adapted from Comix by Pontus Ekberg. (http://comix.sourceforge.net/)
-    '''
-    dimensions = pixbuf.get_width(), pixbuf.get_height()
-    stride = pixbuf.get_rowstride()
-    pixels = pixbuf.get_pixels()
-    image =  Image.frombuffer(
-        'RGB', dimensions, pixels, 'raw', 'RGB', stride, 1)
-    
-    return image

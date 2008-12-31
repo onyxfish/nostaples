@@ -15,17 +15,17 @@
 #~ You should have received a copy of the GNU General Public License
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
-'''
+"""
 TODO
-'''
+"""
 
 import gtk
 import gobject
 
 def setup_combobox(combobox, item_list, selection):
-    '''
+    """
     A short-cut for setting up simple comboboxes.
-    '''
+    """
     liststore = gtk.ListStore(gobject.TYPE_STRING)
     combobox.clear()
     combobox.set_model(liststore)
@@ -44,9 +44,9 @@ def setup_combobox(combobox, item_list, selection):
     combobox.set_active(index)
     
 def read_combobox(combobox):
-    '''
+    """
     A short-cut for reading from simple comboboxes.
-    '''
+    """
     liststore = combobox.get_model()
     active = combobox.get_active()
     
