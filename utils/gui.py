@@ -16,7 +16,8 @@
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-TODO
+This module holds utility methods for populating and
+reading from pygtk controls.
 """
 
 import gtk
@@ -24,7 +25,16 @@ import gobject
 
 def setup_combobox(combobox, item_list, selection):
     """
-    A short-cut for setting up simple comboboxes.
+    Sets up a simple combobox.
+    
+    @type combobox: gtk.ComboBox
+    @param combobox: The combobox to be setup.
+    
+    @type item_list: list of strings.
+    @param item_list: The items to add to the menu box.
+    
+    @type selection: string
+    @param selection: The item to be selected by default.
     """
     liststore = gtk.ListStore(gobject.TYPE_STRING)
     combobox.clear()
@@ -45,7 +55,11 @@ def setup_combobox(combobox, item_list, selection):
     
 def read_combobox(combobox):
     """
-    A short-cut for reading from simple comboboxes.
+    Reads the currently selected item from a
+    simple combobox.
+    
+    @type combobox: gtk.ComboBox
+    @param combobox: The combobox to read from.
     """
     liststore = combobox.get_model()
     active = combobox.get_active()

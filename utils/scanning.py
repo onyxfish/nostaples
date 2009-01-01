@@ -16,7 +16,8 @@
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-TODO
+This module contains those functions (in the form of Thread objects)
+that interface with scanning hardware via SANE.
 """
 
 import commands

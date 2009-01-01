@@ -53,7 +53,11 @@ class PageModel(Model):
         """
         Constructs the PageModel.
         
-        TODO: @param defintions
+        @type path: string
+        @param path: The absolute path to an image.
+        @type resolution: int
+        @param resolution: The dpi that the page was
+                           scanned at.
         """
         Model.__init__(self)
         
