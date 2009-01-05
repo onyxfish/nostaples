@@ -56,11 +56,6 @@ class MainController(Controller):
     def register_view(self, view):
         """
         Registers this controller with a view.
-        
-        Also, invokes the L{models.main.MainModel.load_state} which will
-        pull in any persisted values and then calls
-        L{_update_available_scanners} to poll for devices and
-        create relevant widgets in the view.
         """
         Controller.register_view(self, view)
         

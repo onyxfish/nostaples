@@ -24,6 +24,8 @@ import logging
 
 from gtkmvc.model import Model
 
+import constants
+
 class SaveModel(Model):
     """
     Handles data the metadata associated with saving documents.
@@ -33,7 +35,7 @@ class SaveModel(Model):
          # TODO
         'save_path' : '',
         'filename' : '',
-        'author' : 'TODO author',
+        'author' : '',
     }
 
     def __init__(self, application):
@@ -46,3 +48,58 @@ class SaveModel(Model):
         self.log = logging.getLogger(self.__class__.__name__)
         
         self.log.debug('Created.')
+        
+    def load_state(self):
+        """
+        Load persisted state from the self.state_manager.
+        """
+        state_manager = self.application.get_state_manager()
+        
+        self.save_path = state_manager.init_state(
+            'save_path', constants.DEFAULT_SAVE_PATH, 
+            self.state_save_path_change)
+        
+        self.author = state_manager.init_state(
+            'author', constants.DEFAULT_AUTHOR, 
+            self.state_author_change)
+        
+    # Property setters
+    # (see gtkmvc.support.metaclass_base.py for the origin of these accessors)
+        
+    def set_prop_save_path(self, value):
+        """
+        Write state.
+        See L{MainModel.set_prop_active_scanner} for detailed comments.
+        """
+        old_value = self._prop_save_path
+        if old_value == value:
+            return
+        self._prop_save_path = value
+        self.application.get_state_manager()['save_path'] = value
+        self.notify_property_value_change(
+            'save_path', old_value, value)
+        
+    def set_prop_author(self, value):
+        """
+        Write state.
+        See L{MainModel.set_prop_active_scanner} for detailed comments.
+        """
+        old_value = self._prop_author
+        if old_value == value:
+            return
+        self._prop_author = value
+        self.application.get_state_manager()['author'] = value
+        self.notify_property_value_change(
+            'author', old_value, value)
+        
+    # STATE CALLBACKS
+    
+    def state_save_path_change(self):
+        """Read state."""
+        self.save_path = \
+            self.application.get_state_manager()['save_path']
+    
+    def state_author_change(self):
+        """Read state."""
+        self.author = \
+            self.application.get_state_manager()['author']

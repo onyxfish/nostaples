@@ -56,10 +56,6 @@ class Application(object):
     component of the application via its constructor.  These 
     components then query the application object when they
     need to access other parts of the system.
-    
-    TODO: remove model/controller parameters from all component contstructuters.
-    they are already getting a reference to application so they can just query
-    for those other components
     """
     
     _state_manager = None
@@ -127,13 +123,15 @@ class Application(object):
         Load current settings from the state manager and
         poll for available scanners.
         """
-        self._main_model.load_state()        
+        self._main_model.load_state()
+        self.get_save_model().load_state()  
         self._main_controller._update_available_scanners()
         
     # PUBLIC METHODS
         
     def run(self):
         """Execute the GTK main loop."""
+        assert isinstance(self._main_view, MainView)
         self._main_view.show()
         gtk.gdk.threads_init()
         gtk.main()

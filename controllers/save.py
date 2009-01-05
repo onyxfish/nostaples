@@ -95,12 +95,13 @@ class SaveController(Controller):
         save_model = self.application.get_save_model()
         save_view = self.application.get_save_view()
         document_model = self.application.get_document_model()
+            
+        if response != gtk.RESPONSE_APPLY:
+            save_view['pdf_dialog'].hide()
+            return
         
         save_view['pdf_dialog'].window.set_cursor(gtk.gdk.Cursor(gtk.gdk.WATCH))
         gtk.gdk.flush()
-            
-        if response != gtk.RESPONSE_APPLY:
-            return
         
         title = unicode(save_view['title_entry'].get_text())
         author = unicode(save_view['author_entry'].get_text())
