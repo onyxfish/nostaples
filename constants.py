@@ -54,8 +54,6 @@ DEFAULT_SCAN_RESOLUTION = '75'
 DEFAULT_SAVE_PATH = ''
 DEFAULT_AUTHOR = ''
 DEFAULT_PREVIEW_MODE = 'Bilinear (Default)'
-
-# TODO: make a configurable preference
 DEFAULT_THUMBNAIL_SIZE = 128
 
 STATUSBAR_BASE_CONTEXT_ID = 0
@@ -90,4 +88,12 @@ PREVIEW_MODES_LIST = \
     'Tiles',
     'Bilinear (Default)',
     'Antialias (Smoothest)'
+]
+
+THUMBNAIL_SIZE_LIST = \
+[
+    32,
+    64,
+    128,
+    256
 ]

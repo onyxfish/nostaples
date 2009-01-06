@@ -40,14 +40,16 @@ class DocumentController(Controller):
         """
         self.application = application
         Controller.__init__(self, application.get_document_model())
-
-        self.log = logging.getLogger(self.__class__.__name__)
-        self.log.debug('Created.')
+        
+        application.get_preferences_model().register_observer(self)
         
         application.get_document_model().connect(
           'row-changed', self.on_document_model_row_changed)
         #application.get_document_model().connect(
         #  'row-deleted', self.on_document_model_row_deleted)
+
+        self.log = logging.getLogger(self.__class__.__name__)
+        self.log.debug('Created.')
 
     def register_view(self, view):
         """
@@ -233,11 +235,27 @@ class DocumentController(Controller):
         if new_value == 0:
             self.application.get_page_controller().set_current_page_model(
                 self.application.get_null_page_model())
+            
+    def property_thumbnail_size_value_change(self, model, old_value, new_value):
+        """
+        Update the size of the thumbnail column and redraw all existing
+        thumbnails.
+        """
+        document_model = self.application.get_document_model()
+        document_view = self.application.get_document_view()
+        
+        document_view['thumbnails_column'].set_fixed_width(new_value)
+        
+        page_iter = document_model.get_iter_first()
+        while page_iter:
+            page = document_model.get(page_iter, 0)[0]
+            page._update_thumbnail_pixbuf()
+            page_iter = document_model.iter_next(page_iter)
     
     # PUBLIC METHODS
             
     def toggle_thumbnails_visible(self, visible):
-        """Toggles the visibility of the thumbnails view."""
+        """Toggle the visibility of the thumbnails view."""
         document_view = self.application.get_document_view()
         
         if visible:

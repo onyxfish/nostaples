@@ -25,10 +25,8 @@ import gtk
 from gtkmvc.model import Model
 import Image, ImageEnhance
 
+import constants
 from utils.graphics import *
-
-# TODO: temp
-THUMBNAIL_SIZE = 128
 
 class PageModel(Model):
     """
@@ -49,7 +47,7 @@ class PageModel(Model):
 
     # SETUP METHODS
     
-    def __init__(self, path=None, resolution=75):
+    def __init__(self, application, path=None, resolution=75):
         """
         Constructs the PageModel.
         
@@ -59,6 +57,7 @@ class PageModel(Model):
         @param resolution: The dpi that the page was
                            scanned at.
         """
+        self.application = application
         Model.__init__(self)
         
         self.log = logging.getLogger(self.__class__.__name__)
@@ -201,6 +200,8 @@ class PageModel(Model):
         """
         Creates a thumbnail pixbuf with all transformations applied.
         """
+        preferences_model = self.application.get_preferences_model()
+        
         if self.brightness != 1.0 or \
            self.contrast != 1.0 or \
            self.sharpness != 1.0:
@@ -233,8 +234,10 @@ class PageModel(Model):
         width = pixbuf.get_width()
         height = pixbuf.get_height()
         
-        width_ratio = float(width) / THUMBNAIL_SIZE
-        height_ratio = float(height) / THUMBNAIL_SIZE
+        thumbnail_size = preferences_model.thumbnail_size
+        
+        width_ratio = float(width) / thumbnail_size
+        height_ratio = float(height) / thumbnail_size
         
         if width_ratio < height_ratio:
             zoom =  1 / float(height_ratio)
@@ -243,6 +246,9 @@ class PageModel(Model):
             
         target_width = int(pixbuf.get_width() * zoom)
         target_height = int(pixbuf.get_height() * zoom)
-            
+    
+        gtk_scale_mode = \
+            constants.PREVIEW_MODES[preferences_model.preview_mode]
+                
         self.thumbnail_pixbuf = pixbuf.scale_simple(
-            target_width, target_height, gtk.gdk.INTERP_BILINEAR)
+            target_width, target_height, gtk_scale_mode)

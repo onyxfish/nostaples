@@ -53,9 +53,7 @@ class DocumentView(View):
         self['thumbnails_column'] = gtk.TreeViewColumn(None)
         self['thumbnails_cell'] = gtk.CellRendererPixbuf()
         self['thumbnails_column'].set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
-#        self.thumbnails_column.set_fixed_width(
-#            self.app.state_manager['thumbnail_size'])
-        self['thumbnails_column'].set_fixed_width(128)
+        self['thumbnails_column'].set_fixed_width(constants.DEFAULT_THUMBNAIL_SIZE)
         self['thumbnails_tree_view'].append_column(self['thumbnails_column'])
         self['thumbnails_column'].pack_start(self['thumbnails_cell'], True)
         self['thumbnails_column'].set_cell_data_func(

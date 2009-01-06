@@ -31,7 +31,8 @@ class PreferencesModel(Model):
     """
     __properties__ = \
     {
-        'preview_mode' : constants.PREVIEW_MODES.values()[0],
+        'preview_mode' : constants.DEFAULT_PREVIEW_MODE,
+        'thumbnail_size' : constants.DEFAULT_THUMBNAIL_SIZE
     }
 
     def __init__(self, application):
@@ -55,6 +56,10 @@ class PreferencesModel(Model):
             'preview_mode', constants.DEFAULT_PREVIEW_MODE, 
             self.state_preview_mode_change)
         
+        self.thumbnail_size = state_manager.init_state(
+            'thumbnail_size', constants.DEFAULT_THUMBNAIL_SIZE, 
+            self.state_thumbnail_size_change)
+        
     # Property setters
     # (see gtkmvc.support.metaclass_base.py for the origin of these accessors)
         
@@ -71,9 +76,27 @@ class PreferencesModel(Model):
         self.notify_property_value_change(
             'preview_mode', old_value, value)
         
+    def set_prop_thumbnail_size(self, value):
+        """
+        Write state.
+        See L{MainModel.set_prop_active_scanner} for detailed comments.
+        """
+        old_value = self._prop_thumbnail_size
+        if old_value == value:
+            return
+        self._prop_thumbnail_size = value
+        self.application.get_state_manager()['thumbnail_size'] = value
+        self.notify_property_value_change(
+            'thumbnail_size', old_value, value)
+        
     # STATE CALLBACKS
     
     def state_preview_mode_change(self):
         """Read state."""
         self.preview_mode = \
             self.application.get_state_manager()['preview_mode']
+    
+    def state_thumbnail_size_change(self):
+        """Read state."""
+        self.thumbnail_size = \
+            self.application.get_state_manager()['thumbnail_size']

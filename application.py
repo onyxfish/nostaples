@@ -216,7 +216,7 @@ class Application(object):
         pages have been scanned.
         """
         if not self._null_page_model:
-            self._null_page_model = PageModel()
+            self._null_page_model = PageModel(self)
         
         return self._null_page_model
     

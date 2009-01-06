@@ -79,4 +79,7 @@ class PreferencesController(Controller):
         preferences_model.preview_mode = \
             read_combobox(preferences_view['preview_mode_combobox'])
         
+        preferences_model.thumbnail_size = \
+            int(read_combobox(preferences_view['thumbnail_size_combobox']))
+        
         preferences_view['preferences_dialog'].hide()

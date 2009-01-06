@@ -47,11 +47,11 @@ class MainController(Controller):
         """
         self.application = application
         Controller.__init__(self, application.get_main_model())
-
-        self.log = logging.getLogger(self.__class__.__name__)
-        self.log.debug('Created.')        
         
         application.get_document_model().register_observer(self)
+        
+        self.log = logging.getLogger(self.__class__.__name__)
+        self.log.debug('Created.')
 
     def register_view(self, view):
         """
@@ -423,7 +423,7 @@ class MainController(Controller):
         """Append the new page to the current document."""
         main_model = self.application.get_main_model()
         
-        new_page = PageModel(filename, int(main_model.active_resolution))
+        new_page = PageModel(self.application, filename, int(main_model.active_resolution))
         self.application.get_document_model().append(new_page)
         main_model.scan_in_progress = False
     

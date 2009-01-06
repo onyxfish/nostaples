@@ -54,6 +54,11 @@ class PreferencesView(View):
             constants.PREVIEW_MODES_LIST, 
             application.get_preferences_model().preview_mode)
         
+        setup_combobox(
+            self['thumbnail_size_combobox'],
+            constants.THUMBNAIL_SIZE_LIST, 
+            application.get_preferences_model().thumbnail_size)
+        
         application.get_preferences_controller().register_view(self)
         
         self.log.debug('Created.')
