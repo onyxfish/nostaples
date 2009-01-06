@@ -31,7 +31,7 @@ class PreferencesModel(Model):
     """
     __properties__ = \
     {
-        'preview_mode' : constants.PREVIEW_MODE_ANTIALIAS,
+        'preview_mode' : constants.PREVIEW_MODES.values()[0],
     }
 
     def __init__(self, application):
@@ -44,3 +44,36 @@ class PreferencesModel(Model):
         self.log = logging.getLogger(self.__class__.__name__)
         
         self.log.debug('Created.')
+        
+    def load_state(self):
+        """
+        Load persisted state from the self.state_manager.
+        """
+        state_manager = self.application.get_state_manager()
+        
+        self.preview_mode = state_manager.init_state(
+            'preview_mode', constants.DEFAULT_PREVIEW_MODE, 
+            self.state_preview_mode_change)
+        
+    # Property setters
+    # (see gtkmvc.support.metaclass_base.py for the origin of these accessors)
+        
+    def set_prop_preview_mode(self, value):
+        """
+        Write state.
+        See L{MainModel.set_prop_active_scanner} for detailed comments.
+        """
+        old_value = self._prop_preview_mode
+        if old_value == value:
+            return
+        self._prop_preview_mode = value
+        self.application.get_state_manager()['preview_mode'] = value
+        self.notify_property_value_change(
+            'preview_mode', old_value, value)
+        
+    # STATE CALLBACKS
+    
+    def state_preview_mode_change(self):
+        """Read state."""
+        self.preview_mode = \
+            self.application.get_state_manager()['preview_mode']

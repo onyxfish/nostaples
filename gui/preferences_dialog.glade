@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Sun Dec 14 08:41:56 2008 -->
+<!--Generated with glade3 3.4.5 on Mon Jan  5 15:57:30 2009 -->
 <glade-interface>
   <widget class="GtkDialog" id="preferences_dialog">
     <property name="border_width">5</property>
@@ -12,9 +12,8 @@
     <property name="type_hint">GDK_WINDOW_TYPE_HINT_DIALOG</property>
     <property name="skip_taskbar_hint">True</property>
     <property name="skip_pager_hint">True</property>
-    <property name="transient_for">scan_window</property>
     <property name="has_separator">False</property>
-    <signal name="close" handler="on_preferences_dialog_close"/>
+    <signal name="response" handler="on_preferences_dialog_response"/>
     <child internal-child="vbox">
       <widget class="GtkVBox" id="dialog-vbox5">
         <property name="visible">True</property>
@@ -49,7 +48,6 @@
                       <widget class="GtkComboBox" id="preview_mode_combobox">
                         <property name="visible">True</property>
                         <property name="items" translatable="yes"></property>
-                        <signal name="changed" handler="on_preview_mode_combobox_changed"/>
                       </widget>
                       <packing>
                         <property name="position">1</property>

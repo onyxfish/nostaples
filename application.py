@@ -125,6 +125,7 @@ class Application(object):
         """
         self._main_model.load_state()
         self.get_save_model().load_state()  
+        self.get_preferences_model().load_state()
         self._main_controller._update_available_scanners()
         
     # PUBLIC METHODS
@@ -183,7 +184,8 @@ class Application(object):
         
         This is a convenience function.
         """
-        self.get_preferences_view().show()
+        # TODO: fix PreferencesView getting created twice
+        self.get_preferences_controller().run()
     
     def get_document_model(self):
         """Return the L{DocumentModel} component."""

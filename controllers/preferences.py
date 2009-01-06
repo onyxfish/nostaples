@@ -25,6 +25,7 @@ import logging
 import gtk
 from gtkmvc.controller import Controller
 
+import constants
 from utils.gui import read_combobox
 
 class PreferencesController(Controller):
@@ -60,22 +61,22 @@ class PreferencesController(Controller):
         """
         pass
     
+    # PUBLIC METHODS
+    
+    def run(self):
+        """Run the preferences dialog."""
+        preferences_view = self.application.get_preferences_view()
+        
+        preferences_view.run()
+    
     # USER INTERFACE CALLBACKS
 
-    def on_preferences_dialog_close(self, dialog):
+    def on_preferences_dialog_response(self, dialog, response):
         """Close the preferences dialog."""
-        self.view.hide()
-        
-    def on_preview_mode_combobox_changed(self, combobox):
-        """Registers changes in the preview rendering mode."""
         preferences_model = self.application.get_preferences_model()
         preferences_view = self.application.get_preferences_view()
         
-        preferences_model.preview_mode = read_combobox(
-            preferences_view['preview_mode_combobox'])
-            
-        # TODO: where and when does display get updated?
-    
-    def on_preferences_close_button_clicked(self, button):
-        """Close the preferences dialog."""
-        self.view.hide()
+        preferences_model.preview_mode = \
+            read_combobox(preferences_view['preview_mode_combobox'])
+        
+        preferences_view['preferences_dialog'].hide()

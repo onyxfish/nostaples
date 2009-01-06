@@ -32,10 +32,10 @@ class SaveModel(Model):
     """
     __properties__ = \
     {
-         # TODO
         'save_path' : '',
-        'filename' : '',
         'author' : '',
+        
+        'filename' : '',
     }
 
     def __init__(self, application):

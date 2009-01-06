@@ -25,6 +25,8 @@ import logging
 import gtk
 from gtkmvc.controller import Controller
 
+import constants
+
 class PageController(Controller):
     """
     Manages interaction between the L{PageModel} and L{PageView}.
@@ -428,6 +430,7 @@ class PageController(Controller):
         Render the current page to the preview display.
         """
         page_view = self.application.get_page_view()
+        preferences_model = self.application.get_preferences_model()
         
         # Short circuit if the PageModel does not have a pixbuf 
         # (such as the null page).
@@ -452,8 +455,11 @@ class PageController(Controller):
             target_height = \
                 int(self.model.height * self.preview_zoom)
             
+            gtk_scale_mode = \
+                constants.PREVIEW_MODES[preferences_model.preview_mode]
+            
             self.preview_pixbuf = self.model.pixbuf.scale_simple(
-                target_width, target_height, gtk.gdk.INTERP_BILINEAR)
+                target_width, target_height, gtk_scale_mode)
         else:
             target_width = self.model.width
             target_height = self.model.height

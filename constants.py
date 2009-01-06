@@ -22,6 +22,7 @@ change often as well as enumeration-like state constants.
 
 import os
 
+import gtk
 from reportlab.lib.pagesizes import A0, A1, A2, A3, A4, A5, A6, \
     B0, B1, B2, B3, B4, B5, B6, LETTER, LEGAL, ELEVENSEVENTEEN
 
@@ -52,6 +53,7 @@ DEFAULT_SCAN_MODE = 'Color'
 DEFAULT_SCAN_RESOLUTION = '75'
 DEFAULT_SAVE_PATH = ''
 DEFAULT_AUTHOR = ''
+DEFAULT_PREVIEW_MODE = 'Bilinear (Default)'
 
 # TODO: make a configurable preference
 DEFAULT_THUMBNAIL_SIZE = 128
@@ -74,7 +76,18 @@ TEMP_IMAGES_DIRECTORY = os.path.expanduser('~/.nostaples')
 LOGGING_CONFIG = os.path.join(os.path.dirname(__file__), 'logging.config')
 GUI_DIRECTORY = os.path.join(os.path.dirname(__file__), 'gui')
 
-PREVIEW_MODE_NEAREST = 'Nearest (Fastest)'
-PREVIEW_MODE_BILINEAR = 'Bilinear'
-PREVIEW_MODE_BICUBIC = 'Bicubic'
-PREVIEW_MODE_ANTIALIAS = 'Antialias (Clearest)'
+PREVIEW_MODES = \
+{
+    'Nearest (Fastest)': gtk.gdk.INTERP_NEAREST,
+    'Tiles': gtk.gdk.INTERP_TILES,
+    'Bilinear (Default)': gtk.gdk.INTERP_BILINEAR,
+    'Antialias (Smoothest)': gtk.gdk.INTERP_HYPER
+}
+
+PREVIEW_MODES_LIST = \
+[
+    'Nearest (Fastest)',
+    'Tiles',
+    'Bilinear (Default)',
+    'Antialias (Smoothest)'
+]

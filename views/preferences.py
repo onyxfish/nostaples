@@ -27,7 +27,7 @@ import gtk
 from gtkmvc.view import View
 
 import constants
-from utils.gui import setup_combobox
+from utils.gui import read_combobox, setup_combobox
 
 class PreferencesView(View):
     """
@@ -49,15 +49,15 @@ class PreferencesView(View):
             
         self.log = logging.getLogger(self.__class__.__name__)
         
-        # Setup controls which can not be configured in Glade
         setup_combobox(
-            self['preview_mode_combobox'], 
-            [constants.PREVIEW_MODE_NEAREST,
-                constants.PREVIEW_MODE_BILINEAR, 
-                constants.PREVIEW_MODE_BICUBIC, 
-                constants.PREVIEW_MODE_ANTIALIAS], 
-            constants.PREVIEW_MODE_ANTIALIAS)
+            self['preview_mode_combobox'],
+            constants.PREVIEW_MODES_LIST, 
+            application.get_preferences_model().preview_mode)
         
         application.get_preferences_controller().register_view(self)
         
         self.log.debug('Created.')
+        
+    def run(self):
+        """Run the modal preferences dialog."""
+        self['preferences_dialog'].run()
