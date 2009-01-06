@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Wed Dec 31 14:31:47 2008 -->
+<!--Generated with glade3 3.4.5 on Mon Jan  5 19:55:14 2009 -->
 <glade-interface>
   <widget class="GtkWindow" id="scan_window">
     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
@@ -444,7 +444,7 @@
                 <signal name="clicked" handler="on_scan_button_clicked"/>
               </widget>
               <packing>
-                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
               </packing>
             </child>
             <child>
@@ -455,17 +455,13 @@
                 <signal name="clicked" handler="on_save_as_button_clicked"/>
               </widget>
               <packing>
-                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
               </packing>
             </child>
             <child>
               <widget class="GtkSeparatorToolItem" id="toolbutton1">
                 <property name="visible">True</property>
               </widget>
-              <packing>
-                <property name="expand">False</property>
-                <property name="homogeneous">False</property>
-              </packing>
             </child>
             <child>
               <widget class="GtkToolButton" id="zoom_in_button">
@@ -475,7 +471,7 @@
                 <signal name="clicked" handler="on_zoom_in_button_clicked"/>
               </widget>
               <packing>
-                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
               </packing>
             </child>
             <child>
@@ -486,7 +482,7 @@
                 <signal name="clicked" handler="on_zoom_out_button_clicked"/>
               </widget>
               <packing>
-                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
               </packing>
             </child>
             <child>
@@ -497,7 +493,7 @@
                 <signal name="clicked" handler="on_zoom_one_to_one_button_clicked"/>
               </widget>
               <packing>
-                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
               </packing>
             </child>
             <child>
@@ -508,17 +504,13 @@
                 <signal name="clicked" handler="on_zoom_best_fit_button_clicked"/>
               </widget>
               <packing>
-                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
               </packing>
             </child>
             <child>
               <widget class="GtkSeparatorToolItem" id="toolbutton2">
                 <property name="visible">True</property>
               </widget>
-              <packing>
-                <property name="expand">False</property>
-                <property name="homogeneous">False</property>
-              </packing>
             </child>
             <child>
               <widget class="GtkToolButton" id="rotate_counter_clockwise_button">
@@ -528,7 +520,7 @@
                 <signal name="clicked" handler="on_rotate_counter_clockwise_button_clicked"/>
               </widget>
               <packing>
-                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
               </packing>
             </child>
             <child>
@@ -539,17 +531,13 @@
                 <signal name="clicked" handler="on_rotate_clockwise_button_clicked"/>
               </widget>
               <packing>
-                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
               </packing>
             </child>
             <child>
               <widget class="GtkSeparatorToolItem" id="toolbutton4">
                 <property name="visible">True</property>
               </widget>
-              <packing>
-                <property name="expand">False</property>
-                <property name="homogeneous">False</property>
-              </packing>
             </child>
             <child>
               <widget class="GtkToolButton" id="go_first_button">
@@ -559,7 +547,7 @@
                 <signal name="clicked" handler="on_go_first_button_clicked"/>
               </widget>
               <packing>
-                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
               </packing>
             </child>
             <child>
@@ -570,7 +558,7 @@
                 <signal name="clicked" handler="on_go_previous_button_clicked"/>
               </widget>
               <packing>
-                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
               </packing>
             </child>
             <child>
@@ -581,7 +569,7 @@
                 <signal name="clicked" handler="on_go_next_button_clicked"/>
               </widget>
               <packing>
-                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
               </packing>
             </child>
             <child>
@@ -592,7 +580,7 @@
                 <signal name="clicked" handler="on_go_last_button_clicked"/>
               </widget>
               <packing>
-                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
               </packing>
             </child>
           </widget>
@@ -614,9 +602,13 @@
           </packing>
         </child>
         <child>
-          <widget class="GtkStatusbar" id="scan_window_statusbar">
+          <widget class="GtkViewport" id="status_view_docking_viewport">
             <property name="visible">True</property>
-            <property name="spacing">2</property>
+            <property name="resize_mode">GTK_RESIZE_QUEUE</property>
+            <property name="shadow_type">GTK_SHADOW_NONE</property>
+            <child>
+              <placeholder/>
+            </child>
           </widget>
           <packing>
             <property name="expand">False</property>

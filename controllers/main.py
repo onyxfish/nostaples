@@ -50,6 +50,11 @@ class MainController(Controller):
         
         application.get_document_model().register_observer(self)
         
+        status_controller = application.get_status_controller()
+        self.status_context = \
+            status_controller.get_context_id(self.__class__.__name__)
+        status_controller.push(self.status_context, 'Ready')
+        
         self.log = logging.getLogger(self.__class__.__name__)
         self.log.debug('Created.')
 
@@ -257,9 +262,9 @@ class MainController(Controller):
         menu_item.set_active(new_value)
         
         if new_value:
-            main_view['scan_window_statusbar'].show()
+            main_view['status_view_docking_viewport'].show()
         else:
-            main_view['scan_window_statusbar'].hide()
+            main_view['status_view_docking_viewport'].hide()
 
     def property_show_thumbnails_value_change(self, model, old_value, new_value):
         """Update the visibility of the thumbnails."""
@@ -422,6 +427,9 @@ class MainController(Controller):
     def on_scan_succeeded(self, scanning_thread, filename):
         """Append the new page to the current document."""
         main_model = self.application.get_main_model()
+        status_controller = self.application.get_status_controller()
+        
+        status_controller.pop(self.status_context)
         
         new_page = PageModel(self.application, filename, int(main_model.active_resolution))
         self.application.get_document_model().append(new_page)
@@ -433,6 +441,10 @@ class MainController(Controller):
         
         TODO: check if the scanner has been disconnected
         """
+        status_controller = self.application.get_status_controller()
+        
+        status_controller.pop(self.status_context)
+        
         self.application.get_main_model().scan_in_progress = False
         
     def on_update_available_scanners_thread_finished(self, update_thread, scanner_list):
@@ -533,6 +545,9 @@ class MainController(Controller):
     def _scan(self):
         """Begin a scan."""
         main_model = self.application.get_main_model()
+        status_controller = self.application.get_status_controller()
+        
+        status_controller.push(self.status_context, 'Scanning...')
         
         main_model.scan_in_progress = True
         scanning_thread = ScanningThread(main_model)

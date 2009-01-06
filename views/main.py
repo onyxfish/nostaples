@@ -50,15 +50,17 @@ class MainView(View):
         
         # Setup controls which can not be configured in Glade
         self['scan_window'].set_property('allow-shrink', True)
-
-        self['scan_window_statusbar'].push(
-            constants.STATUSBAR_BASE_CONTEXT_ID, 'Ready')
         
         # Setup sub views
         document_view = self.application.get_document_view()
         document_view['document_view_horizontal_box'].reparent(
              self['document_view_docking_viewport'])
         self['document_view_docking_viewport'].show_all()
+        
+        status_view = self.application.get_status_view()
+        status_view['statusbar'].reparent(
+             self['status_view_docking_viewport'])
+        self['status_view_docking_viewport'].show_all()
 
         # All controls are disabled by default, they become
         # avaiable when an event indicates that they should be.

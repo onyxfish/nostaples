@@ -33,11 +33,13 @@ from controllers.main import MainController
 from controllers.page import PageController
 from controllers.preferences import PreferencesController
 from controllers.save import SaveController
+from controllers.status import StatusController
 from models.document import DocumentModel
 from models.main import MainModel
 from models.page import PageModel
 from models.preferences import PreferencesModel
 from models.save import SaveModel
+from models.status import StatusModel
 from utils.state import GConfStateManager
 from views.about import AboutView
 from views.document import DocumentView
@@ -45,6 +47,7 @@ from views.main import MainView
 from views.page import PageView
 from views.preferences import PreferencesView
 from views.save import SaveView
+from views.status import StatusView
 
 class Application(object):
     """
@@ -64,10 +67,6 @@ class Application(object):
     _main_controller = None
     _main_view = None
     
-    _preferences_model = None
-    _preferences_controller = None
-    _preferences_view = None
-    
     _document_model = None
     _document_controller = None
     _document_view = None
@@ -75,6 +74,14 @@ class Application(object):
     _null_page_model = None
     _page_controller = None
     _page_view = None
+    
+    _status_model = None
+    _status_controller = None
+    _status_view = None
+    
+    _preferences_model = None
+    _preferences_controller = None
+    _preferences_view = None
     
     _save_model = None
     _save_controller = None
@@ -157,36 +164,6 @@ class Application(object):
         assert self._main_view
         return self._main_view
     
-    def get_preferences_model(self):
-        """Return the L{PreferencesModel} component."""
-        if not self._preferences_model:
-            self._preferences_model = PreferencesModel(self)
-        
-        return self._preferences_model
-    
-    def get_preferences_controller(self):
-        """Return the L{PreferencesController} component."""
-        if not self._preferences_controller:            
-            self._preferences_controller = PreferencesController(self)
-                    
-        return self._preferences_controller
-    
-    def get_preferences_view(self):
-        """Return the L{PreferencesView} component."""
-        if not self._preferences_view:            
-            self._preferences_view = PreferencesView(self)
-                    
-        return self._preferences_view
-    
-    def show_preferences_dialog(self):
-        """
-        Show the preferences dialog.
-        
-        This is a convenience function.
-        """
-        # TODO: fix PreferencesView getting created twice
-        self.get_preferences_controller().run()
-    
     def get_document_model(self):
         """Return the L{DocumentModel} component."""
         if not self._document_model:
@@ -241,6 +218,56 @@ class Application(object):
             self._page_view = PageView(self)
                     
         return self._page_view
+    
+    def get_status_model(self):
+        """Return the L{StatusModel} component."""
+        if not self._status_model:
+            self._status_model = StatusModel(self)
+        
+        return self._status_model
+    
+    def get_status_controller(self):
+        """Return the L{StatusController} component."""
+        if not self._status_controller:            
+            self._status_controller = StatusController(self)
+                    
+        return self._status_controller
+    
+    def get_status_view(self):
+        """Return the L{StatusView} component."""
+        if not self._status_view:            
+            self._status_view = StatusView(self)
+                    
+        return self._status_view
+    
+    def get_preferences_model(self):
+        """Return the L{PreferencesModel} component."""
+        if not self._preferences_model:
+            self._preferences_model = PreferencesModel(self)
+        
+        return self._preferences_model
+    
+    def get_preferences_controller(self):
+        """Return the L{PreferencesController} component."""
+        if not self._preferences_controller:            
+            self._preferences_controller = PreferencesController(self)
+                    
+        return self._preferences_controller
+    
+    def get_preferences_view(self):
+        """Return the L{PreferencesView} component."""
+        if not self._preferences_view:            
+            self._preferences_view = PreferencesView(self)
+                    
+        return self._preferences_view
+    
+    def show_preferences_dialog(self):
+        """
+        Show the preferences dialog.
+        
+        This is a convenience function.
+        """
+        self.get_preferences_controller().run()
     
     def get_save_model(self):
         """Return the L{SaveModel} component."""
