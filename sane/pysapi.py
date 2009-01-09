@@ -1,0 +1,733 @@
+#!/usr/bin/python
+
+#~ This file is part of Pysapi.
+
+#~ Pysapi is free software: you can redistribute it and/or modify
+#~ it under the terms of the GNU General Public License as published by
+#~ the Free Software Foundation, either version 3 of the License, or
+#~ (at your option) any later version.
+
+#~ Pysapi is distributed in the hope that it will be useful,
+#~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+#~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#~ GNU General Public License for more details.
+
+#~ You should have received a copy of the GNU General Public License
+#~ along with Pysapi.  If not, see <http://www.gnu.org/licenses/>.
+
+"""
+This module contains the Pythonic implementation of the SANE API.
+The flat C functions have been wrapped in a set of objects and all
+ctypes of the underlying implmentation have been hidden from the
+user's view.  This enumerations and definiations which are absolutely
+necessary to the end user have been redeclared.
+"""
+
+# TODO: document what exceptions can be thrown by each method
+
+from array import *
+import ctypes
+from types import *
+
+from PIL import Image
+
+from errors import *
+from saneh import *
+
+# Redeclare saneh enumerations which are visible to the end user
+(OPTION_TYPE_BOOL,
+    OPTION_TYPE_INT,
+    OPTION_TYPE_FIXED,
+    OPTION_TYPE_STRING,
+    OPTION_TYPE_BUTTON,
+    OPTION_TYPE_GROUP) = xrange(6)
+    
+(OPTION_UNIT_NONE,
+    OPTION_UNIT_PIXEL,
+    OPTION_UNIT_BIT,
+    OPTION_UNIT_MM,
+    OPTION_UNIT_DPI,
+    OPTION_UNIT_PERCENT,
+    OPTION_UNIT_MICROSECOND) = xrange(7)
+    
+(OPTION_CONSTRAINT_NONE,
+    OPTION_CONSTRAINT_RANGE,
+    OPTION_CONSTRAINT_INTEGER_LIST,
+    OPTION_CONSTRAINT_STRING_LIST) = xrange(4)
+
+class SANE(object):
+    """
+    The top-level object for interacting with the SANE API.  Handles
+    polling for devices.  This object should only be instantiated once.
+    """
+    _log = None
+    
+    _version = None  # (major, minor, build)
+    _devices = []
+    
+    def __init__(self, log=None):
+        """
+        Create the SANE object.  Note that all functional setup of the
+        SANE object is deferred until the user explicitly calls L{init}.
+        
+        @param log: an optional Python logging object to log to.
+        """
+        self._log = log
+        
+    def __del__(self):
+        """
+        Verify that the SANE connectoin was terminated.
+        """
+        assert self._version is None
+        
+    # Read only properties
+
+    def __get_version(self):
+        """Get the current installed version of SANE."""
+        return self._version
+        
+    version = property(__get_version)
+
+    def __get_devices(self):
+        """
+        Get the list of available devices, as of the most recent call
+        to L{update_devices}.
+        """
+        return self._devices
+        
+    devices = property(__get_devices)
+
+    # Public Methods
+    
+    def setup(self):
+        """
+        Iniitalize SANE and retrieve the current installed version.
+        Optionally, set a logging object to receive debugging
+        information.
+        
+        See L{exit} for an explanation of why this does not occur
+        in __init__.
+        
+        TODO: handle the authentication callback
+        
+        @raise SaneUnknownError: sane_init returned an invalid status.
+        """
+        version_code = SANE_Int()
+        callback = SANE_Auth_Callback(sane_auth_callback)
+        
+        status = sane_init(byref(version_code), callback) 
+        
+        if status != SANE_STATUS_GOOD.value:
+            raise SaneUnknownError()
+        
+        # TODO: handle status/exceptions
+        
+        self._version = (SANE_VERSION_MAJOR(version_code), 
+            SANE_VERSION_MINOR(version_code), 
+            SANE_VERSION_BUILD(version_code))
+        
+        if self._log:
+            self._log.debug('SANE version %s initalized.', self._version)
+        
+    def shutdown(self):
+        """
+        Deinitialize SANE.
+        
+        This code would go in __del__, but it is not guaranteed that method
+        will be called and sane_exit must be called to release resources.  Thus
+        the parallel L{init} method for consistency.
+        
+        TODO: close any open devices before exiting
+        """
+        sane_exit()
+        self._version = None
+        
+        if self._log:
+            self._log.debug('SANE deinitialized.')
+        
+    def update_devices(self):
+        """
+        Poll for connected devices.
+        
+        @raise SaneOutOfMemoryError: sane_get_devices ran out of memory.
+        @raise SaneUnknownError: sane_get_devices returned an invalid status.
+        """
+        assert self._version is not None
+        
+        cdevices = POINTER(POINTER(SANE_Device))()
+
+        status = sane_get_devices(byref(cdevices), SANE_Bool(0))
+        
+        if status == SANE_STATUS_GOOD.value:
+            pass
+        elif status == SANE_STATUS_NO_MEM.value:
+            raise SaneOutOfMemoryError()
+        else:
+            raise SaneUnknownError()
+
+        device_count = 0
+        self._devices = []
+        
+        while cdevices[device_count]:
+            self._devices.append(Device(cdevices[device_count].contents))
+            device_count += 1
+           
+        if self._log:
+            self._log.debug('SANE queried, %i device(s) found.', device_count)
+        
+class Device(object):
+    """
+    This is the primary object for interacting with SANE.  It represents
+    a single device and handles enumeration of options, getting and
+    setting of options, and starting and stopping of scanning jobs.
+    """   
+    _log = None
+    
+    _handle = None
+    
+    _name = ''
+    _vendor = ''
+    _model = ''
+    _type = ''
+    
+    _options = {}
+    
+    def __init__(self, ctypes_device, log=None):
+        """
+        Sets the Devices properties from a ctypes SANE_Device and
+        queries for its available options.
+        """
+        self._log = log
+        
+        assert type(ctypes_device.name) is StringType
+        assert type(ctypes_device.vendor) is StringType
+        assert type(ctypes_device.model) is StringType
+        assert type(ctypes_device.type) is StringType
+        
+        self._name = ctypes_device.name
+        self._vendor = ctypes_device.vendor
+        self._model = ctypes_device.model
+        self._type = ctypes_device.type
+        
+    # Read only properties
+
+    def __get_name(self):
+        """
+        Get the complete SANE identifier for this device, 
+        e.g. 'lexmark:libusb:002:006'.
+        """
+        return self._name
+        
+    name = property(__get_name)
+    
+    def __get_vendor(self):
+        """Get the manufacturer of this device, e.g. 'Lexmark'."""
+        return self._vendor
+        
+    vendor = property(__get_vendor)
+    
+    def __get_model(self):
+        """Get the specific model of this device, e.g. 'X1100/rev. B2'."""
+        return self._model
+        
+    model = property(__get_model)
+    
+    def __get_type(self):
+        """Get the type of this device, e.g. 'flatbed scanner'."""
+        return self._type
+        
+    type = property(__get_type)
+    
+    def __get_options(self):
+        """Get the list of options that this device has."""
+        return self._options
+        
+    options = property(__get_options)
+    
+    # Internal methods
+        
+    def _update_options(self):
+        """
+        Update the list of available options for this device.  As these
+        are immutable, this should only need to be called when the Device
+        is first instantiated.
+        """
+        assert self._handle is not None
+        assert self._handle != c_void_p(None)
+        
+        option_value = pointer(c_int())
+        status = sane_control_option(self._handle, 0, SANE_ACTION_GET_VALUE, option_value, None)
+        
+        # TODO: handle statuses/exceptions
+        
+        option_count = option_value.contents.value
+        
+        if self._log:
+            self._log.debug('Device queried, %i option(s) found.', option_count)
+        
+        self._options.clear()
+        
+        i = 1
+        while(i < option_count - 1):
+            coption = sane_get_option_descriptor(self._handle, i)
+            self._options[coption.contents.name] = Option(self, i, coption.contents)
+            i = i + 1
+        
+    # Methods for use only by Options
+    
+    def _get_handle(self):
+        """
+        Verify that the device is open and get the current open handle.
+        
+        To be called by Options of this device so that they may set themselves.
+        """
+        assert self._handle is not None
+        assert self._handle != c_void_p(None)
+        
+        return self._handle
+        
+    # Public methods
+        
+    def open(self):
+        """
+        Open a new handle to this device.
+        
+        Must be called before any operations (including setting options)
+        are performed on this device.
+        
+        @raise SaneDeviceBusyError: this device is in use by another process.
+        @raise SaneInvalidDataError: the device has been disconnected.
+        @raise SaneIOError: a communications error occurred with the device.
+        @raise SaneOutOfMemoryError: ran out of memory while opening the device.
+        @raise SaneAccessDeniedError: greater access is required to open the device.
+        @raise SaneUnknownError: sane_open returned an invalid status.
+        """
+        assert self._handle is None
+        self._handle = SANE_Handle()
+        
+        status = sane_open(self.name, byref(self._handle))
+        
+        if status == SANE_STATUS_GOOD.value:
+            pass
+        elif status == SANE_STATUS_DEVICE_BUSY.value:
+            raise SaneDeviceBusyError()
+        elif status == SANE_STATUS_INVAL.value:
+            raise SaneInvalidDataError()
+        elif status == SANE_STATUS_IO_ERROR.value:
+            raise SaneIOError()
+        elif status == SANE_STATUS_NO_MEM.value:
+            raise SaneOutOfMemoryError()
+        elif status == SANE_STATUS_ACCESS_DENIED.value:
+            # TODO
+            raise SaneAccessDeniedError()
+        else:
+            raise SaneUnknownError()
+        
+        assert self._handle != c_void_p(None)
+        
+        if self._log:
+            self._log.debug('Device %s open.', self._name)
+            
+        self._update_options()
+        
+    def is_open(self):
+        """
+        Return true if there is an active handle to this device.
+        """
+        return (self._handle is not None)
+
+    def close(self):
+        """
+        Close the current handle to this device.  All changes made
+        to its options will be lost.
+        """
+        assert self._handle is not None
+        assert self._handle != c_void_p(None)
+        
+        sane_close(self._handle)        
+        self._handle = None
+        
+        if self._log:
+            self._log.debug('Device %s closed.', self._name)
+            
+    def scan(self, progress_callback=None):
+        #TODO
+        assert self._handle is not None
+        assert self._handle != c_void_p(None)
+        
+        status = sane_start(self._handle)
+        print status
+        
+        sane_parameters = SANE_Parameters()
+        
+        status = sane_get_parameters(self._handle, byref(sane_parameters))
+        
+        if status != SANE_STATUS_GOOD.value:
+                raise SaneUnknownError()
+
+        scan_info = ScanInfo(sane_parameters)
+        
+        bytes_per_read = 48 #should be multiple of 3 (for RGB)
+        
+        data_array = array('B')
+        temp_array = (SANE_Byte * bytes_per_read)()
+        actual_size = SANE_Int()
+        
+        while True:
+            status = sane_read(self._handle, temp_array, bytes_per_read, byref(actual_size))
+            
+            if status == SANE_STATUS_GOOD.value:
+                data_array.extend(temp_array[0:actual_size.value])
+            elif status == SANE_STATUS_EOF.value:
+                break
+            elif status == SANE_STATUS_CANCELLED.value:
+                return None
+            elif status == SANE_STATUS_JAMMED.value:
+                #TODO
+                pass
+            elif status == SANE_STATUS_NO_DOCS.value:
+                #TODO
+                pass
+            elif status == SANE_STATUS_COVER_OPEN.value:
+                #TODO
+                pass
+            elif status == SANE_STATUS_IO_ERROR.value:
+                #TODO
+                pass
+            elif status == SANE_STATUS_NO_MEM.value:
+                #TODO
+                pass
+            elif status == SANE_STATUS_ACCESS_DENIED.value:
+                #TODO
+                pass
+            else:
+                raise SaneUnknownError()
+            
+            # TODO
+            if progress_callback:
+                cancel = progress_callback(scan_info, len(data_array))
+                
+                if cancel:
+                    sane_cancel(self._handle)
+            
+        sane_cancel(self._handle)
+        
+        assert scan_info.total_bytes == len(data_array)
+        
+        if sane_parameters.format == SANE_FRAME_GRAY.value:
+            pil_image = Image.fromstring('L', (scan_info.width, scan_info.height), data_array.tostring())
+        elif sane_parameters.format == SANE_FRAME_RGB.value:
+            pil_image = Image.fromstring('RGB', (scan_info.width, scan_info.height), data_array.tostring())
+        else:
+            # TODO
+            raise NotImplementedError()
+            
+        return pil_image
+        
+    def cancel_scan(self):
+        #TODO
+        assert self._handle is not None
+        assert self._handle != c_void_p(None)
+    
+class Option(object):
+    """
+    Represents a single option available for a device.  Exposes
+    a variety of information designed to make it easy for a GUI
+    to render each arbitrary option in a user-friendly way.
+    """
+    log = None
+    
+    _device = None
+    _option_number = 0
+    
+    _name = ''
+    _title = ''
+    _description = ''
+    _type = 0
+    _unit = 0
+    _size = 0
+    _capabilities = 0
+    _constraint_type = 0
+    
+    _constraint_string_list = []
+    _constraint_word_list = []
+    _constraint_range = ()
+    
+    def __init__(self, device, option_number, ctypes_option, log=None): 
+        """
+        Construct the option from a given ctypes SANE_Option_Descriptor.
+        Parse the necessary constraint information from the
+        SANE_Constraint and SANE_Range structures.
+        """
+        self._log = log
+        
+        self._device = device
+        self._option_number = option_number
+        
+        assert type(ctypes_option.name) is StringType
+        assert type(ctypes_option.title) is StringType
+        assert type(ctypes_option.desc) is StringType
+        assert type(ctypes_option.type) is IntType
+        assert type(ctypes_option.unit) is IntType
+        assert type(ctypes_option.size) is IntType
+        assert type(ctypes_option.cap) is IntType
+        assert type(ctypes_option.constraint_type) is IntType
+        
+        self._name = ctypes_option.name
+        self._title = ctypes_option.title
+        self._description = ctypes_option.desc
+        self._type = ctypes_option.type
+        self._unit = ctypes_option.unit
+        self._size = ctypes_option.size
+        self._capability = ctypes_option.cap
+        self._constraint_type = ctypes_option.constraint_type
+        
+        if self._constraint_type == SANE_CONSTRAINT_NONE.value:
+            pass
+        elif self._constraint_type == SANE_CONSTRAINT_RANGE.value:
+            assert type(ctypes_option.constraint.range) is POINTER(SANE_Range)
+            assert type(ctypes_option.constraint.range.contents.min) is IntType
+            assert type(ctypes_option.constraint.range.contents.max) is IntType
+            assert type(ctypes_option.constraint.range.contents.quant) is IntType
+            
+            self._constraint_range = (
+                ctypes_option.constraint.range.contents.min,
+                ctypes_option.constraint.range.contents.max,
+                ctypes_option.constraint.range.contents.quant)
+        elif self._constraint_type == SANE_CONSTRAINT_WORD_LIST.value:
+            assert type(ctypes_option.constraint.word_list) is POINTER(SANE_Word)
+            
+            word_count = ctypes_option.constraint.word_list[0]
+            self._constraint_word_list = []
+            
+            i = 1
+            while(i < word_count):
+                self._constraint_word_list.append(ctypes_option.constraint.word_list[i])
+                i = i + 1                
+        elif self._constraint_type == SANE_CONSTRAINT_STRING_LIST.value:
+            assert type(ctypes_option.constraint.string_list) is POINTER(SANE_String_Const)
+            
+            string_count = 0
+            self._constraint_string_list = []
+            
+            while ctypes_option.constraint.string_list[string_count]:
+                self._constraint_word_list.append(ctypes_option.constraint.string_list[string_count])
+                string_count += 1
+        
+    # Read only properties
+
+    def __get_name(self):
+        """Get the short-form name of this option, e.g. 'mode'."""
+        return self._name
+        
+    name = property(__get_name)
+
+    def __get_title(self):
+        """Get the full name of this option, e.g. 'Scan mode'."""
+        return self._title
+        
+    title = property(__get_title)
+
+    def __get_description(self):
+        """
+        Get the full description of this option,
+        e.g. 'Selects the scan mode (e.g., lineart, monochrome, or color).'
+        """
+        return self._description
+        
+    description = property(__get_description)
+
+    def __get_type(self):
+        # TODO: convert to Python types at creation?
+        return self._type
+        
+    type = property(__get_type)
+
+    def __get_unit(self):
+        # TODO: convert to string representation at creation?
+        return self._unit
+        
+    unit = property(__get_unit)
+
+    def __get_size(self):
+        # TODO: hide from user view?
+        return self._size
+        
+    size = property(__get_size)
+
+    def __get_capability(self):
+        # TODO: hide from user view?
+        return self._capability
+        
+    capability = property(__get_capability)
+
+    def __get_constraint_type(self):
+        # TODO: recast into a module-local Python enumeration?
+        return self._constraint_type
+        
+    constraint_type = property(__get_constraint_type)
+
+    def __get_constraint_string_list(self):
+        """Get a list of strings which are valid values for this option."""
+        return self.__constraint_string_list
+        
+    constraint_string_list = property(__get_constraint_string_list)
+
+    def __get_constraint_word_list(self):
+        """Get a list of integers that are valid values for this option."""
+        return self._constraint_word_list
+        
+    constraint_word_list = property(__get_constraint_word_list)
+
+    def __get_constraint_range(self):
+        """
+        Get a tuple containing the (minimum, maximum, step) of
+        valid values for this option.
+        """
+        return self._constraint_range
+        
+    constraint_range = property(__get_constraint_range)
+        
+    def __get_value(self):
+        """
+        Get the current value of this option.
+        """
+        handle = self._device._get_handle()
+        
+        if self._type == SANE_TYPE_BOOL.value:
+            option_value = pointer(SANE_Bool())
+        elif self._type == SANE_TYPE_INT.value:
+            # TODO: these may not always be a single char wide, see SANE doc 4.2.9.6
+            option_value = pointer(SANE_Int())
+        elif self._type == SANE_TYPE_FIXED.value:
+            # TODO: these may not always be a single char wide, see SANE doc 4.2.9.6
+            option_value = pointer(SANE_Fixed())
+        elif self._type == SANE_TYPE_STRING.value:
+            # sane_control_option expects a mutable string buffer
+            option_value = create_string_buffer(self._size)
+        elif self._type == SANE_TYPE_BUTTON.value:
+            raise TypeError('SANE_TYPE_BUTTON has no value.')
+        elif self._type == SANE_TYPE_GROUP.value:
+            raise TypeError('SANE_TYPE_GROUP has no value.')
+        else:
+            raise TypeError('Option is of unknown type.')
+        
+        status = sane_control_option(handle, self._option_number, SANE_ACTION_GET_VALUE, option_value, None)
+        
+        # TODO: handle statuses/exceptions
+        
+        if self._type == SANE_TYPE_STRING.value:
+            option_value = option_value.value
+        else:
+            option_value = option_value.contents.value
+            
+        if self._log:
+            self._log.debug('Option %s queried, its current value is %s.', self._name, option_value)
+            
+        return option_value
+    
+    def __set_value(self, value):
+        """
+        Set the current value of this option.
+        """
+        handle = self._device._get_handle()
+        
+        if self._type == SANE_TYPE_BOOL.value:
+            assert type(value) is BoolType
+        elif self._type == SANE_TYPE_INT.value:
+            assert type(value) is IntType
+        elif self._type == SANE_TYPE_FIXED.value:
+            assert type(value) is IntType
+        elif self._type == SANE_TYPE_STRING.value:
+            assert type(value) is StringType
+        elif self._type == SANE_TYPE_BUTTON.value:
+            raise TypeError('SANE_TYPE_BUTTON has no value.')
+        elif self._type == SANE_TYPE_GROUP.value:
+            raise TypeError('SANE_TYPE_GROUP has no value.')
+        else:
+            raise TypeError('Option is of unknown type.')
+            
+        info_flags = SANE_Int()
+        
+        # TODO: When to use SANE_ACTION_SET_AUTO?
+        status = sane_control_option(
+            handle, self._option_number, SANE_ACTION_SET_VALUE, value, byref(info_flags))
+        
+        # TODO: handle statuses/exceptions
+        
+        # TODO: parse and respond to flags, see SANE docs 4.3.7
+        #print info_flags
+        
+        if self._log:
+            self._log.debug('Option %s set to value %s.', self._name, value)
+        
+    value = property(__get_value, __set_value)
+    
+class ScanInfo(object):
+    """
+    Contains the parameters and progress of a scan in progress.
+    """
+    _width = 0
+    _height = 0
+    _depth = 0
+    _total_bytes = 0
+    
+    def __init__(self, sane_parameters):
+        """
+        Initialize the ScanInfo object from the sane_parameters.
+        """
+        self._width = sane_parameters.pixels_per_line
+        self._height = sane_parameters.lines
+        self._depth = sane_parameters.depth
+        self._total_bytes = sane_parameters.bytes_per_line * sane_parameters.lines
+        
+    # Read only properties
+
+    def __get_width(self):
+        """Get the width of the current scan, in pixels."""
+        return self._width
+        
+    width = property(__get_width)
+
+    def __get_height(self):
+        """Get the height of the current scan, in pixels."""
+        return self._height
+        
+    height = property(__get_height)
+
+    def __get_depth(self):
+        """Get the depth of the current scan, in bits."""
+        return self._depth
+        
+    depth = property(__get_depth)
+
+    def __get_total_bytes(self):
+        """Get the total number of bytes comprising this scan."""
+        return self._total_bytes
+        
+    total_bytes = property(__get_total_bytes)
+        
+if __name__ == '__main__':
+    import logging
+    log_format = FORMAT = "%(message)s"
+    logging.basicConfig(level=logging.DEBUG, format=log_format)
+    
+    sane = SANE(logging.getLogger())
+    sane.setup()
+    sane.update_devices()
+    
+    for dev in sane.devices:
+        print dev.name
+        
+    sane.devices[0].open()
+    
+    print sane.devices[0].options.keys()
+    
+    print sane.devices[0].options['mode'].value
+    sane.devices[0].options['mode'].value = 'Color'
+    print sane.devices[0].options['mode'].value
+    
+    sane.devices[0].scan().save('out.bmp')
+    
+    sane.devices[0].close()
+    sane.shutdown()
