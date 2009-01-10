@@ -44,14 +44,6 @@ class SaneUnsupportedOperationError(SaneError):
     """
     pass
     
-class SaneCancelledOperationError(SaneError):
-    """
-    TODO: when is this called
-    
-    Corresponds to SANE status code SANE_STATUS_CANCELLED.
-    """
-    pass
-    
 class SaneDeviceBusyError(SaneError):
     """
     Exception denoting that the requested device is being
@@ -127,4 +119,12 @@ class SaneAccessDeniedError(SaneError):
     
     Corresponds to the SANE status code SANE_STATUS_ACCESS_DENIED.
     """
-    pass	
+    pass
+
+class SaneReloadOptionsError(SaneError):
+    """
+    Exception denoting that a change to a SANE option has had
+    a cascade effect on other options and thus that they should
+    be read again to get the most up to date values.
+    """
+    pass

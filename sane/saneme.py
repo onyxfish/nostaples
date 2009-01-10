@@ -108,9 +108,7 @@ class SANE(object):
         See L{exit} for an explanation of why this does not occur
         in __init__.
         
-        TODO: handle the authentication callback
-        
-        @raise SaneUnknownError: sane_init returned an invalid status.
+        TODO: handle the authentication callback... or not
         """
         version_code = SANE_Int()
         callback = SANE_Auth_Callback(sane_auth_callback)
@@ -118,9 +116,8 @@ class SANE(object):
         status = sane_init(byref(version_code), callback) 
         
         if status != SANE_STATUS_GOOD.value:
-            raise SaneUnknownError()
-        
-        # TODO: handle status/exceptions
+            raise SaneUnknownError(
+                'sane_init returned an invalid status.')
         
         self._version = (SANE_VERSION_MAJOR(version_code), 
             SANE_VERSION_MINOR(version_code), 
@@ -148,9 +145,6 @@ class SANE(object):
     def update_devices(self):
         """
         Poll for connected devices.
-        
-        @raise SaneOutOfMemoryError: sane_get_devices ran out of memory.
-        @raise SaneUnknownError: sane_get_devices returned an invalid status.
         """
         assert self._version is not None
         
@@ -161,9 +155,11 @@ class SANE(object):
         if status == SANE_STATUS_GOOD.value:
             pass
         elif status == SANE_STATUS_NO_MEM.value:
-            raise SaneOutOfMemoryError()
+            raise SaneOutOfMemoryError(
+                'sane_get_devices ran out of memory.')
         else:
-            raise SaneUnknownError()
+            raise SaneUnknownError(
+                'sane_get_devices returned an invalid status.')
 
         device_count = 0
         self._devices = []
@@ -294,13 +290,6 @@ class Device(object):
         
         Must be called before any operations (including setting options)
         are performed on this device.
-        
-        @raise SaneDeviceBusyError: this device is in use by another process.
-        @raise SaneInvalidDataError: the device has been disconnected.
-        @raise SaneIOError: a communications error occurred with the device.
-        @raise SaneOutOfMemoryError: ran out of memory while opening the device.
-        @raise SaneAccessDeniedError: greater access is required to open the device.
-        @raise SaneUnknownError: sane_open returned an invalid status.
         """
         assert self._handle is None
         self._handle = SANE_Handle()
@@ -310,18 +299,24 @@ class Device(object):
         if status == SANE_STATUS_GOOD.value:
             pass
         elif status == SANE_STATUS_DEVICE_BUSY.value:
-            raise SaneDeviceBusyError()
+            raise SaneDeviceBusyError(
+                'sane_open reported that the device was busy.')
         elif status == SANE_STATUS_INVAL.value:
-            raise SaneInvalidDataError()
+            # TODO - invalid device name?  disconnected?
+            raise AssertionError(
+                'sane_open reported that the device name was invalid.')
         elif status == SANE_STATUS_IO_ERROR.value:
-            raise SaneIOError()
+            raise SaneIOError(
+                'sane_open reported a communications error.')
         elif status == SANE_STATUS_NO_MEM.value:
-            raise SaneOutOfMemoryError()
+            raise SaneOutOfMemoryError(
+                'sane_open ran out of memory.')
         elif status == SANE_STATUS_ACCESS_DENIED.value:
-            # TODO
-            raise SaneAccessDeniedError()
+            raise SaneAccessDeniedError(
+                'sane_open requires greater access to open the device.')
         else:
-            raise SaneUnknownError()
+            raise SaneUnknownError(
+                'sane_open returned an invalid status.')
         
         assert self._handle != c_void_p(None)
         
@@ -351,15 +346,55 @@ class Device(object):
             self._log.debug('Device %s closed.', self._name)
             
     def scan(self, progress_callback=None):
-        #TODO
+        """
+        Scan a document using this device.
+        
+        @param progress_callback: An optional callback that
+            will be called each time data is read from
+            the device.  Has the format:
+            cancel = progress_callback(sane_info, bytes_read)
+        @return: A PIL image containing the scanned
+            page.
+        """
         assert self._handle is not None
         assert self._handle != c_void_p(None)
         
+        # See SANE API 4.3.9
         status = sane_start(self._handle)
-        print status
+        
+        if status == SANE_STATUS_GOOD.value:
+            pass
+        elif status == SANE_STATUS_CANCELLED.value:
+            raise AssertionError(
+                'sane_start reported cancelled status before it was set.')
+        elif status == SANE_STATUS_DEVICE_BUSY.value:
+            raise SaneDeviceBusyError(
+                'sane_start reported the device was in use.')
+        elif status == SANE_STATUS_JAMMED.value:
+            raise SaneDeviceJammedError(
+                'sane_start reported a paper jam.')
+        elif status == SANE_STATUS_NO_DOCS.value:
+            raise SaneNoDocumentsError(
+                'sane_start reported that the document feeder was empty.')
+        elif status == SANE_STATUS_COVER_OPEN.value:
+            raise SaneCoverOpenError(
+                'sane_start reported that the device cover was open.')
+        elif status == SANE_STATUS_IO_ERROR.value:
+            raise SaneIOError(
+                'sane_start encountered a communications error.')
+        elif status == SANE_STATUS_NO_MEM.value:
+            raise SaneOutOfMemoryError(
+                'sane_start ran out of memory.')
+        elif status == SANE_STATUS_INVAL.value:
+            #TODO - see docs
+            raise SaneInvalidDataError()
+        else:
+            raise SaneUnknownError(
+                'sane_start returned an invalid status.')
         
         sane_parameters = SANE_Parameters()
         
+        # See SANE API 4.3.8
         status = sane_get_parameters(self._handle, byref(sane_parameters))
         
         if status != SANE_STATUS_GOOD.value:
@@ -367,67 +402,72 @@ class Device(object):
 
         scan_info = ScanInfo(sane_parameters)
         
-        bytes_per_read = 48 #should be multiple of 3 (for RGB)
+        # Should be a multiple of three (for RGB data) and a reasonable size
+        # so that the progress callback will occur frequently without spamming.
+        bytes_per_read = 4800
         
         data_array = array('B')
         temp_array = (SANE_Byte * bytes_per_read)()
         actual_size = SANE_Int()
         
         while True:
+            # See SANE API 4.3.10
             status = sane_read(self._handle, temp_array, bytes_per_read, byref(actual_size))
             
             if status == SANE_STATUS_GOOD.value:
-                data_array.extend(temp_array[0:actual_size.value])
+                pass
             elif status == SANE_STATUS_EOF.value:
                 break
             elif status == SANE_STATUS_CANCELLED.value:
                 return None
             elif status == SANE_STATUS_JAMMED.value:
-                #TODO
-                pass
+                raise SaneDeviceJammedError(
+                    'sane_read reported a paper jam.')
             elif status == SANE_STATUS_NO_DOCS.value:
-                #TODO
-                pass
+                raise SaneNoDocumentsError(
+                    'sane_read reported that the document feeder was empty.')
             elif status == SANE_STATUS_COVER_OPEN.value:
-                #TODO
-                pass
+                raise SaneCoverOpenError(
+                    'sane_read reported that the device cover was open.')
             elif status == SANE_STATUS_IO_ERROR.value:
-                #TODO
-                pass
+                raise SaneIOError(
+                    'sane_read encountered a communications error.')
             elif status == SANE_STATUS_NO_MEM.value:
-                #TODO
-                pass
+                raise SaneOutOfMemoryError(
+                    'sane_read ran out of memory.')
             elif status == SANE_STATUS_ACCESS_DENIED.value:
-                #TODO
-                pass
+                raise SaneAccessDeniedError(
+                    'sane_read requires greater access to open the device.')
             else:
-                raise SaneUnknownError()
+                raise SaneUnknownError(
+                    'sane_read returned an invalid status.')
             
-            # TODO
+            data_array.extend(temp_array[0:actual_size.value])
+            
             if progress_callback:
                 cancel = progress_callback(scan_info, len(data_array))
                 
                 if cancel:
                     sane_cancel(self._handle)
-            
-        sane_cancel(self._handle)
+       
+        if not cancel:
+            sane_cancel(self._handle)
         
         assert scan_info.total_bytes == len(data_array)
         
         if sane_parameters.format == SANE_FRAME_GRAY.value:
-            pil_image = Image.fromstring('L', (scan_info.width, scan_info.height), data_array.tostring())
+            pil_image = Image.frombuffer(
+                'L', (scan_info.width, scan_info.height), 
+                data_array, 'raw', 'L', 0, 1)
         elif sane_parameters.format == SANE_FRAME_RGB.value:
-            pil_image = Image.fromstring('RGB', (scan_info.width, scan_info.height), data_array.tostring())
+            pil_image = Image.frombuffer(
+                'RGB', (scan_info.width, scan_info.height), 
+                data_array, 'raw', 'L', 0, 1)
         else:
-            # TODO
+            # TODO - seperate frames for R, G, and B
             raise NotImplementedError()
             
         return pil_image
-        
-    def cancel_scan(self):
-        #TODO
-        assert self._handle is not None
-        assert self._handle != c_void_p(None)
     
 class Option(object):
     """
@@ -506,12 +546,12 @@ class Option(object):
                 i = i + 1                
         elif self._constraint_type == SANE_CONSTRAINT_STRING_LIST.value:
             assert type(ctypes_option.constraint.string_list) is POINTER(SANE_String_Const)
-            
+
             string_count = 0
             self._constraint_string_list = []
             
             while ctypes_option.constraint.string_list[string_count]:
-                self._constraint_word_list.append(ctypes_option.constraint.string_list[string_count])
+                self._constraint_string_list.append(ctypes_option.constraint.string_list[string_count])
                 string_count += 1
         
     # Read only properties
@@ -556,25 +596,32 @@ class Option(object):
     size = property(__get_size)
 
     def __get_capability(self):
-        # TODO: hide from user view?
+        # TODO: recast into a dictionary?
         return self._capability
         
     capability = property(__get_capability)
 
     def __get_constraint_type(self):
-        # TODO: recast into a module-local Python enumeration?
         return self._constraint_type
         
     constraint_type = property(__get_constraint_type)
 
     def __get_constraint_string_list(self):
-        """Get a list of strings which are valid values for this option."""
-        return self.__constraint_string_list
+        """
+        Get a list of strings which are valid values for this option.
+        
+        Only relevant if constraint_type is OPTION_CONSTRAINT_STRING_LIST.
+        """
+        return self._constraint_string_list
         
     constraint_string_list = property(__get_constraint_string_list)
 
     def __get_constraint_word_list(self):
-        """Get a list of integers that are valid values for this option."""
+        """
+        Get a list of integers that are valid values for this option.
+        
+        Only relevant if constraint_type is OPTION_CONSTRAINT_WORD_LIST.
+        """
         return self._constraint_word_list
         
     constraint_word_list = property(__get_constraint_word_list)
@@ -583,6 +630,8 @@ class Option(object):
         """
         Get a tuple containing the (minimum, maximum, step) of
         valid values for this option.
+        
+        Only relevant if constraint_type is OPTION_CONSTRAINT_RANGE.
         """
         return self._constraint_range
         
@@ -614,7 +663,26 @@ class Option(object):
         
         status = sane_control_option(handle, self._option_number, SANE_ACTION_GET_VALUE, option_value, None)
         
-        # TODO: handle statuses/exceptions
+        if status == SANE_STATUS_GOOD.value:
+            pass
+        elif status ==  SANE_STATUS_UNSUPPORTED.value:
+            # TODO - should never happen if we check cap's before setting
+            pass
+        elif status == SANE_STATUS_INVAL.value:
+            raise AssertionError(
+                'sane_control_option reported a value was invalid, but no values was being set.')
+        elif status == SANE_STATUS_IO_ERROR.value:
+            raise SaneIOError(
+                'sane_control_option reported a communications error.')
+        elif status == SANE_STATUS_NO_MEM.value:
+            raise SaneOutOfMemoryError(
+                'sane_control_option ran out of memory.')
+        elif status == SANE_STATUS_ACCESS_DENIED.value:
+            raise SaneAccessDeniedError(
+                'sane_control_option requires greater access to open the device.')
+        else:
+            raise SaneUnknownError(
+                'sane_control_option returned an invalid status.')
         
         if self._type == SANE_TYPE_STRING.value:
             option_value = option_value.value
@@ -632,34 +700,77 @@ class Option(object):
         """
         handle = self._device._get_handle()
         
+        c_value = None
+        
+        # Type checking
         if self._type == SANE_TYPE_BOOL.value:
-            assert type(value) is BoolType
+            assert type(value) is BooleanType
+            c_value = pointer(c_int(value))
         elif self._type == SANE_TYPE_INT.value:
+            # TODO: these may not always be a single char wide, see SANE doc 4.2.9.6
             assert type(value) is IntType
+            c_value = pointer(c_int(value))
         elif self._type == SANE_TYPE_FIXED.value:
+            # TODO: these may not always be a single char wide, see SANE doc 4.2.9.6
             assert type(value) is IntType
+            c_value = pointer(c_int(value))
         elif self._type == SANE_TYPE_STRING.value:
             assert type(value) is StringType
+            assert len(value) + 1 < self._size
+            c_value = c_char_p(value)
         elif self._type == SANE_TYPE_BUTTON.value:
             raise TypeError('SANE_TYPE_BUTTON has no value.')
         elif self._type == SANE_TYPE_GROUP.value:
             raise TypeError('SANE_TYPE_GROUP has no value.')
         else:
             raise TypeError('Option is of unknown type.')
+        
+        # Constraint checking
+        if self._constraint_type == SANE_CONSTRAINT_NONE.value:
+            pass
+        elif self._constraint_type == SANE_CONSTRAINT_RANGE.value:
+            assert value >= self._constraint_range[0]
+            assert value <= self._constraint_range[1]
+            assert value % self._constraint_range[2] == 0
+        elif self._constraint_type == SANE_CONSTRAINT_WORD_LIST.value:
+            assert value in self._constraint_word_list
+        elif self._constraint_type == SANE_CONSTRAINT_STRING_LIST.value:
+            assert value in self._constraint_string_list
             
         info_flags = SANE_Int()
         
-        # TODO: When to use SANE_ACTION_SET_AUTO?
         status = sane_control_option(
-            handle, self._option_number, SANE_ACTION_SET_VALUE, value, byref(info_flags))
+            handle, self._option_number, SANE_ACTION_SET_VALUE, c_value, byref(info_flags))
+        
+        if status == SANE_STATUS_GOOD.value:
+            pass
+        elif status ==  SANE_STATUS_UNSUPPORTED.value:
+            # TODO - should never happen if we check cap's before setting
+            pass
+        elif status == SANE_STATUS_INVAL.value:
+            raise AssertionError(
+                'sane_control_option reported that the value to be set was invalid, despite checks.')
+        elif status == SANE_STATUS_IO_ERROR.value:
+            raise SaneIOError(
+                'sane_control_option reported a communications error.')
+        elif status == SANE_STATUS_NO_MEM.value:
+            raise SaneOutOfMemoryError(
+                'sane_control_option ran out of memory.')
+        elif status == SANE_STATUS_ACCESS_DENIED.value:
+            raise SaneAccessDeniedError(
+                'sane_control_option requires greater access to open the device.')
+        else:
+            raise SaneUnknownError(
+                'sane_control_option returned an invalid status.')
         
         # TODO: handle statuses/exceptions
         
-        # TODO: parse and respond to flags, see SANE docs 4.3.7
-        #print info_flags
-        
         if self._log:
             self._log.debug('Option %s set to value %s.', self._name, value)
+        
+        # See SANE API 4.3.7
+        if info_flags.value & SANE_INFO_RELOAD_OPTIONS:
+            raise SaneReloadOptionsError()
         
     value = property(__get_value, __set_value)
     
@@ -708,6 +819,10 @@ class ScanInfo(object):
     total_bytes = property(__get_total_bytes)
         
 if __name__ == '__main__':
+    def progress_callback(sane_info, bytes_read):
+        #print float(bytes_read) / sane_info.total_bytes
+        pass
+    
     import logging
     log_format = FORMAT = "%(message)s"
     logging.basicConfig(level=logging.DEBUG, format=log_format)
@@ -723,11 +838,22 @@ if __name__ == '__main__':
     
     print sane.devices[0].options.keys()
     
-    print sane.devices[0].options['mode'].value
-    sane.devices[0].options['mode'].value = 'Color'
-    print sane.devices[0].options['mode'].value
+    try:
+        sane.devices[0].options['mode'].value = 'Gray'
+    except SaneReloadOptionsError:
+        pass
     
-    sane.devices[0].scan().save('out.bmp')
+    try:
+        sane.devices[0].options['resolution'].value = 75
+    except SaneReloadOptionsError:
+        pass
+    
+    try:
+        sane.devices[0].options['preview'].value = False
+    except SaneReloadOptionsError:
+        pass
+    
+    sane.devices[0].scan(progress_callback).save('out.bmp')
     
     sane.devices[0].close()
     sane.shutdown()
