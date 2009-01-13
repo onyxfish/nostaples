@@ -68,7 +68,7 @@ class SANE(object):
     def __init__(self, log=None):
         """
         Create the SANE object.  Note that all functional setup of the
-        SANE object is deferred until the user explicitly calls L{init}.
+        SANE object is deferred until the user explicitly calls L{setup}.
         
         @param log: an optional Python logging object to log to.
         """
@@ -106,7 +106,7 @@ class SANE(object):
         information.
         
         See L{exit} for an explanation of why this does not occur
-        in __init__.
+        in L{__init__}.
         
         TODO: handle the authentication callback... or not
         """
@@ -130,9 +130,9 @@ class SANE(object):
         """
         Deinitialize SANE.
         
-        This code would go in __del__, but it is not guaranteed that method
+        This code would go in L{__del__}, but it is not guaranteed that method
         will be called and sane_exit must be called to release resources.  Thus
-        the parallel L{init} method for consistency.
+        the parallel L{__init__} method for consistency.
         
         TODO: close any open devices before exiting
         """
