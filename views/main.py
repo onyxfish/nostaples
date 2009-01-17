@@ -49,7 +49,7 @@ class MainView(View):
         self.log = logging.getLogger(self.__class__.__name__)
         
         # Setup controls which can not be configured in Glade
-        self['scan_window'].set_property('allow-shrink', True)
+        self['scan_window'].set_geometry_hints(min_width=600, min_height=400)
         
         # Setup sub views
         document_view = self.application.get_document_view()

@@ -81,25 +81,25 @@ class DocumentModel(ListStoreModel):
         self.count += 1
         
     def insert(self, position, page_model):
-        """Insert a page in the doucument at the specified position."""
+        """Insert a page in the document at the specified position."""
         super(DocumentModel, self).insert(position, [page_model])
         page_model.register_observer(self)
         self.count += 1
     
     def insert_before(self, loc_iter, page_model):
-        """Insert a page in the doucument before the iter."""
+        """Insert a page in the document before the iter."""
         super(DocumentModel, self).insert_before(loc_iter, [page_model])
         page_model.register_observer(self)
         self.count += 1
     
     def insert_after(self, loc_iter, page_model):
-        """Insert a page in the doucument after the iter."""
+        """Insert a page in the document after the iter."""
         super(DocumentModel, self).insert_after(loc_iter, [page_model])
         page_model.register_observer(self)
         self.count += 1
         
     def remove(self, loc_iter):
-        """Remove a page from the doucument."""
+        """Remove a page from the document."""
         self.get_value(loc_iter, 0).unregister_observer(self)
         super(DocumentModel, self).remove(loc_iter)
         self.count -= 1

@@ -41,12 +41,11 @@ class DocumentController(Controller):
         self.application = application
         Controller.__init__(self, application.get_document_model())
         
-        application.get_preferences_model().register_observer(self)
+        test = application.get_preferences_model()
+        test.register_observer(self)
         
         application.get_document_model().connect(
           'row-changed', self.on_document_model_row_changed)
-        #application.get_document_model().connect(
-        #  'row-deleted', self.on_document_model_row_deleted)
 
         self.log = logging.getLogger(self.__class__.__name__)
         self.log.debug('Created.')
@@ -60,7 +59,16 @@ class DocumentController(Controller):
         view['thumbnails_tree_view'].set_model(
             self.application.get_document_model())
         view['thumbnails_tree_view'].get_selection().connect(
-          'changed', self.on_thumbnails_tree_view_selection_changed)
+            'changed', self.on_thumbnails_tree_view_selection_changed)
+        view['thumbnails_tree_view'].connect(
+            'button-press-event', self.on_thumbnails_tree_view_button_press_event)
+        
+        view['delete_menu_item'].connect(
+            "activate", self.on_delete_menu_item_activated)
+#        view['rotate_clockwise_menu_item'].connect(
+#            "activate", self.on_rotate_clockwise_menu_item_activated)
+#        view['rotate_counter_clockwise_menu_item'].connect(
+#            "activate", self.on_rotate_counter_clockwise_menu_item_activated)
         
         self.log.debug('%s registered.', view.__class__.__name__)
         
@@ -84,6 +92,22 @@ class DocumentController(Controller):
             document_view['brightness_scale'].set_value(page_model.brightness)
             document_view['contrast_scale'].set_value(page_model.contrast)
             document_view['sharpness_scale'].set_value(page_model.sharpness)
+    
+    def on_thumbnails_tree_view_button_press_event(self, treeview, event):
+        """
+        Popup the context menu when the user right-clicks.
+        
+        Method from U{http://faq.pygtk.org/index.py?req=show&file=faq13.017.htp}.
+        """
+        document_view = self.application.get_document_view()
+        
+        if event.button == 3:
+            info = treeview.get_path_at_pos(int(event.x), int(event.y))
+            if info is not None:
+                document_view['thumbnails_context_menu'].popup(
+                    None, None, None, event.button, event.time)
+            else:
+                return True
         
     def on_document_model_row_changed(self, model, path, iter):
         """
@@ -111,21 +135,6 @@ class DocumentController(Controller):
             document_model.manually_updating_row = False
         else:
             document_view['thumbnails_tree_view'].get_selection().select_path(path)
-            
-    def on_document_model_row_deleted(self, model, path):
-        """TODO: this method doesn't even remotely work as intended..."""   
-        document_model = self.application.get_document_model()    
-        document_view = self.application.get_document_view()
-         
-        row = path[0]
-        
-        if document_model.count == 1:
-            return
-        
-        if row == document_model.count - 1:
-            document_view['thumbnails_tree_view'].get_selection().select_path(row - 1)
-        else:        
-            document_view['thumbnails_tree_view'].get_selection().select_path(row + 1)
     
     def on_brightness_scale_value_changed(self, widget):
         """
@@ -224,6 +233,18 @@ class DocumentController(Controller):
                     document_view['contrast_scale'].get_value(),
                     document_view['sharpness_scale'].get_value())
                 page_iter = document_model.iter_next(page_iter)
+                
+    def on_delete_menu_item_activated(self, menu_item):
+        """Delete the currently selected page."""
+        self.delete_selected()
+                
+#    def on_rotate_clockwise_menu_item_activated(self, menu_item):
+#        """Rotate the currently selected page clockwise."""
+#        self.application.get_page_controller().rotate_clockwise()
+#                
+#    def on_rotate_counter_clockwise_menu_item_activated(self, menu_item):
+#        """Rotate the currently selected page counter-clockwise."""
+#        self.application.get_page_controller().rotate_counter_clockwise()
     
     # PROPERTY CALLBACKS
     
