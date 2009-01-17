@@ -23,7 +23,6 @@ GTK and PIL graphics formats.
 import gtk
 import Image
 
-# TODO: move these utility functions into own module? 
 def convert_pil_image_to_pixbuf(image):
     """
     Utility function to quickly convert a PIL Image to a GTK Pixbuf.
