@@ -2,9 +2,9 @@ import unittest
 
 from mock import Mock
 
-from application import Application
-from models.document import DocumentModel
-from models.page import PageModel
+from nostaples.application import Application
+from nostaples.models.document import DocumentModel
+from nostaples.models.page import PageModel
 
 class TestDocumentModel(unittest.TestCase):
     def setUp(self):

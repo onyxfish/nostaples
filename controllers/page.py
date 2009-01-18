@@ -25,7 +25,7 @@ import logging
 import gtk
 from gtkmvc.controller import Controller
 
-import constants
+from nostaples import constants
 
 class PageController(Controller):
     """

@@ -26,7 +26,7 @@ import os
 import gtk
 from gtkmvc.view import View
 
-import constants
+from nostaples import constants
 
 class DocumentView(View):
     """

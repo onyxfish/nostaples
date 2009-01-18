@@ -25,7 +25,7 @@ import logging
 from gtkmvc.controller import Controller
 from gtkmvc.model import Model
 
-import constants
+from nostaples import constants
 
 class AboutController(Controller):
     """

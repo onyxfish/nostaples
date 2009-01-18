@@ -26,8 +26,8 @@ import os
 import gtk
 from gtkmvc.view import View
 
-import constants
-from utils.gui import read_combobox, setup_combobox
+from nostaples import constants
+from nostaples.utils.gui import read_combobox, setup_combobox
 
 class PreferencesView(View):
     """

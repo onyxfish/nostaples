@@ -26,28 +26,28 @@ import os
 
 import gtk
 
-import constants
-from controllers.about import AboutController
-from controllers.document import DocumentController
-from controllers.main import MainController
-from controllers.page import PageController
-from controllers.preferences import PreferencesController
-from controllers.save import SaveController
-from controllers.status import StatusController
-from models.document import DocumentModel
-from models.main import MainModel
-from models.page import PageModel
-from models.preferences import PreferencesModel
-from models.save import SaveModel
-from models.status import StatusModel
-from utils.state import GConfStateManager
-from views.about import AboutView
-from views.document import DocumentView
-from views.main import MainView
-from views.page import PageView
-from views.preferences import PreferencesView
-from views.save import SaveView
-from views.status import StatusView
+from nostaples import constants
+from nostaples.controllers.about import AboutController
+from nostaples.controllers.document import DocumentController
+from nostaples.controllers.main import MainController
+from nostaples.controllers.page import PageController
+from nostaples.controllers.preferences import PreferencesController
+from nostaples.controllers.save import SaveController
+from nostaples.controllers.status import StatusController
+from nostaples.models.document import DocumentModel
+from nostaples.models.main import MainModel
+from nostaples.models.page import PageModel
+from nostaples.models.preferences import PreferencesModel
+from nostaples.models.save import SaveModel
+from nostaples.models.status import StatusModel
+from nostaples.utils.state import GConfStateManager
+from nostaples.views.about import AboutView
+from nostaples.views.document import DocumentView
+from nostaples.views.main import MainView
+from nostaples.views.page import PageView
+from nostaples.views.preferences import PreferencesView
+from nostaples.views.save import SaveView
+from nostaples.views.status import StatusView
 
 class Application(object):
     """

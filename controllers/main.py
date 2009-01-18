@@ -30,8 +30,8 @@ import gobject
 import gtk
 from gtkmvc.controller import Controller
 
-from models.page import PageModel
-from utils.scanning import *
+from nostaples.models.page import PageModel
+from nostaples.utils.scanning import *
 
 class MainController(Controller):
     """

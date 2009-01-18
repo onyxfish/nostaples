@@ -29,7 +29,7 @@ import threading
 
 import gobject
 
-import constants
+from nostaples import constants
 
 class IdleObject(gobject.GObject):
     """

@@ -2,7 +2,7 @@ import unittest
 
 import Image, ImageDraw
 
-from utils.graphics import *
+from nostaples.utils.graphics import *
 
 class TestGraphics(unittest.TestCase):
     def setUp(self):

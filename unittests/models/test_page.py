@@ -3,7 +3,7 @@ import unittest
 
 import Image, ImageDraw
 
-from models.page import PageModel
+from nostaples.models.page import PageModel
 
 class TestPageModel(unittest.TestCase):
     TEST_PAGE_WIDTH = 93

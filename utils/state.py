@@ -28,7 +28,7 @@ from types import IntType, StringType, FloatType, BooleanType, TupleType
 
 import gconf
 
-import constants
+from nostaples import constants
 
 class GConfState():
     '''

@@ -25,8 +25,8 @@ import gtk
 from gtkmvc.model import Model
 import Image, ImageEnhance
 
-import constants
-from utils.graphics import *
+from nostaples import constants
+from nostaples.utils.graphics import *
 
 class PageModel(Model):
     """

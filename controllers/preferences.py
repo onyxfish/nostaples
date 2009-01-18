@@ -25,8 +25,8 @@ import logging
 import gtk
 from gtkmvc.controller import Controller
 
-import constants
-from utils.gui import read_combobox
+from nostaples import constants
+from nostaples.utils.gui import read_combobox
 
 class PreferencesController(Controller):
     """
