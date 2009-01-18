@@ -40,6 +40,7 @@ from nostaples.models.page import PageModel
 from nostaples.models.preferences import PreferencesModel
 from nostaples.models.save import SaveModel
 from nostaples.models.status import StatusModel
+import nostaples.utils.gtkexcepthook
 from nostaples.utils.state import GConfStateManager
 from nostaples.views.about import AboutView
 from nostaples.views.document import DocumentView
