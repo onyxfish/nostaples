@@ -2,4 +2,5 @@ include *.py
 include README
 include COPYING
 include logging.config
-include nostaples.glade
+include gui/*.glade
+include data/nostaples.desktop
