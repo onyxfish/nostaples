@@ -26,6 +26,7 @@ necessary to the end user have been redeclared.
 # TODO: document what exceptions can be thrown by each method
 
 from array import *
+import atexit
 import ctypes
 from types import *
 
@@ -67,18 +68,15 @@ class SANE(object):
     
     def __init__(self, log=None):
         """
-        Create the SANE object.  Note that all functional setup of the
-        SANE object is deferred until the user explicitly calls L{setup}.
+        Create the SANE object, perform setup, and register
+        the cleanup function.
         
         @param log: an optional Python logging object to log to.
         """
         self._log = log
         
-    def __del__(self):
-        """
-        Verify that the SANE connectoin was terminated.
-        """
-        assert self._version is None
+        self._setup()
+        atexit.register(self._shutdown)
         
     # Read only properties
 
@@ -96,17 +94,10 @@ class SANE(object):
         return self._devices
         
     devices = property(__get_devices)
-
-    # Public Methods
     
-    def setup(self):
+    def _setup(self):
         """
         Iniitalize SANE and retrieve the current installed version.
-        Optionally, set a logging object to receive debugging
-        information.
-        
-        See L{exit} for an explanation of why this does not occur
-        in L{__init__}.
         
         TODO: handle the authentication callback... or not
         """
@@ -126,13 +117,13 @@ class SANE(object):
         if self._log:
             self._log.debug('SANE version %s initalized.', self._version)
         
-    def shutdown(self):
+    def _shutdown(self):
         """
         Deinitialize SANE.
         
         This code would go in L{__del__}, but it is not guaranteed that method
-        will be called and sane_exit must be called to release resources.  Thus
-        the parallel L{__init__} method for consistency.
+        will be called and sane_exit must be called to release resources.  To
+        ensure this method is called it is registered with atexit.
         
         TODO: close any open devices before exiting
         """
@@ -142,6 +133,8 @@ class SANE(object):
         if self._log:
             self._log.debug('SANE deinitialized.')
         
+    # Public Methods
+    
     def update_devices(self):
         """
         Poll for connected devices.
@@ -828,7 +821,6 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG, format=log_format)
     
     sane = SANE(logging.getLogger())
-    sane.setup()
     sane.update_devices()
     
     for dev in sane.devices:
@@ -856,4 +848,3 @@ if __name__ == '__main__':
     sane.devices[0].scan(progress_callback).save('out.bmp')
     
     sane.devices[0].close()
-    sane.shutdown()
