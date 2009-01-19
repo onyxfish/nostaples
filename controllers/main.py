@@ -544,13 +544,14 @@ class MainController(Controller):
     
     def _scan(self):
         """Begin a scan."""
+        sane = self.application.get_sane()
         main_model = self.application.get_main_model()
         status_controller = self.application.get_status_controller()
         
         status_controller.push(self.status_context, 'Scanning...')
         
         main_model.scan_in_progress = True
-        scanning_thread = ScanningThread(main_model)
+        scanning_thread = ScanningThread(sane, main_model)
         scanning_thread.connect("succeeded", self.on_scan_succeeded)
         scanning_thread.connect("failed", self.on_scan_failed)
         scanning_thread.start()
@@ -558,11 +559,12 @@ class MainController(Controller):
     def _update_available_scanners(self):
         """
         Start a new update thread to query for available scanners.
-        """        
+        """
+        sane = self.application.get_sane()
         main_model = self.application.get_main_model()
         
         main_model.updating_available_scanners = True
-        update_thread = UpdateAvailableScannersThread(main_model)
+        update_thread = UpdateAvailableScannersThread(sane, main_model)
         update_thread.connect("finished", self.on_update_available_scanners_thread_finished)
         update_thread.start()
     

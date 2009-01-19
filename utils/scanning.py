@@ -30,6 +30,7 @@ import threading
 import gobject
 
 from nostaples import constants
+import saneme
 
 class IdleObject(gobject.GObject):
     """
@@ -58,7 +59,7 @@ class UpdateAvailableScannersThread(IdleObject, threading.Thread):
                 gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, [gobject.TYPE_PYOBJECT]),
             }
     
-    def __init__(self, main_model):
+    def __init__(self, sane, main_model):
         """
         Initialize the thread.
         """
@@ -67,6 +68,7 @@ class UpdateAvailableScannersThread(IdleObject, threading.Thread):
         
         self.log = logging.getLogger(self.__class__.__name__)
         
+        self.sane = sane
         self.model = main_model
         
         self.log.debug('Created.')
@@ -76,30 +78,42 @@ class UpdateAvailableScannersThread(IdleObject, threading.Thread):
         Queries SANE for a list of connected scanners and updates
         the list of available scanners from the results.
         """
-        update_command = 'scanimage -f "%d=%v %m;"'
-        self.log.debug(
-            'Updating available scanners with command: "%s".' % \
-            update_command)
-        output = commands.getoutput(update_command)
+#        update_command = 'scanimage -f "%d=%v %m;"'
+#        self.log.debug(
+#            'Updating available scanners with command: "%s".' % \
+#            update_command)
+#        output = commands.getoutput(update_command)
+#
+#        results = re.findall('(.*?)=(.*?)[;|$]', output)
+#        scanner_list = []
+#        
+#        for sane_name, display_name in results:
+#            scanner_already_in_list = False
+#            
+#            # Check if the scanner has already been connected, if so
+#            # use existing instance so settings are not lost.
+#            for scanner in self.model.available_scanners:
+#                if scanner[1] == sane_name:
+#                    scanner_already_in_list = True
+#                    scanner_list.append(scanner)
+#            
+#            if not scanner_already_in_list:
+#                scanner_list.append((display_name, sane_name))
 
-        results = re.findall('(.*?)=(.*?)[;|$]', output)
-        scanner_list = []
+        try:
+            self.sane.update_devices()
+        except saneme.SaneOutOfMemoryError:
+            # TODO
+            raise
+        except saneme.SaneUnknownError:
+            # TODO
+            raise
         
-        for sane_name, display_name in results:
-            scanner_already_in_list = False
-            
-            # Check if the scanner has already been connected, if so
-            # use existing instance so settings are not lost.
-            for scanner in self.model.available_scanners:
-                if scanner[1] == sane_name:
-                    scanner_already_in_list = True
-                    scanner_list.append(scanner)
-            
-            if not scanner_already_in_list:
-                scanner_list.append((display_name, sane_name))
+        # TODO: temp, should return the Device list
+        device_list = [(' '.join([device.vendor, device.model]), device.name) for device in self.sane.devices]
         
         # NB: We callback with the lists so that they can updated on the main thread
-        self.emit("finished", scanner_list)        
+        self.emit("finished", device_list)        
 
 class ScanningThread(IdleObject, threading.Thread):
     """
@@ -120,7 +134,7 @@ class ScanningThread(IdleObject, threading.Thread):
                 gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, [])
             }
     
-    def __init__(self, main_model):
+    def __init__(self, sane, main_model):
         """
         Initialize the thread and get a tempfile name that
         will house the scanned image.
@@ -130,6 +144,7 @@ class ScanningThread(IdleObject, threading.Thread):
         
         self.log = logging.getLogger(self.__class__.__name__)
         
+        self.sane = sane
         self.model = main_model
         self.path = tempfile.mktemp()
         

@@ -50,6 +50,8 @@ from nostaples.views.preferences import PreferencesView
 from nostaples.views.save import SaveView
 from nostaples.views.status import StatusView
 
+from saneme import SaneMe
+
 class Application(object):
     """
     A 'front controller' class that stores references to all
@@ -63,6 +65,7 @@ class Application(object):
     """
     
     _state_manager = None
+    _sane = None
     
     _main_model = None
     _main_controller = None
@@ -101,6 +104,7 @@ class Application(object):
         self._init_config()
         self._init_logging()
         self._init_state()
+        self._init_sane()
         self._init_main_components()
         self._init_settings()
 
@@ -116,6 +120,10 @@ class Application(object):
     def _init_state(self):
         """Setup the state manager."""
         self._state_manager = GConfStateManager()
+        
+    def _init_sane(self):
+        """Setup SANE."""
+        self._sane = SaneMe(logging.getLogger("saneme"))
         
     def _init_main_components(self):
         """
@@ -149,6 +157,11 @@ class Application(object):
         """Return the L{GConfStateManager} component."""
         assert isinstance(self._state_manager, GConfStateManager)
         return self._state_manager
+    
+    def get_sane(self):
+        """Return the SaneMe object."""
+        assert isinstance(self._sane, SaneMe)
+        return self._sane
         
     def get_main_model(self):
         """Return the L{MainModel} component."""

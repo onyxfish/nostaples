@@ -18,6 +18,8 @@
 # This module is based on:
 
 # gtkexcepthook.py
+# from http://blog.sysfs.net/archives/35-PyGTK-exception-handler.html
+# which carries the following copyright notice:
 
 # (c) 2003 Gustavo J A M Carneiro gjc at inescporto.pt
 #     2004-2005 Filip Van Raemdonck
