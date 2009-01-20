@@ -146,7 +146,7 @@ class MainController(Controller):
         
         if menu_item.get_active():
             for scanner in main_model.available_scanners:
-                if scanner[0] == menu_item.get_children()[0].get_text():
+                if scanner.display_name == menu_item.get_children()[0].get_text():
                     main_model.active_scanner = scanner
                     return
                 
@@ -289,7 +289,7 @@ class MainController(Controller):
         main_view = self.application.get_main_view()
         
         for menu_item in main_view['scanner_sub_menu'].get_children():
-            if menu_item.get_children()[0].get_text() == new_value[0]:
+            if menu_item.get_children()[0].get_text() == new_value.display_name:
                 menu_item.set_active(True)
                 break
         
@@ -333,11 +333,11 @@ class MainController(Controller):
                 # The first menu item defines the group
                 if i == 0:
                     menu_item = gtk.RadioMenuItem(
-                        None, new_value[i][0])
+                        None, new_value[i].display_name)
                     first_item = menu_item
                 else:
                     menu_item = gtk.RadioMenuItem(
-                        first_item, new_value[i][0])
+                        first_item, new_value[i].display_name)
                 
                 main_view['scanner_sub_menu'].append(menu_item)
         
@@ -424,14 +424,14 @@ class MainController(Controller):
     
     # THREAD CALLBACKS
     
-    def on_scan_succeeded(self, scanning_thread, filename):
+    def on_scan_succeeded(self, scanning_thread, pil_image):
         """Append the new page to the current document."""
         main_model = self.application.get_main_model()
         status_controller = self.application.get_status_controller()
         
         status_controller.pop(self.status_context)
         
-        new_page = PageModel(self.application, filename, int(main_model.active_resolution))
+        new_page = PageModel(self.application, pil_image, int(main_model.active_resolution))
         self.application.get_document_model().append(new_page)
         main_model.scan_in_progress = False
     
@@ -544,14 +544,14 @@ class MainController(Controller):
     
     def _scan(self):
         """Begin a scan."""
-        sane = self.application.get_sane()
         main_model = self.application.get_main_model()
         status_controller = self.application.get_status_controller()
         
         status_controller.push(self.status_context, 'Scanning...')
         
         main_model.scan_in_progress = True
-        scanning_thread = ScanningThread(sane, main_model)
+        scanning_thread = ScanningThread(
+            main_model.active_scanner, main_model.active_mode, main_model.active_resolution)
         scanning_thread.connect("succeeded", self.on_scan_succeeded)
         scanning_thread.connect("failed", self.on_scan_failed)
         scanning_thread.start()
@@ -564,7 +564,7 @@ class MainController(Controller):
         main_model = self.application.get_main_model()
         
         main_model.updating_available_scanners = True
-        update_thread = UpdateAvailableScannersThread(sane, main_model)
+        update_thread = UpdateAvailableScannersThread(sane)
         update_thread.connect("finished", self.on_update_available_scanners_thread_finished)
         update_thread.start()
     
@@ -573,6 +573,6 @@ class MainController(Controller):
         main_model = self.application.get_main_model()
                   
         main_model.updating_scan_options = True
-        update_thread = UpdateScannerOptionsThread(main_model)
+        update_thread = UpdateScannerOptionsThread(main_model.active_scanner)
         update_thread.connect("finished", self.on_update_scanner_options_thread_finished)
         update_thread.start()

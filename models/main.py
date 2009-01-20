@@ -25,6 +25,7 @@ import logging
 from gtkmvc.model import Model
 
 from nostaples import constants
+import saneme
 
 class MainModel(Model):
     """
@@ -41,11 +42,11 @@ class MainModel(Model):
         'show_thumbnails' : True,
         'show_adjustments' : False,
         
-        'active_scanner' : None,
+        'active_scanner' : None,      # saneme.Device
         'active_mode' : None,
         'active_resolution' : None,
         
-        'available_scanners' : [],
+        'available_scanners' : [],    # [] of saneme.Device
         'valid_modes' : [],
         'valid_resolutions' : [],
         
@@ -70,6 +71,7 @@ class MainModel(Model):
         Load persisted state from the self.state_manager.
         """
         state_manager = self.application.get_state_manager()
+        sane = self.application.get_sane()
         
         self.show_toolbar = state_manager.init_state(
             'show_toolbar', constants.DEFAULT_SHOW_TOOLBAR, 
@@ -87,15 +89,21 @@ class MainModel(Model):
             'show_adjustments', constants.DEFAULT_SHOW_ADJUSTMENTS, 
             self.state_show_adjustments_change)
 
-        self._prop_active_scanner = state_manager.init_state(
-            'active_scanner', constants.DEFAULT_ACTIVE_SCANNER, 
-            self.state_active_scanner_change)
+        # The local representation of active_scanner is a
+        # saneme.Device, but it is persisted by its name attribute only.
+        try:
+            self.active_scanner = sane.get_device_by_name(
+                state_manager.init_state(
+                'active_scanner', constants.DEFAULT_ACTIVE_SCANNER, 
+                self.state_active_scanner_change))
+        except saneme.SaneNoSuchDeviceError:
+            self.active_scanner = None
         
-        self._prop_active_mode = state_manager.init_state(
+        self.active_mode = state_manager.init_state(
             'scan_mode', constants.DEFAULT_SCAN_MODE, 
             self.state_scan_mode_change)
         
-        self._prop_active_resolution = state_manager.init_state(
+        self.active_resolution = state_manager.init_state(
             'scan_resolution', constants.DEFAULT_SCAN_RESOLUTION, 
             self.state_scan_resolution_change)
         
@@ -164,15 +172,22 @@ class MainModel(Model):
         if old_value == value:
             return
         
+        # Close the old scanner
+        old_value.close()
+        
+        if value is not None:
+            assert isinstance(value, saneme.Device)
+        
         # Update the internal property variable
         self._prop_active_scanner = value
         
         # Only persist the state if the new value is not None
         # This prevents problems with trying to store a Null
         # value in the state backend and also allows for smooth
-        # transitions if a scanner is disconnecte and reconnected.
+        # transitions if a scanner is disconnected and reconnected.
         if value is not None:
-            self.application.get_state_manager()['active_scanner'] = value
+            self.application.get_state_manager()['active_scanner'] = value.name
+            value.open()
             
         # Emit the property change notification to all observers.
         self.notify_property_value_change(
@@ -185,10 +200,10 @@ class MainModel(Model):
         """
         old_value = self._prop_active_mode
         if old_value == value:
-            return
-        self._prop_active_mode = value
+            return        
+        self._prop_active_mode = value        
         if value is not None:
-            self.application.get_state_manager()['scan_mode'] = value
+            self.application.get_state_manager()['scan_mode'] = value            
         self.notify_property_value_change(
             'active_mode', old_value, value)
         
@@ -224,7 +239,8 @@ class MainModel(Model):
             if self._prop_active_scanner not in value:
                 self._prop_active_scanner = value[0]
                 self.application.get_state_manager()['active_scanner'] = \
-                    value[0]
+                    value[0].name
+                self._prop_active_scanner.open()
             # Otherwise maintain current selection
             else:
                 pass
@@ -321,11 +337,15 @@ class MainModel(Model):
     def state_active_scanner_change(self):
         """Read state, validating the input."""
         state_manager = self.application.get_state_manager()
+        sane = self.application.get_sane()
         
         if state_manager['active_scanner'] in self.available_scanners:
-            self.active_scanner = state_manager['active_scanner']
+            try:
+                self.active_scanner = sane.get_device_by_name(state_manager['active_scanner'])
+            except SaneNoSuchDeviceError:
+                raise
         else:
-            state_manager['active_scanner'] = self.active_scanner
+            state_manager['active_scanner'] = self.active_scanner.name
         
     def state_scan_mode_change(self):
         """Read state, validating the input."""

@@ -23,6 +23,7 @@ change often as well as enumeration-like state constants.
 import os
 
 import gtk
+import Image
 from reportlab.lib.pagesizes import A0, A1, A2, A3, A4, A5, A6, \
     B0, B1, B2, B3, B4, B5, B6, LETTER, LEGAL, ELEVENSEVENTEEN
 
@@ -48,7 +49,7 @@ DEFAULT_SHOW_TOOLBAR = True
 DEFAULT_SHOW_STATUSBAR = True
 DEFAULT_SHOW_THUMBNAILS = True
 DEFAULT_SHOW_ADJUSTMENTS = False
-DEFAULT_ACTIVE_SCANNER = ('','')
+DEFAULT_ACTIVE_SCANNER = ''
 DEFAULT_SCAN_MODE = 'Color'
 DEFAULT_SCAN_RESOLUTION = '75'
 DEFAULT_SAVE_PATH = ''
@@ -75,7 +76,7 @@ PREVIEW_MODES = \
     'Bilinear (Default)': gtk.gdk.INTERP_BILINEAR,
     'Antialias (Smoothest)': gtk.gdk.INTERP_HYPER
 }
-
+ 
 PREVIEW_MODES_LIST = \
 [
     'Nearest (Fastest)',

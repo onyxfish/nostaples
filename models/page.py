@@ -34,25 +34,26 @@ class PageModel(Model):
     """
     __properties__ = \
     {
-        'path' : None,
-        '_raw_pixbuf' : None,
+        '_raw_pil_image' : None,
+        
         'rotation' : 0,
         'brightness' : 1.0,
         'contrast' : 1.0,
         'sharpness' : 1.0,
         'resolution' : 75,
+        
         'pixbuf' : None,
-        'thumbnail_pixbuf' : None,
+        'thumbnail_pixbuf': None,
     }
 
     # SETUP METHODS
     
-    def __init__(self, application, path=None, resolution=75):
+    def __init__(self, application, pil_image=None, resolution=75):
         """
         Constructs the PageModel.
         
-        @type path: string
-        @param path: The absolute path to an image.
+        @type pil_image: a PIL image
+        @param pil_image: The image data for this page.
         @type resolution: int
         @param resolution: The dpi that the page was
                            scanned at.
@@ -62,11 +63,10 @@ class PageModel(Model):
         
         self.log = logging.getLogger(self.__class__.__name__)
         
-        self.path = path
         self.resolution = resolution
         
-        if path:
-            self._raw_pixbuf = gtk.gdk.pixbuf_new_from_file(path)
+        if pil_image:
+            self._raw_pil_image = pil_image
             self._update_pixbuf()
             self._update_thumbnail_pixbuf()
         
@@ -95,17 +95,6 @@ class PageModel(Model):
         """
         return self.pixbuf.get_height()
     
-    @property
-    def pil_image(self):
-        """
-        Returns a PIL version of the transformed pixbuf for this page.
-        
-        This could be sped up by bypassing the conversion to and from
-        a PIL image in L{pixbuf}, but this is not a speed intensive 
-        routine and requires less maintenance this way.
-        """
-        return convert_pixbuf_to_pil_image(self.pixbuf)
-    
     # PROPERTY CALLBACKS
         
     def property_rotation_value_change(self, model, old_value, new_value):
@@ -115,19 +104,16 @@ class PageModel(Model):
         
     def property_brightness_value_change(self, model, old_value, new_value):
         """Updates the full and thumbnail pixbufs."""
-        print 1
         self._update_pixbuf()
         self._update_thumbnail_pixbuf()
         
     def property_contrast_value_change(self, model, old_value, new_value):
         """Updates the full and thumbnail pixbufs."""
-        print 2
         self._update_pixbuf()
         self._update_thumbnail_pixbuf()
         
     def property_sharpness_value_change(self, model, old_value, new_value):
         """Updates the full and thumbnail pixbufs."""
-        print 3
         self._update_pixbuf()
         self._update_thumbnail_pixbuf()
     
@@ -164,75 +150,54 @@ class PageModel(Model):
         """
         Creates a full-size pixbuf of the scanned image with all 
         transformations applied.
-        """        
-        if self.brightness != 1.0 or \
-           self.contrast != 1.0 or \
-           self.sharpness != 1.0:
-            image = convert_pixbuf_to_pil_image(self._raw_pixbuf)
-            
-            if self.brightness != 1.0:
-                image = ImageEnhance.Brightness(image).enhance(
-                    self.brightness)
-            if self.contrast != 1.0:
-                image = ImageEnhance.Contrast(image).enhance(
-                    self.contrast)
-            if self.sharpness != 1.0:
-                image = ImageEnhance.Sharpness(image).enhance(
-                    self.sharpness)
-                
-            pixbuf = convert_pil_image_to_pixbuf(image)
-        else:
-            pixbuf = self._raw_pixbuf
+        """   
+        image = self._raw_pil_image  
         
-        if abs(self.rotation % 360) == 90:
-            pixbuf = pixbuf.rotate_simple(
-                gtk.gdk.PIXBUF_ROTATE_COUNTERCLOCKWISE)
-        elif abs(self.rotation % 360) == 180:
-            pixbuf = pixbuf.rotate_simple(
-                gtk.gdk.PIXBUF_ROTATE_UPSIDEDOWN)
-        elif abs(self.rotation % 360) == 270:
-            pixbuf = pixbuf.rotate_simple(
-                gtk.gdk.PIXBUF_ROTATE_CLOCKWISE)
+        if self.brightness != 1.0:
+            image = ImageEnhance.Brightness(image).enhance(
+                self.brightness)
+        if self.contrast != 1.0:
+            image = ImageEnhance.Contrast(image).enhance(
+                self.contrast)
+        if self.sharpness != 1.0:
+            image = ImageEnhance.Sharpness(image).enhance(
+                self.sharpness)
             
-        self.pixbuf = pixbuf
+        if abs(self.rotation % 360) == 90:
+            image = image.transpose(Image.ROTATE_90)
+        elif abs(self.rotation % 360) == 180:
+            image = image.transpose(Image.ROTATE_180)
+        elif abs(self.rotation % 360) == 270:
+            image = image.transpose(Image.ROTATE_270)
+            
+        self.pixbuf = convert_pil_image_to_pixbuf(image)
         
     def _update_thumbnail_pixbuf(self):
         """
-        Creates a thumbnail pixbuf with all transformations applied.
+        Creates a thumbnail image with all transformations applied.
         """
         preferences_model = self.application.get_preferences_model()
-        
-        if self.brightness != 1.0 or \
-           self.contrast != 1.0 or \
-           self.sharpness != 1.0:
-            image = convert_pixbuf_to_pil_image(self._raw_pixbuf)
             
-            if self.brightness != 1.0:
-                image = ImageEnhance.Brightness(image).enhance(
-                    self.brightness)
-            if self.contrast != 1.0:
-                image = ImageEnhance.Contrast(image).enhance(
-                    self.contrast)
-            if self.sharpness != 1.0:
-                image = ImageEnhance.Sharpness(image).enhance(
-                    self.sharpness)
-                
-            pixbuf = convert_pil_image_to_pixbuf(image)
-        else:
-            pixbuf = self._raw_pixbuf
+        image = self._raw_pil_image
+            
+        if self.brightness != 1.0:
+            image = ImageEnhance.Brightness(image).enhance(
+                self.brightness)
+        if self.contrast != 1.0:
+            image = ImageEnhance.Contrast(image).enhance(
+                self.contrast)
+        if self.sharpness != 1.0:
+            image = ImageEnhance.Sharpness(image).enhance(
+                self.sharpness)
         
         if abs(self.rotation % 360) == 90:
-            pixbuf = pixbuf.rotate_simple(
-                gtk.gdk.PIXBUF_ROTATE_COUNTERCLOCKWISE)
+            image = image.transpose(Image.ROTATE_90)
         elif abs(self.rotation % 360) == 180:
-            pixbuf = pixbuf.rotate_simple(
-                gtk.gdk.PIXBUF_ROTATE_UPSIDEDOWN)
+            image = image.transpose(Image.ROTATE_180)
         elif abs(self.rotation % 360) == 270:
-            pixbuf = pixbuf.rotate_simple(
-                gtk.gdk.PIXBUF_ROTATE_CLOCKWISE)
+            image = image.transpose(Image.ROTATE_270)
             
-        width = pixbuf.get_width()
-        height = pixbuf.get_height()
+        width, height = image.size
         
         thumbnail_size = preferences_model.thumbnail_size
         
@@ -244,11 +209,11 @@ class PageModel(Model):
         else:
             zoom =  1 / float(width_ratio)
             
-        target_width = int(pixbuf.get_width() * zoom)
-        target_height = int(pixbuf.get_height() * zoom)
-    
-        gtk_scale_mode = \
-            constants.PREVIEW_MODES[preferences_model.preview_mode]
-                
-        self.thumbnail_pixbuf = pixbuf.scale_simple(
-            target_width, target_height, gtk_scale_mode)
+        target_width = int(width * zoom)
+        target_height = int(height * zoom)
+        
+        image = image.resize(
+            (target_width, target_height), 
+            Image.ANTIALIAS)
+        
+        self.thumbnail_pixbuf = convert_pil_image_to_pixbuf(image)

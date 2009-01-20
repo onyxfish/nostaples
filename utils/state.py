@@ -256,7 +256,7 @@ class GConfStateManager(dict):
         # Verify that the GConf value is of the expected type, if not then
         # a third-party was mucking with our config settings and we need
         # to revert to the previous setting.
-        if new_value.type is not state.gconf_type:
+        if new_value is None or new_value.type is not state.gconf_type:
             # ERROR: not the correct type, reset old value
             self.log.error(
                 'An invalid value was set for state %s.  \

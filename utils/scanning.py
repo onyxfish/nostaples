@@ -50,16 +50,13 @@ class UpdateAvailableScannersThread(IdleObject, threading.Thread):
     """
     Responsible for getting an updated list of available scanners
     and passing it back to the main thread.
-    
-    This class is based on an example by John Stowers:
-    U{http://www.johnstowers.co.nz/blog/index.php/tag/pygtk/}
     """
     __gsignals__ =  {
             "finished": (
                 gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, [gobject.TYPE_PYOBJECT]),
             }
     
-    def __init__(self, sane, main_model):
+    def __init__(self, sane):
         """
         Initialize the thread.
         """
@@ -69,7 +66,6 @@ class UpdateAvailableScannersThread(IdleObject, threading.Thread):
         self.log = logging.getLogger(self.__class__.__name__)
         
         self.sane = sane
-        self.model = main_model
         
         self.log.debug('Created.')
     
@@ -78,30 +74,10 @@ class UpdateAvailableScannersThread(IdleObject, threading.Thread):
         Queries SANE for a list of connected scanners and updates
         the list of available scanners from the results.
         """
-#        update_command = 'scanimage -f "%d=%v %m;"'
-#        self.log.debug(
-#            'Updating available scanners with command: "%s".' % \
-#            update_command)
-#        output = commands.getoutput(update_command)
-#
-#        results = re.findall('(.*?)=(.*?)[;|$]', output)
-#        scanner_list = []
-#        
-#        for sane_name, display_name in results:
-#            scanner_already_in_list = False
-#            
-#            # Check if the scanner has already been connected, if so
-#            # use existing instance so settings are not lost.
-#            for scanner in self.model.available_scanners:
-#                if scanner[1] == sane_name:
-#                    scanner_already_in_list = True
-#                    scanner_list.append(scanner)
-#            
-#            if not scanner_already_in_list:
-#                scanner_list.append((display_name, sane_name))
+        self.log.debug('Updating available scanners.')
 
         try:
-            self.sane.update_devices()
+            devices = self.sane.get_device_list()
         except saneme.SaneOutOfMemoryError:
             # TODO
             raise
@@ -109,11 +85,8 @@ class UpdateAvailableScannersThread(IdleObject, threading.Thread):
             # TODO
             raise
         
-        # TODO: temp, should return the Device list
-        device_list = [(' '.join([device.vendor, device.model]), device.name) for device in self.sane.devices]
-        
         # NB: We callback with the lists so that they can updated on the main thread
-        self.emit("finished", device_list)        
+        self.emit("finished", devices)        
 
 class ScanningThread(IdleObject, threading.Thread):
     """
@@ -123,18 +96,15 @@ class ScanningThread(IdleObject, threading.Thread):
     This thread should treat its reference to the ScanningModel
     as read-only.  That way we don't have to worry about making
     the Model thread-safe.
-    
-    This class is based on an example by John Stowers:
-    U{http://www.johnstowers.co.nz/blog/index.php/tag/pygtk/}
     """
     __gsignals__ =  {
             "succeeded": (
-                gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, [gobject.TYPE_STRING]),
+                gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, [gobject.TYPE_PYOBJECT]),
             "failed": (
                 gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, [])
             }
     
-    def __init__(self, sane, main_model):
+    def __init__(self, sane_device, mode, resolution):
         """
         Initialize the thread and get a tempfile name that
         will house the scanned image.
@@ -144,62 +114,44 @@ class ScanningThread(IdleObject, threading.Thread):
         
         self.log = logging.getLogger(self.__class__.__name__)
         
-        self.sane = sane
-        self.model = main_model
-        self.path = tempfile.mktemp()
-        
-        self.log.debug('Created targeting temp file %s.' % self.path)
+        self.sane_device = sane_device
+        self.mode = mode
+        self.resolution = resolution
     
     def run(self):
         """
         Scan a page and emit status callbacks.
         """
-        scan_program = 'scanimage --format=pnm'
-        mode_flag = ' '.join(['--mode', self.model.active_mode])
-        resolution_flag = ' '.join(['--resolution', self.model.active_resolution])
-        scanner_flag = ' '.join(['-d', self.model.active_scanner[1]])
-        output_file = '>%s' % self.path
-        scan_command = ' '.join(
-            [scan_program, mode_flag, resolution_flag, scanner_flag, output_file])
+        assert self.sane_device.is_open()
         
-        self.log.info(
-            'Scanning with command: "%s".' % scan_command)
-        output = commands.getoutput(scan_command)
+        self.log.info('Scanning...')
         
-        # TODO: check output for errors?
+        # TODO - should set these when they are set in the UI?
+        try:
+            self.sane_device.options['mode'].value = self.mode
+        except saneme.SaneReloadOptionsError:
+            pass
         
-        if not os.path.exists(self.path):
-            self.log.error(
-                'Failed: temp file %s not created.' % self.path)
-            self.emit("failed")
-            return
+        try:
+            self.sane_device.options['resolution'].value = int(self.resolution)
+        except saneme.SaneReloadOptionsError:
+            pass
         
-        if os.stat(self.path).st_size <= 0:
-            self.log.error(
-                'Failed: temp file %s is empty.' % self.path)
-            self.emit("failed")
-            return
+        pil_image = self.sane_device.scan()
 
-        self.emit("succeeded", self.path)
+        self.emit("succeeded", pil_image)
         
 class UpdateScannerOptionsThread(IdleObject, threading.Thread):
     """
     Responsible for getting an up-to-date list of valid scanner options
     and passing it back to the main thread.
-    
-    This thread should treat its reference to the ScanningModel
-    as read-only.  That way we don't have to worry about making
-    the Model thread-safe.
-    
-    This class is based on an example by John Stowers:
-    U{http://www.johnstowers.co.nz/blog/index.php/tag/pygtk/}
     """
     __gsignals__ =  {
             "finished": (
                 gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, [gobject.TYPE_PYOBJECT, gobject.TYPE_PYOBJECT]),
             }
     
-    def __init__(self, main_model):
+    def __init__(self, sane_device):
         """
         Initialize the thread.
         """
@@ -208,7 +160,7 @@ class UpdateScannerOptionsThread(IdleObject, threading.Thread):
         
         self.log = logging.getLogger(self.__class__.__name__)
         
-        self.model = main_model
+        self.sane_device = sane_device
         
         self.log.debug('Created.')
     
@@ -216,29 +168,12 @@ class UpdateScannerOptionsThread(IdleObject, threading.Thread):
         """
         Queries SANE for a list of available options for the specified scanner.    
         """
-        update_command = ' '.join(['scanimage --help -d',  self.model.active_scanner[1]])
-        self.log.debug(
-            'Updating scanner options with command: "%s".' % \
-            update_command)
-        output = commands.getoutput(update_command)
+        assert self.sane_device.is_open()
         
-        # TODO: check that scanner was found
+        self.log.debug('Updating scanner options.')
 
-        try:
-            mode_list = re.findall('--mode (.*) ', output)[0].split('|')
-        except IndexError:
-            self.log.warn(
-                'Could not parse scan modes or no modes available for \
-                device "%s".' % self.model.active_scanner[0])
-            mode_list = []
-            
-        try:
-            resolution_list = re.findall('--resolution (.*)dpi ', output)[0].split('|')
-        except IndexError:
-            self.log.warn(
-                'Could not parse resolutions or no resolutions available for \
-                device "%s".' % self.model.active_scanner[0])
-            resolution_list = []
+        mode_list = self.sane_device.options['mode'].constraint_string_list
+        resolution_list = [str(i) for i in self.sane_device.options['resolution'].constraint_word_list]
         
         # NB: We callback with the lists so that they can updated on the main thread
         self.emit("finished", mode_list, resolution_list)
