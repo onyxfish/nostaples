@@ -240,6 +240,12 @@ class MainController(Controller):
         """Selects the last scanned page."""
         self.application.get_document_controller().goto_last_page()
     
+    # Progress Window INTERFACE CALLBACKS
+    
+    def on_scan_cancel_button_activate(self, button):
+        # TODO
+        pass
+    
     # MainModel PROPERTY CALLBACKS
     
     def property_show_toolbar_value_change(self, model, old_value, new_value):
@@ -424,15 +430,45 @@ class MainController(Controller):
     
     # THREAD CALLBACKS
     
+    def on_scan_progress(self, scanning_thread, scan_info, bytes_scanned):
+        main_view = self.application.get_main_view()
+        
+        short_bytes_scanned = float(bytes_scanned) / 1000
+        short_total_bytes = float(scan_info.total_bytes) / 1000
+        
+        main_view['scan_progressbar'].set_fraction(
+            float(bytes_scanned) / scan_info.total_bytes)
+        main_view['scan_progressbar'].set_text(
+            'Received %ik of %ik bytes' % (short_bytes_scanned, short_total_bytes))
+        # TODO: multi page scans
+        main_view['progress_secondary_label'].set_markup(
+            '<i>Scanning page 1 of 1.</i>')     
+    
     def on_scan_succeeded(self, scanning_thread, pil_image):
         """Append the new page to the current document."""
         main_model = self.application.get_main_model()
+        main_view = self.application.get_main_view()
         status_controller = self.application.get_status_controller()
         
-        status_controller.pop(self.status_context)
+        # This shows the progress of pages being added to the document
+        # as a "throbber" progress bar.  This may be unnecessary as
+        # the conversion process is very fast.       
+        main_view['scan_progressbar'].set_fraction(1)
+        main_view['scan_progressbar'].set_text('Adding page')
+        # TODO: multi page scans
+        main_view['progress_secondary_label'].set_markup(
+            '<i>Adding page 1 of 1 to current document.</i>')
+        main_view['scan_progressbar'].pulse()   
+        
+        pulse_callback = gobject.timeout_add(100, self.on_indeterminate_progress_pulse)
         
         new_page = PageModel(self.application, pil_image, int(main_model.active_resolution))
         self.application.get_document_model().append(new_page)
+        
+        gobject.source_remove(pulse_callback)
+        
+        main_view['progress_window'].hide()        
+        status_controller.pop(self.status_context)        
         main_model.scan_in_progress = False
     
     def on_scan_failed(self, scanning_thread):
@@ -441,7 +477,10 @@ class MainController(Controller):
         
         TODO: check if the scanner has been disconnected
         """
+        main_view = self.application.get_main_view()
         status_controller = self.application.get_status_controller()
+        
+        main_view['progress_window'].hide()
         
         status_controller.pop(self.status_context)
         
@@ -461,6 +500,12 @@ class MainController(Controller):
         main_model.valid_modes = mode_list
         main_model.valid_resolutions = resolution_list
         main_model.updating_scan_options = False
+        
+    
+    def on_indeterminate_progress_pulse(self):
+        """Pulse the indeterminate state progress bar."""
+        main_view = self.application.get_main_view()
+        main_view['scan_progressbar'].pulse()   
         
     # PUBLIC METHODS
         
@@ -545,6 +590,7 @@ class MainController(Controller):
     def _scan(self):
         """Begin a scan."""
         main_model = self.application.get_main_model()
+        main_view = self.application.get_main_view()
         status_controller = self.application.get_status_controller()
         
         status_controller.push(self.status_context, 'Scanning...')
@@ -552,8 +598,17 @@ class MainController(Controller):
         main_model.scan_in_progress = True
         scanning_thread = ScanningThread(
             main_model.active_scanner, main_model.active_mode, main_model.active_resolution)
+        scanning_thread.connect("progress", self.on_scan_progress)
         scanning_thread.connect("succeeded", self.on_scan_succeeded)
         scanning_thread.connect("failed", self.on_scan_failed)
+        
+        main_view['scan_progressbar'].set_fraction(0)
+        main_view['scan_progressbar'].set_text('Waiting for data')
+        main_view['progress_secondary_label'].set_markup('<i>Preparing device.</i>')
+        main_view['progress_mode_label'].set_markup(main_model.active_mode)
+        main_view['progress_resolution_label'].set_markup('%s DPI' % main_model.active_resolution)
+        main_view['progress_window'].show_all()
+        
         scanning_thread.start()
             
     def _update_available_scanners(self):

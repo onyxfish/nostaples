@@ -98,11 +98,15 @@ class ScanningThread(IdleObject, threading.Thread):
     the Model thread-safe.
     """
     __gsignals__ =  {
+            "progress": (
+                gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, (gobject.TYPE_PYOBJECT, gobject.TYPE_INT)),
             "succeeded": (
-                gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, [gobject.TYPE_PYOBJECT]),
+                gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, (gobject.TYPE_PYOBJECT,)),
             "failed": (
-                gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, [])
+                gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, ())
             }
+    
+    # TODO: add cancel event
     
     def __init__(self, sane_device, mode, resolution):
         """
@@ -117,6 +121,12 @@ class ScanningThread(IdleObject, threading.Thread):
         self.sane_device = sane_device
         self.mode = mode
         self.resolution = resolution
+        
+    def progress_callback(self, scan_info, bytes_scanned):
+        self.emit("progress", scan_info, bytes_scanned)
+        
+        # TODO: if cancel, return true
+        return False
     
     def run(self):
         """
@@ -137,7 +147,7 @@ class ScanningThread(IdleObject, threading.Thread):
         except saneme.SaneReloadOptionsError:
             pass
         
-        pil_image = self.sane_device.scan()
+        pil_image = self.sane_device.scan(self.progress_callback)
 
         self.emit("succeeded", pil_image)
         

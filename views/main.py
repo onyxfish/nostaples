@@ -43,13 +43,15 @@ class MainView(View):
             constants.GUI_DIRECTORY, 'scan_window.glade')
         View.__init__(
             self, application.get_main_controller(), 
-            scan_window_glade, 'scan_window', 
+            scan_window_glade, ['scan_window', 'progress_window'], 
             None, False)
             
         self.log = logging.getLogger(self.__class__.__name__)
         
         # Setup controls which can not be configured in Glade
         self['scan_window'].set_geometry_hints(min_width=600, min_height=400)
+        self['progress_primary_label'].set_alignment(0, 0.5)
+        self['progress_secondary_label'].set_alignment(0, 0.5)
         
         # Setup sub views
         document_view = self.application.get_document_view()
