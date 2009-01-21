@@ -56,7 +56,7 @@ from saneh import *
     OPTION_CONSTRAINT_INTEGER_LIST,
     OPTION_CONSTRAINT_STRING_LIST) = xrange(4)
 
-class SANE(object):
+class SaneMe(object):
     """
     The top-level object for interacting with the SANE API.  Handles
     polling for devices.  This object should only be instantiated once.
@@ -85,15 +85,6 @@ class SANE(object):
         return self._version
         
     version = property(__get_version)
-
-    def __get_devices(self):
-        """
-        Get the list of available devices, as of the most recent call
-        to L{update_devices}.
-        """
-        return self._devices
-        
-    devices = property(__get_devices)
     
     def _setup(self):
         """
@@ -124,9 +115,11 @@ class SANE(object):
         This code would go in L{__del__}, but it is not guaranteed that method
         will be called and sane_exit must be called to release resources.  To
         ensure this method is called it is registered with atexit.
-        
-        TODO: close any open devices before exiting
         """
+        for device in self._devices:
+            if device.is_open():
+                device.close()
+                
         sane_exit()
         self._version = None
         
@@ -135,14 +128,33 @@ class SANE(object):
         
     # Public Methods
     
-    def update_devices(self):
+    def get_device_list(self):
         """
-        Poll for connected devices.
+        Poll for connected devices.  This method may take several
+        seconds to return.
+        
+        Note that SANE is exited and re-inited before querying for
+        devices to workaround a limitation in SANE's USB driver
+        which causes the device list to only be updated on init.
+        
+        This was found documented here:        
+        U{http://www.nabble.com/sane_get_devices-and-sanei_usb_init-td20766234.html}
         """
         assert self._version is not None
+            
+        for device in self._devices:
+            if device.is_open():
+                device.close()
+        
+        # See docstring for details on this voodoo
+        sane_exit()        
+        status = sane_init(byref(SANE_Int()), SANE_Auth_Callback(sane_auth_callback)) 
+        
+        if status != SANE_STATUS_GOOD.value:
+            raise SaneUnknownError(
+                'sane_init returned an invalid status.')
         
         cdevices = POINTER(POINTER(SANE_Device))()
-
         status = sane_get_devices(byref(cdevices), SANE_Bool(0))
         
         if status == SANE_STATUS_GOOD.value:
@@ -163,12 +175,28 @@ class SANE(object):
            
         if self._log:
             self._log.debug('SANE queried, %i device(s) found.', device_count)
+            
+        return self._devices
+        
+    def get_device_by_name(self, name):
+        """
+        Retrieve a L{Device} by name.
+        
+        Must be preceded by a call to L{get_device_list}.
+        """
+        for device in self._devices:
+            if device.name == name:
+                return device
+            
+        raise SaneNoSuchDeviceError()
         
 class Device(object):
     """
     This is the primary object for interacting with SANE.  It represents
     a single device and handles enumeration of options, getting and
     setting of options, and starting and stopping of scanning jobs.
+    
+    TODO: make open/close implicit?
     """   
     _log = None
     
@@ -178,6 +206,8 @@ class Device(object):
     _vendor = ''
     _model = ''
     _type = ''
+    
+    _display_name = ''
     
     _options = {}
     
@@ -197,6 +227,8 @@ class Device(object):
         self._vendor = ctypes_device.vendor
         self._model = ctypes_device.model
         self._type = ctypes_device.type
+        
+        self._display_name = ' '.join([self._vendor, self._model])
         
     # Read only properties
 
@@ -226,6 +258,14 @@ class Device(object):
         return self._type
         
     type = property(__get_type)
+    
+    def __get_display_name(self):
+        """
+        Get an appropriate name to use for displaying this device
+        to a user, e.g. 'Lexmark X1100/rev. B2'."""
+        return self._display_name
+        
+    display_name = property(__get_display_name)
     
     def __get_options(self):
         """Get the list of options that this device has."""
@@ -403,6 +443,8 @@ class Device(object):
         temp_array = (SANE_Byte * bytes_per_read)()
         actual_size = SANE_Int()
         
+        cancel = False
+        
         while True:
             # See SANE API 4.3.10
             status = sane_read(self._handle, temp_array, bytes_per_read, byref(actual_size))
@@ -455,7 +497,7 @@ class Device(object):
         elif sane_parameters.format == SANE_FRAME_RGB.value:
             pil_image = Image.frombuffer(
                 'RGB', (scan_info.width, scan_info.height), 
-                data_array, 'raw', 'L', 0, 1)
+                data_array, 'raw', 'RGB', 0, 1)
         else:
             # TODO - seperate frames for R, G, and B
             raise NotImplementedError()
@@ -820,31 +862,31 @@ if __name__ == '__main__':
     log_format = FORMAT = "%(message)s"
     logging.basicConfig(level=logging.DEBUG, format=log_format)
     
-    sane = SANE(logging.getLogger())
-    sane.update_devices()
+    sane = SaneMe(logging.getLogger())
+    devices = sane.get_device_list()
     
-    for dev in sane.devices:
+    for dev in devices:
         print dev.name
         
-    sane.devices[0].open()
+    devices[0].open()
     
-    print sane.devices[0].options.keys()
+    print devices[0].options.keys()
     
     try:
-        sane.devices[0].options['mode'].value = 'Gray'
+        devices[0].options['mode'].value = 'Gray'
     except SaneReloadOptionsError:
         pass
     
     try:
-        sane.devices[0].options['resolution'].value = 75
+        devices[0].options['resolution'].value = 75
     except SaneReloadOptionsError:
         pass
     
     try:
-        sane.devices[0].options['preview'].value = False
+        devices[0].options['preview'].value = False
     except SaneReloadOptionsError:
         pass
     
-    sane.devices[0].scan(progress_callback).save('out.bmp')
+    devices[0].scan(progress_callback).save('out.bmp')
     
-    sane.devices[0].close()
+    devices[0].close()

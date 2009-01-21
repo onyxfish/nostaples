@@ -35,6 +35,13 @@ class SaneUnknownError(SaneError):
     not be categorized.
     """
     pass
+
+class SaneNoSuchDeviceError(SaneError):
+    """
+    Exception denoting that a device requested by name did not
+    exist.
+    """
+    pass
     
 class SaneUnsupportedOperationError(SaneError):
     """
