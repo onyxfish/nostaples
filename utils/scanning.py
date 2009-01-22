@@ -103,7 +103,7 @@ class ScanningThread(IdleObject, threading.Thread):
             "succeeded": (
                 gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, (gobject.TYPE_PYOBJECT,)),
             "failed": (
-                gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, ())
+                gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, (gobject.TYPE_STRING,))
             }
     
     # TODO: add cancel event
@@ -122,11 +122,19 @@ class ScanningThread(IdleObject, threading.Thread):
         self.mode = mode
         self.resolution = resolution
         
+        self.cancel_event = threading.Event()
+        
     def progress_callback(self, scan_info, bytes_scanned):
+        """
+        Pass the progress information on the the main thread
+        and cancel the scan if the cancel event has been set.
+        """
         self.emit("progress", scan_info, bytes_scanned)
         
-        # TODO: if cancel, return true
-        return False
+        if self.cancel_event.isSet():
+            return True
+        else:
+            return False
     
     def run(self):
         """
@@ -134,22 +142,35 @@ class ScanningThread(IdleObject, threading.Thread):
         """
         assert self.sane_device.is_open()
         
-        self.log.info('Scanning...')
+        self.log.debug('Setting device options.')
         
-        # TODO - should set these when they are set in the UI?
         try:
             self.sane_device.options['mode'].value = self.mode
+        # TODO
         except saneme.SaneReloadOptionsError:
             pass
         
         try:
             self.sane_device.options['resolution'].value = int(self.resolution)
+        # TODO
         except saneme.SaneReloadOptionsError:
             pass
         
-        pil_image = self.sane_device.scan(self.progress_callback)
-
-        self.emit("succeeded", pil_image)
+        self.log.debug('Beginning scan.')
+        
+        pil_image = None
+        
+        try:
+            pil_image = self.sane_device.scan(self.progress_callback)
+        # TODO: handle individual errors
+        except saneme.SaneError:
+            raise
+        
+        if self.cancel_event.isSet():
+            self.emit("failed", "Scan cancelled")
+        else:
+            assert pil_image is not None
+            self.emit("succeeded", pil_image)
         
 class UpdateScannerOptionsThread(IdleObject, threading.Thread):
     """

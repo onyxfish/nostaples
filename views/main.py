@@ -50,8 +50,6 @@ class MainView(View):
         
         # Setup controls which can not be configured in Glade
         self['scan_window'].set_geometry_hints(min_width=600, min_height=400)
-        self['progress_primary_label'].set_alignment(0, 0.5)
-        self['progress_secondary_label'].set_alignment(0, 0.5)
         
         # Setup sub views
         document_view = self.application.get_document_view()
