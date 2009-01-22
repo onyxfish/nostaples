@@ -435,9 +435,11 @@ class Device(object):
 
         scan_info = ScanInfo(sane_parameters)
         
-        # Should be a multiple of three (for RGB data) and a reasonable size
-        # so that the progress callback will occur frequently without spamming.
-        bytes_per_read = 4800
+        # This is the size used for the scan buffer in SANE's scanimage
+        # utility.  The reasoning for this value (32kb) is unclear,
+        # but it does not seem to suffer the same stuttering problems as
+        # lower values, nor is it ridiculously large.
+        bytes_per_read = 32768
         
         data_array = array('B')
         temp_array = (SANE_Byte * bytes_per_read)()
@@ -484,9 +486,11 @@ class Device(object):
                 
                 if cancel:
                     sane_cancel(self._handle)
-       
-        if not cancel:
-            sane_cancel(self._handle)
+                    return None
+
+        assert not cancel
+        
+        sane_cancel(self._handle)
         
         assert scan_info.total_bytes == len(data_array)
         
