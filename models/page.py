@@ -138,6 +138,11 @@ class PageModel(Model):
         the pixbuf and thumbnail from being update multiple
         times.
         """
+        if (self.__properties__['brightness'] == brightness and
+            self.__properties__['contrast'] == contrast and
+            self.__properties__['sharpness'] == sharpness):
+            return
+        
         self.__properties__['brightness'] = brightness
         self.__properties__['contrast'] = contrast
         self.__properties__['sharpness'] = sharpness  

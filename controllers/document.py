@@ -25,6 +25,8 @@ import logging
 import gtk
 from gtkmvc.controller import Controller
 
+import nostaples.utils.gui
+
 class DocumentController(Controller):
     """
     Manages interaction between the L{DocumentModel} and
@@ -41,8 +43,12 @@ class DocumentController(Controller):
         self.application = application
         Controller.__init__(self, application.get_document_model())
         
-        test = application.get_preferences_model()
-        test.register_observer(self)
+        preferences_model = application.get_preferences_model()
+        preferences_model.register_observer(self)
+        
+        status_controller = application.get_status_controller()
+        self.status_context = \
+            status_controller.get_context_id(self.__class__.__name__)
         
         application.get_document_model().connect(
           'row-changed', self.on_document_model_row_changed)
@@ -65,10 +71,6 @@ class DocumentController(Controller):
         
         view['delete_menu_item'].connect(
             "activate", self.on_delete_menu_item_activated)
-#        view['rotate_clockwise_menu_item'].connect(
-#            "activate", self.on_rotate_clockwise_menu_item_activated)
-#        view['rotate_counter_clockwise_menu_item'].connect(
-#            "activate", self.on_rotate_counter_clockwise_menu_item_activated)
         
         self.log.debug('%s registered.', view.__class__.__name__)
         
@@ -147,18 +149,32 @@ class DocumentController(Controller):
         """ 
         document_model = self.application.get_document_model()
         document_view = self.application.get_document_view()
+        page_model = self.application.get_current_page_model()
+        status_controller = self.application.get_status_controller()
         
-        if document_model.adjust_all_pages:
+        if document_model.adjust_all_pages:   
+            i = 1
             page_iter = document_model.get_iter_first()
             while page_iter:
+                status_controller.push(self.status_context, 'Updating page %i...' % i)
+                nostaples.utils.gui.flush_pending_events()
+                
                 page = document_model.get(page_iter, 0)[0]
                 document_model.manually_updating_row = True
                 page.brightness = \
                     document_view['brightness_scale'].get_value()
                 page_iter = document_model.iter_next(page_iter)
+                
+                status_controller.pop(self.status_context)
+                i = i + 1
         else:
-            self.application.get_current_page_model().brightness = \
+            status_controller.push(self.status_context, 'Updating current page...')
+            nostaples.utils.gui.flush_pending_events()
+                
+            page_model.brightness = \
                 document_view['brightness_scale'].get_value()
+                
+            status_controller.pop(self.status_context)
     
     def on_contrast_scale_value_changed(self, widget):
         """
@@ -171,18 +187,32 @@ class DocumentController(Controller):
         """
         document_model = self.application.get_document_model()
         document_view = self.application.get_document_view()
+        page_model = self.application.get_current_page_model()
+        status_controller = self.application.get_status_controller()
         
-        if document_model.adjust_all_pages:
+        if document_model.adjust_all_pages:      
+            i = 1
             page_iter = document_model.get_iter_first()
             while page_iter:
+                status_controller.push(self.status_context, 'Updating page %i...' % i)
+                nostaples.utils.gui.flush_pending_events()
+                
                 page = document_model.get(page_iter, 0)[0]
                 document_model.manually_updating_row = True
                 page.contrast = \
                     document_view['contrast_scale'].get_value()
                 page_iter = document_model.iter_next(page_iter)
+                
+                status_controller.pop(self.status_context)
+                i = i + 1
         else:
-            self.application.get_current_page_model().contrast = \
+            status_controller.push(self.status_context, 'Updating current page...')
+            nostaples.utils.gui.flush_pending_events()
+                
+            page_model.contrast = \
                 document_view['contrast_scale'].get_value()
+                
+            status_controller.pop(self.status_context)
     
     def on_sharpness_scale_value_changed(self, widget):
         """
@@ -195,18 +225,32 @@ class DocumentController(Controller):
         """
         document_model = self.application.get_document_model()
         document_view = self.application.get_document_view()
+        page_model = self.application.get_current_page_model()
+        status_controller = self.application.get_status_controller()
         
-        if document_model.adjust_all_pages:
+        if document_model.adjust_all_pages:      
+            i = 1
             page_iter = document_model.get_iter_first()
             while page_iter:
+                status_controller.push(self.status_context, 'Updating page %i...' % i)
+                nostaples.utils.gui.flush_pending_events()
+                
                 page = document_model.get(page_iter, 0)[0]
                 document_model.manually_updating_row = True
                 page.sharpness = \
                     document_view['sharpness_scale'].get_value()
                 page_iter = document_model.iter_next(page_iter)
+                
+                status_controller.pop(self.status_context)
+                i = i + 1
         else:
-            self.application.get_current_page_model().sharpness = \
+            status_controller.push(self.status_context, 'Updating current page...')
+            nostaples.utils.gui.flush_pending_events()
+                
+            page_model.sharpness = \
                 document_view['sharpness_scale'].get_value()
+                
+            status_controller.pop(self.status_context)
                 
     def on_adjust_all_pages_check_toggled(self, checkbox):
         """
@@ -220,12 +264,17 @@ class DocumentController(Controller):
         """
         document_model = self.application.get_document_model()
         document_view = self.application.get_document_view()
+        status_controller = self.application.get_status_controller()
         
         document_model.adjust_all_pages = checkbox.get_active()
         
-        if document_model.adjust_all_pages:
+        if document_model.adjust_all_pages:      
+            i = 1
             page_iter = document_model.get_iter_first()
             while page_iter:
+                status_controller.push(self.status_context, 'Updating page %i...' % i)
+                nostaples.utils.gui.flush_pending_events()
+                
                 page = document_model.get(page_iter, 0)[0]
                 document_model.manually_updating_row = True
                 page.set_adjustments(
@@ -234,17 +283,12 @@ class DocumentController(Controller):
                     document_view['sharpness_scale'].get_value())
                 page_iter = document_model.iter_next(page_iter)
                 
+                status_controller.pop(self.status_context)
+                i = i + 1
+                
     def on_delete_menu_item_activated(self, menu_item):
         """Delete the currently selected page."""
         self.delete_selected()
-                
-#    def on_rotate_clockwise_menu_item_activated(self, menu_item):
-#        """Rotate the currently selected page clockwise."""
-#        self.application.get_page_controller().rotate_clockwise()
-#                
-#    def on_rotate_counter_clockwise_menu_item_activated(self, menu_item):
-#        """Rotate the currently selected page counter-clockwise."""
-#        self.application.get_page_controller().rotate_counter_clockwise()
     
     # PROPERTY CALLBACKS
     

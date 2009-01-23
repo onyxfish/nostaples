@@ -138,13 +138,17 @@ class PageController(Controller):
         """
         pass
     
+    def on_page_view_image_layout_size_request(self, widget, size):
+        size.width = 1
+        size.height = 1
+    
     def on_page_view_image_layout_size_allocate(self, widget, allocation):
         """
         Resizes the image preview size to match that which is allocated to
         the preview layout widget.
         
-        TODO: Bug, when resizing window to be smaller (even slightly), the
-        right scrollbar expands to take up ~20% of th preview space.
+        TODO: Resize of image does not occur until after the window has
+        finished resizing (which looks awful).
         """
         if allocation.width == self.preview_width and \
            allocation.height == self.preview_height:

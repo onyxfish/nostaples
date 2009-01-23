@@ -203,8 +203,8 @@ class UpdateScannerOptionsThread(IdleObject, threading.Thread):
         
         self.log.debug('Updating scanner options.')
 
-        mode_list = self.sane_device.options['mode'].constraint_string_list
-        resolution_list = [str(i) for i in self.sane_device.options['resolution'].constraint_word_list]
+        mode_list = self.sane_device.options['mode'].constraint
+        resolution_list = [str(i) for i in self.sane_device.options['resolution'].constraint]
         
         # NB: We callback with the lists so that they can updated on the main thread
         self.emit("finished", mode_list, resolution_list)

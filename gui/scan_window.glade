@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Wed Jan 21 20:54:35 2009 -->
+<!--Generated with glade3 3.4.5 on Thu Jan 22 19:04:09 2009 -->
 <glade-interface>
   <widget class="GtkWindow" id="scan_window">
     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
@@ -639,6 +639,7 @@
           <widget class="GtkAlignment" id="alignment1">
             <property name="visible">True</property>
             <property name="top_padding">12</property>
+            <property name="bottom_padding">12</property>
             <property name="left_padding">12</property>
             <property name="right_padding">12</property>
             <child>
@@ -660,121 +661,133 @@
                 <child>
                   <widget class="GtkVBox" id="vbox2">
                     <property name="visible">True</property>
-                    <property name="spacing">3</property>
+                    <property name="spacing">12</property>
                     <child>
-                      <widget class="GtkHBox" id="hbox2">
+                      <widget class="GtkVBox" id="vbox3">
                         <property name="visible">True</property>
-                        <property name="spacing">6</property>
                         <child>
-                          <widget class="GtkLabel" id="static_mode_label">
-                            <property name="width_request">90</property>
+                          <widget class="GtkHBox" id="hbox2">
                             <property name="visible">True</property>
-                            <property name="xalign">1</property>
-                            <property name="label" translatable="yes">&lt;b&gt;Mode:&lt;/b&gt;</property>
-                            <property name="use_markup">True</property>
+                            <property name="spacing">6</property>
+                            <child>
+                              <widget class="GtkLabel" id="static_mode_label">
+                                <property name="width_request">90</property>
+                                <property name="visible">True</property>
+                                <property name="xalign">1</property>
+                                <property name="label" translatable="yes">&lt;b&gt;Mode:&lt;/b&gt;</property>
+                                <property name="use_markup">True</property>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkLabel" id="progress_mode_label">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">Color</property>
+                                <property name="use_markup">True</property>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </widget>
+                        </child>
+                        <child>
+                          <widget class="GtkHBox" id="hbox5">
+                            <property name="visible">True</property>
+                            <property name="spacing">6</property>
+                            <child>
+                              <widget class="GtkLabel" id="static_page_size_label">
+                                <property name="width_request">90</property>
+                                <property name="visible">True</property>
+                                <property name="xalign">1</property>
+                                <property name="label" translatable="yes">&lt;b&gt;Page Size:&lt;/b&gt;</property>
+                                <property name="use_markup">True</property>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkLabel" id="progress_page_size_label">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">Letter (TODO)</property>
+                                <property name="use_markup">True</property>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
                           </widget>
                           <packing>
-                            <property name="expand">False</property>
+                            <property name="position">1</property>
                           </packing>
                         </child>
                         <child>
-                          <widget class="GtkLabel" id="progress_mode_label">
+                          <widget class="GtkHBox" id="hbox3">
                             <property name="visible">True</property>
-                            <property name="label" translatable="yes">Color</property>
-                            <property name="use_markup">True</property>
+                            <property name="spacing">6</property>
+                            <child>
+                              <widget class="GtkLabel" id="static_resolution_label">
+                                <property name="width_request">90</property>
+                                <property name="visible">True</property>
+                                <property name="xalign">1</property>
+                                <property name="label" translatable="yes">&lt;b&gt;Resolution:&lt;/b&gt;</property>
+                                <property name="use_markup">True</property>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkLabel" id="progress_resolution_label">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">150 DPI</property>
+                                <property name="use_markup">True</property>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
                           </widget>
                           <packing>
-                            <property name="expand">False</property>
-                            <property name="position">1</property>
+                            <property name="position">2</property>
                           </packing>
                         </child>
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkHBox" id="hbox5">
+                      <widget class="GtkVBox" id="vbox4">
                         <property name="visible">True</property>
-                        <property name="spacing">6</property>
                         <child>
-                          <widget class="GtkLabel" id="static_page_size_label">
-                            <property name="width_request">90</property>
+                          <widget class="GtkProgressBar" id="scan_progressbar">
                             <property name="visible">True</property>
-                            <property name="xalign">1</property>
-                            <property name="label" translatable="yes">&lt;b&gt;Page Size:&lt;/b&gt;</property>
-                            <property name="use_markup">True</property>
+                            <property name="show_text">True</property>
+                            <property name="text" translatable="yes">X of Y bytes receieved.</property>
                           </widget>
                           <packing>
-                            <property name="expand">False</property>
+                            <property name="fill">False</property>
                           </packing>
                         </child>
                         <child>
-                          <widget class="GtkLabel" id="progress_page_size_label">
+                          <widget class="GtkLabel" id="progress_secondary_label">
                             <property name="visible">True</property>
-                            <property name="label" translatable="yes">Letter (TODO)</property>
+                            <property name="xalign">0</property>
+                            <property name="label" translatable="yes">&lt;i&gt;Scanning page 1 of Z.&lt;/i&gt;</property>
                             <property name="use_markup">True</property>
                           </widget>
                           <packing>
-                            <property name="expand">False</property>
                             <property name="position">1</property>
                           </packing>
                         </child>
                       </widget>
                       <packing>
                         <property name="position">1</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <widget class="GtkHBox" id="hbox3">
-                        <property name="visible">True</property>
-                        <property name="spacing">6</property>
-                        <child>
-                          <widget class="GtkLabel" id="static_resolution_label">
-                            <property name="width_request">90</property>
-                            <property name="visible">True</property>
-                            <property name="xalign">1</property>
-                            <property name="label" translatable="yes">&lt;b&gt;Resolution:&lt;/b&gt;</property>
-                            <property name="use_markup">True</property>
-                          </widget>
-                          <packing>
-                            <property name="expand">False</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <widget class="GtkLabel" id="progress_resolution_label">
-                            <property name="visible">True</property>
-                            <property name="label" translatable="yes">150 DPI</property>
-                            <property name="use_markup">True</property>
-                          </widget>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">False</property>
-                            <property name="position">1</property>
-                          </packing>
-                        </child>
-                      </widget>
-                      <packing>
-                        <property name="position">2</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <widget class="GtkProgressBar" id="scan_progressbar">
-                        <property name="visible">True</property>
-                        <property name="show_text">True</property>
-                        <property name="text" translatable="yes">X of Y bytes receieved.</property>
-                      </widget>
-                      <packing>
-                        <property name="fill">False</property>
-                        <property name="position">3</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <widget class="GtkLabel" id="progress_secondary_label">
-                        <property name="visible">True</property>
-                        <property name="xalign">0</property>
-                        <property name="label" translatable="yes">&lt;i&gt;Scanning page 1 of Z.&lt;/i&gt;</property>
-                        <property name="use_markup">True</property>
-                      </widget>
-                      <packing>
-                        <property name="position">4</property>
                       </packing>
                     </child>
                   </widget>

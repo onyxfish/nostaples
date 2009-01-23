@@ -23,6 +23,21 @@ reading from pygtk controls.
 import gtk
 import gobject
 
+def flush_pending_events():
+    """
+    This event flushes any pending idle operations
+    without returning to the GTK main loop.
+    
+    It can be used to ensure that all GUI updates have
+    been processed prior to a long-running operation.
+    
+    Do NOT use if any calls to gobject.idle_add have been
+    made as those idle methods will cause an infinite
+    loop.
+    """
+    while gtk.events_pending() :
+        gtk.main_iteration(False)
+
 def setup_combobox(combobox, item_list, selection):
     """
     Sets up a simple combobox.

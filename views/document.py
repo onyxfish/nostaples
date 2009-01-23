@@ -68,13 +68,7 @@ class DocumentView(View):
         
         self['thumbnails_context_menu'] = gtk.Menu()
         self['delete_menu_item'] = gtk.MenuItem('Delete')
-#        self['separator_menu_item'] = gtk.SeparatorMenuItem()
-#        self['rotate_clockwise_menu_item'] = gtk.MenuItem('Rotate Clockwise')
-#        self['rotate_counter_clockwise_menu_item'] = gtk.MenuItem('Rotate Counterclockwise')
         self['thumbnails_context_menu'].append(self['delete_menu_item'])
-#        self['thumbnails_context_menu'].append(self['separator_menu_item'])
-#        self['thumbnails_context_menu'].append(self['rotate_clockwise_menu_item'])
-#        self['thumbnails_context_menu'].append(self['rotate_counter_clockwise_menu_item'])
         self['thumbnails_context_menu'].show_all()
 
         # Dock sub-views

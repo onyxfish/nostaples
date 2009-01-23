@@ -519,8 +519,13 @@ class MainController(Controller):
         
     def on_update_available_scanners_thread_finished(self, update_thread, scanner_list):
         """Set the new list of available scanners."""
-        self.application.get_main_model().available_scanners = scanner_list
-        self.application.get_main_model().updating_available_scanners = False
+        main_model = self.application.get_main_model()
+        status_controller = self.application.get_status_controller()
+        
+        main_model.available_scanners = scanner_list
+        main_model.updating_available_scanners = False
+        
+        status_controller.pop(self.status_context)
             
     def on_update_scanner_options_thread_finished(self, update_thread, mode_list, resolution_list):
         """
@@ -528,9 +533,13 @@ class MainController(Controller):
         the scanner is no longer in use.
         """
         main_model = self.application.get_main_model()
+        status_controller = self.application.get_status_controller()
+        
         main_model.valid_modes = mode_list
         main_model.valid_resolutions = resolution_list
         main_model.updating_scan_options = False
+        
+        status_controller.pop(self.status_context)
         
     # PUBLIC METHODS
         
@@ -628,6 +637,8 @@ class MainController(Controller):
         scanning_thread.connect("failed", self.on_scan_failed)
         self.cancel_event = scanning_thread.cancel_event
         
+        main_view['progress_primary_label'].set_markup(
+            '<big><b>%s</b></big>' % main_model.active_scanner.display_name)
         main_view['scan_progressbar'].set_fraction(0)
         main_view['scan_progressbar'].set_text('Waiting for data')
         main_view['progress_secondary_label'].set_markup('<i>Preparing device.</i>')
@@ -645,6 +656,9 @@ class MainController(Controller):
         """
         sane = self.application.get_sane()
         main_model = self.application.get_main_model()
+        status_controller = self.application.get_status_controller()
+        
+        status_controller.push(self.status_context, 'Querying devices...')
         
         main_model.updating_available_scanners = True
         update_thread = UpdateAvailableScannersThread(sane)
@@ -654,6 +668,9 @@ class MainController(Controller):
     def _update_scanner_options(self):
         """Determine the valid options for the current scanner."""  
         main_model = self.application.get_main_model()
+        status_controller = self.application.get_status_controller()
+        
+        status_controller.push(self.status_context, 'Querying scanner options...')
                   
         main_model.updating_scan_options = True
         update_thread = UpdateScannerOptionsThread(main_model.active_scanner)
