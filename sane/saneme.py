@@ -382,6 +382,8 @@ class Device(object):
         """
         Scan a document using this device.
         
+        TODO: handle ADF scans
+        
         @param progress_callback: An optional callback that
             will be called each time data is read from
             the device.  Has the format:
@@ -436,9 +438,7 @@ class Device(object):
         scan_info = ScanInfo(sane_parameters)
         
         # This is the size used for the scan buffer in SANE's scanimage
-        # utility.  The reasoning for this value (32kb) is unclear,
-        # but it does not seem to suffer the same stuttering problems as
-        # lower values, nor is it ridiculously large.
+        # utility.  The precise reasoning for using 32kb is unclear.
         bytes_per_read = 32768
         
         data_array = array('B')
@@ -503,7 +503,7 @@ class Device(object):
                 'RGB', (scan_info.width, scan_info.height), 
                 data_array, 'raw', 'RGB', 0, 1)
         else:
-            # TODO - seperate frames for R, G, and B
+            # TODO - handle seperate frames for R, G, and B
             raise NotImplementedError()
             
         return pil_image
@@ -528,9 +528,7 @@ class Option(object):
     _capabilities = 0
     _constraint_type = 0
     
-    _constraint_string_list = []
-    _constraint_word_list = []
-    _constraint_range = ()
+    _constraint = None
     
     def __init__(self, device, option_number, ctypes_option, log=None): 
         """
@@ -569,7 +567,7 @@ class Option(object):
             assert type(ctypes_option.constraint.range.contents.max) is IntType
             assert type(ctypes_option.constraint.range.contents.quant) is IntType
             
-            self._constraint_range = (
+            self._constraint = (
                 ctypes_option.constraint.range.contents.min,
                 ctypes_option.constraint.range.contents.max,
                 ctypes_option.constraint.range.contents.quant)
@@ -577,20 +575,20 @@ class Option(object):
             assert type(ctypes_option.constraint.word_list) is POINTER(SANE_Word)
             
             word_count = ctypes_option.constraint.word_list[0]
-            self._constraint_word_list = []
+            self._constraint = []
             
             i = 1
             while(i < word_count):
-                self._constraint_word_list.append(ctypes_option.constraint.word_list[i])
+                self._constraint.append(ctypes_option.constraint.word_list[i])
                 i = i + 1                
         elif self._constraint_type == SANE_CONSTRAINT_STRING_LIST.value:
             assert type(ctypes_option.constraint.string_list) is POINTER(SANE_String_Const)
 
             string_count = 0
-            self._constraint_string_list = []
+            self._constraint = []
             
             while ctypes_option.constraint.string_list[string_count]:
-                self._constraint_string_list.append(ctypes_option.constraint.string_list[string_count])
+                self._constraint.append(ctypes_option.constraint.string_list[string_count])
                 string_count += 1
         
     # Read only properties
@@ -617,25 +615,17 @@ class Option(object):
     description = property(__get_description)
 
     def __get_type(self):
-        # TODO: convert to Python types at creation?
         return self._type
         
     type = property(__get_type)
 
     def __get_unit(self):
-        # TODO: convert to string representation at creation?
         return self._unit
         
     unit = property(__get_unit)
 
-    def __get_size(self):
-        # TODO: hide from user view?
-        return self._size
-        
-    size = property(__get_size)
-
     def __get_capability(self):
-        # TODO: recast into a dictionary?
+        # TODO: break out into individual capabilities, rather than a bitset
         return self._capability
         
     capability = property(__get_capability)
@@ -645,36 +635,23 @@ class Option(object):
         
     constraint_type = property(__get_constraint_type)
 
-    def __get_constraint_string_list(self):
+    def __get_constraint(self):
         """
-        Get a list of strings which are valid values for this option.
+        Get the constraint for this option.
         
-        Only relevant if constraint_type is OPTION_CONSTRAINT_STRING_LIST.
+        If constraint_type is OPTION_CONSTRAINT_RANGE then
+        this is a tuple containing the (minimum, maximum, step)
+        for valid values.
+        
+        If constraint_type is OPTION_CONSTRAINT_INTEGER_LIST then
+        this is a list of integers which are valid values.
+        
+        If constraint_type is OPTION_CONSTRAINT_STRING_LIST then
+        this is a list of strings which are valid values.
         """
-        return self._constraint_string_list
+        return self._constraint
         
-    constraint_string_list = property(__get_constraint_string_list)
-
-    def __get_constraint_word_list(self):
-        """
-        Get a list of integers that are valid values for this option.
-        
-        Only relevant if constraint_type is OPTION_CONSTRAINT_WORD_LIST.
-        """
-        return self._constraint_word_list
-        
-    constraint_word_list = property(__get_constraint_word_list)
-
-    def __get_constraint_range(self):
-        """
-        Get a tuple containing the (minimum, maximum, step) of
-        valid values for this option.
-        
-        Only relevant if constraint_type is OPTION_CONSTRAINT_RANGE.
-        """
-        return self._constraint_range
-        
-    constraint_range = property(__get_constraint_range)
+    constraint = property(__get_constraint)
         
     def __get_value(self):
         """
@@ -705,8 +682,9 @@ class Option(object):
         if status == SANE_STATUS_GOOD.value:
             pass
         elif status ==  SANE_STATUS_UNSUPPORTED.value:
-            # TODO - should never happen if we check cap's before setting
-            pass
+            # Constraint checking ensures this should NEVER happen
+            raise SaneUnsupportedOperationError(
+                'sane_control_option reported that a value was outside the option\'s constraint.')
         elif status == SANE_STATUS_INVAL.value:
             raise AssertionError(
                 'sane_control_option reported a value was invalid, but no values was being set.')
@@ -768,13 +746,13 @@ class Option(object):
         if self._constraint_type == SANE_CONSTRAINT_NONE.value:
             pass
         elif self._constraint_type == SANE_CONSTRAINT_RANGE.value:
-            assert value >= self._constraint_range[0]
-            assert value <= self._constraint_range[1]
-            assert value % self._constraint_range[2] == 0
+            assert value >= self._constraint[0]
+            assert value <= self._constraint[1]
+            assert value % self._constraint[2] == 0
         elif self._constraint_type == SANE_CONSTRAINT_WORD_LIST.value:
-            assert value in self._constraint_word_list
+            assert value in self._constraint
         elif self._constraint_type == SANE_CONSTRAINT_STRING_LIST.value:
-            assert value in self._constraint_string_list
+            assert value in self._constraint
             
         info_flags = SANE_Int()
         
@@ -784,8 +762,9 @@ class Option(object):
         if status == SANE_STATUS_GOOD.value:
             pass
         elif status ==  SANE_STATUS_UNSUPPORTED.value:
-            # TODO - should never happen if we check cap's before setting
-            pass
+            # Constraint checking ensures this should NEVER happen
+            raise SaneUnsupportedOperationError(
+                'sane_control_option reported that a value was outside the option\'s constraint.')
         elif status == SANE_STATUS_INVAL.value:
             raise AssertionError(
                 'sane_control_option reported that the value to be set was invalid, despite checks.')
@@ -801,8 +780,6 @@ class Option(object):
         else:
             raise SaneUnknownError(
                 'sane_control_option returned an invalid status.')
-        
-        # TODO: handle statuses/exceptions
         
         if self._log:
             self._log.debug('Option %s set to value %s.', self._name, value)
