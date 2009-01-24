@@ -40,6 +40,10 @@ class PageController(Controller):
         """
         self.application = application
         Controller.__init__(self, application.get_null_page_model())
+        
+        status_controller = application.get_status_controller()
+        self.status_context = \
+            status_controller.get_context_id(self.__class__.__name__)
 
         self.log = logging.getLogger(self.__class__.__name__)
         
@@ -53,14 +57,12 @@ class PageController(Controller):
         self.preview_zoom = 1.0
         self.preview_is_best_fit = False
         
-        # TODO: should be a user preference
+        # TODO: should be a gconf preference
         self.preview_zoom_rect_color = \
             gtk.gdk.colormap_get_system().alloc_color(
                 gtk.gdk.Color(65535, 0, 0), False, True)
                 
         # Reusable temp vars to hold the start point of a mouse drag action.
-        #self.preview_drag_start_x = 0
-        #self.preview_drag_start_y = 0
         self.zoom_drag_start_x = 0
         self.zoom_drag_start_y = 0
         self.move_drag_start_x = 0
@@ -149,7 +151,7 @@ class PageController(Controller):
         
         TODO: Resize of image does not occur until after the window has
         finished resizing (which looks awful).
-        """
+        """        
         if allocation.width == self.preview_width and \
            allocation.height == self.preview_height:
             return
@@ -158,7 +160,6 @@ class PageController(Controller):
         self.preview_height = allocation.height
 
         self._update_preview()
-#       self.update_status()
     
     # PROPERTY CALLBACKS
     
@@ -167,7 +168,6 @@ class PageController(Controller):
         Update the preview display.
         """
         self._update_preview()
-#       self.update_status()
     
     # PUBLIC METHODS
     
@@ -193,11 +193,11 @@ class PageController(Controller):
         """
         Zooms the preview image in.
         """ 
-        # TODO: max zoom should be configurable
+        # TODO: max zoom should be a gconf preference
         if self.preview_zoom == 5:
             return
         
-        # TODO: zoom amount should be configurable
+        # TODO: zoom amount should be a gconf preference
         self.preview_zoom +=  0.5
         
         if self.preview_zoom > 5:
@@ -206,13 +206,13 @@ class PageController(Controller):
         self.preview_is_best_fit = False
             
         self._update_preview()
-        #self.update_status()
     
     def zoom_out(self):  
         """
         Zooms the preview image out.
-        """             
-        if self.preview_zoom == 0.5:
+        """
+        # TODO: min zoom should be a gconf preference
+        if self.preview_zoom == 1.0:
             return
             
         self.preview_zoom -=  0.5
@@ -223,7 +223,6 @@ class PageController(Controller):
         self.preview_is_best_fit = False
             
         self._update_preview()
-        #self.update_status()
     
     def zoom_one_to_one(self):
         """
@@ -233,7 +232,6 @@ class PageController(Controller):
         self.preview_is_best_fit = False
             
         self._update_preview()
-        #self.update_status()
     
     def zoom_best_fit(self):
         """
@@ -243,7 +241,6 @@ class PageController(Controller):
         self.preview_is_best_fit = True
 
         self._update_preview()
-        #self.update_status()
     
     # PRIVATE (INTERNAL) METHODS
     
@@ -417,8 +414,6 @@ class PageController(Controller):
         page_view['page_view_image_layout'].get_vadjustment().set_value(
             transform_y)
         
-        #self.update_status()
-        
         page_view['page_view_image'].get_parent_window().set_cursor(None)        
         
     def _update_preview(self):
@@ -427,11 +422,13 @@ class PageController(Controller):
         """
         page_view = self.application.get_page_view()
         preferences_model = self.application.get_preferences_model()
+        status_controller = self.application.get_status_controller()
         
         # Short circuit if the PageModel does not have a pixbuf 
         # (such as the null page).
         if not self.model.pixbuf:
             page_view['page_view_image'].clear()
+            status_controller.pop(self.status_context)
             return
         
         # Fit if necessary
@@ -489,3 +486,7 @@ class PageController(Controller):
         
         # Render updated preview
         page_view['page_view_image'].set_from_pixbuf(self.preview_pixbuf)
+        
+        # Update status
+        status_controller.pop(self.status_context)
+        status_controller.push(self.status_context, "%.0f%%" % (self.preview_zoom * 100))
