@@ -41,6 +41,7 @@ class MainModel(Model):
         'show_statusbar' : True,
         'show_thumbnails' : True,
         'show_adjustments' : False,
+        'rotate_all_pages' : False,
         
         'active_scanner' : None,      # saneme.Device
         'active_mode' : None,
@@ -88,6 +89,11 @@ class MainModel(Model):
         self.show_adjustments = state_manager.init_state(
             'show_adjustments', constants.DEFAULT_SHOW_ADJUSTMENTS, 
             self.state_show_adjustments_change)
+        
+        self.rotate_all_pages = state_manager.init_state(
+            'rotate_all_pages', constants.DEFAULT_ROTATE_ALL_PAGES, 
+            self.state_rotate_all_pages_change)
+
 
         # The local representation of active_scanner is a
         # saneme.Device, but it is persisted by its name attribute only.
@@ -161,6 +167,19 @@ class MainModel(Model):
         self.application.get_state_manager()['show_adjustments'] = value
         self.notify_property_value_change(
             'show_adjustments', old_value, value)
+    
+    def set_prop_rotate_all_pages(self, value):
+        """
+        Write state.
+        See L{set_prop_active_scanner} for detailed comments.
+        """
+        old_value = self._prop_rotate_all_pages
+        if old_value == value:
+            return
+        self._prop_rotate_all_pages = value
+        self.application.get_state_manager()['rotate_all_pages'] = value
+        self.notify_property_value_change(
+            'rotate_all_pages', old_value, value)
         
     def set_prop_active_scanner(self, value):
         """
@@ -333,6 +352,11 @@ class MainModel(Model):
         """Read state."""
         self.show_adjustments = \
             self.application.get_state_manager()['show_adjustments']
+    
+    def state_rotate_all_pages_change(self):
+        """Read state."""
+        self.rotate_all_pages = \
+            self.application.get_state_manager()['rotate_all_pages']
         
     def state_active_scanner_change(self):
         """Read state, validating the input."""

@@ -74,7 +74,8 @@ class MainController(Controller):
         self.adapt('show_toolbar', 'show_toolbar_menu_item')
         self.adapt('show_statusbar', 'show_statusbar_menu_item')
         self.adapt('show_thumbnails', 'show_thumbnails_menu_item')
-        self.adapt('show_adjustments', 'show_adjustments_menu_item')        
+        self.adapt('show_adjustments', 'show_adjustments_menu_item')
+        self.adapt('rotate_all_pages', 'rotate_all_pages_menu_item')   
         self.log.debug('Adapters registered.')
         
     # USER INTERFACE CALLBACKS
@@ -126,15 +127,13 @@ class MainController(Controller):
         
     def on_rotate_clockwise_menu_item_activate(self, menu_item):
         """Rotates the visible page ninety degress clockwise."""
-        self.application.get_page_controller().rotate_clockwise()
+        self.application.get_document_controller().rotate_clockwise(
+            self.application.get_main_model().rotate_all_pages)
         
     def on_rotate_counter_clockwise_menu_item_activate(self, menu_item):
         """Rotates the visible page ninety degress counter-clockwise."""
-        self.application.get_page_controller().rotate_counter_clockwise()
-        
-    def on_rotate_all_pages_menu_item_toggled(self, menu_item):
-        """TODO"""
-        pass
+        self.application.get_document_controller().rotate_counter_clockwise(
+            self.application.get_main_model().rotate_all_pages)
         
     def on_available_scanner_menu_item_toggled(self, menu_item):
         """
@@ -218,11 +217,13 @@ class MainController(Controller):
         
     def on_rotate_clockwise_button_clicked(self, button):
         """Rotates the visible page ninety degress clockwise."""
-        self.application.get_page_controller().rotate_clockwise()
+        self.application.get_document_controller().rotate_clockwise(
+            self.application.get_main_model().rotate_all_pages)
         
     def on_rotate_counter_clockwise_button_clicked(self, button):
         """Rotates the visible page ninety degress counter-clockwise."""
-        self.application.get_page_controller().rotate_counter_clockwise()
+        self.application.get_document_controller().rotate_counter_clockwise(
+            self.application.get_main_model().rotate_all_pages)
         
     def on_go_first_button_clicked(self, button):
         """Selects the first scanned page."""

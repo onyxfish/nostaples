@@ -86,8 +86,6 @@ class DocumentController(Controller):
         
         selection_iter = selection.get_selected()[1]
         
-        # TODO: when a new row is added, if adjust_all is checked
-        # the current scale values should be applied to it.
         if selection_iter:
             page_model = document_model.get_value(selection_iter, 0)
             page_controller.set_current_page_model(page_model)
@@ -137,6 +135,18 @@ class DocumentController(Controller):
             document_model.manually_updating_row = False
         else:
             document_view['thumbnails_tree_view'].get_selection().select_path(path)
+            
+            # TODO: when a new row is added, if adjust_all is checked
+            # the current scale values should be applied to it.
+            # This code causes the application to hang:
+#            if document_model.adjust_all_pages:
+#                page_model = document_model.get_value(iter, 0)
+#                document_model.manually_updating_row = True
+#                page_model.set_adjustments(
+#                    document_view['brightness_scale'].get_value(),
+#                    document_view['contrast_scale'].get_value(),
+#                    document_view['sharpness_scale'].get_value())
+                
     
     def on_brightness_scale_value_changed(self, widget):
         """
@@ -372,6 +382,36 @@ class DocumentController(Controller):
             document_model.remove(selection_iter)
         else:
             self.log.warn('Method delete_selected was called, but no selection has been made.')
+        
+    def rotate_counter_clockwise(self, rotate_all):
+        """
+        Rotate the page counter-clockwise.
+        """
+        if not rotate_all:
+            page_model = self.application.get_current_page_model()
+            page_model.rotate_counter_clockwise()
+        else:
+            document_model = self.application.get_document_model()
+            page_iter = document_model.get_iter_first()
+            while page_iter:
+                page_model = document_model.get_value(page_iter, 0)
+                page_model.rotate_counter_clockwise()
+                page_iter = document_model.iter_next(page_iter)              
+    
+    def rotate_clockwise(self, rotate_all):
+        """
+        Rotate the page clockwise.
+        """
+        if not rotate_all:
+            page_model = self.application.get_current_page_model()
+            page_model.rotate_clockwise()
+        else:
+            document_model = self.application.get_document_model()
+            page_iter = document_model.get_iter_first()
+            while page_iter:
+                page_model = document_model.get_value(page_iter, 0)
+                page_model.rotate_clockwise()
+                page_iter = document_model.iter_next(page_iter)  
             
     def goto_first_page(self):
         """Select the first scanned page."""

@@ -244,14 +244,6 @@ class PageController(Controller):
 
         self._update_preview()
         #self.update_status()
-        
-    def rotate_counter_clockwise(self):
-        #TODO
-        self.model.rotate_counter_clockwise()
-    
-    def rotate_clockwise(self):
-        #TODO
-        self.model.rotate_clockwise()
     
     # PRIVATE (INTERNAL) METHODS
     
