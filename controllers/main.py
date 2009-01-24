@@ -271,6 +271,10 @@ class MainController(Controller):
     def on_scan_again_button_clicked(self, button):
         """Initiate a new scan from the progress window."""
         self._scan()
+        
+    def on_quick_save_button_clicked(self, button):
+        """TODO"""
+        pass
     
     # MainModel PROPERTY CALLBACKS
     
@@ -493,6 +497,7 @@ class MainController(Controller):
             '<i>Page added.</i>')
         
         main_view['scan_again_button'].set_sensitive(True)
+        main_view['quick_save_button'].set_sensitive(True)
         main_view['scan_cancel_button'].set_label(gtk.STOCK_CLOSE)
               
         status_controller.pop(self.status_context)        
@@ -513,6 +518,7 @@ class MainController(Controller):
             '<i>%s</i>' % reason)
         
         main_view['scan_again_button'].set_sensitive(True)
+        main_view['quick_save_button'].set_sensitive(True)
         main_view['scan_cancel_button'].set_label(gtk.STOCK_CLOSE)
         
         status_controller.pop(self.status_context)
@@ -648,6 +654,7 @@ class MainController(Controller):
         main_view['progress_mode_label'].set_markup(main_model.active_mode)
         main_view['progress_resolution_label'].set_markup('%s DPI' % main_model.active_resolution)
         main_view['scan_again_button'].set_sensitive(False)
+        main_view['quick_save_button'].set_sensitive(False)
         main_view['scan_cancel_button'].set_label(gtk.STOCK_CANCEL)
         main_view['progress_window'].show_all()
         

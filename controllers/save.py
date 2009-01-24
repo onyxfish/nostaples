@@ -104,6 +104,10 @@ class SaveController(Controller):
     def on_clear_author_button_clicked(self, button):
         """Clear the author."""
         self.application.get_save_model().author = ''
+        
+    def on_manage_keywords_button_clicked(self, button):
+        """TODO"""
+        pass
     
     def on_clear_keywords_button_clicked(self, button):
         """Clear the keywords."""

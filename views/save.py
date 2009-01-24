@@ -27,6 +27,7 @@ import gtk
 from gtkmvc.view import View
 
 from nostaples import constants
+import nostaples.utils.gui
 
 class SaveView(View):
     """
@@ -48,6 +49,11 @@ class SaveView(View):
             
         self.log = logging.getLogger(self.__class__.__name__)
         
+        # Can't do this in constructor as main_view has multiple
+        # top widgets
+        self['save_dialog'].set_transient_for(
+            self.application.get_main_view()['scan_window'])
+        
         # Setup filename filter
         filename_filter = gtk.FileFilter()
         filename_filter.set_name('PDF Files')
@@ -55,9 +61,15 @@ class SaveView(View):
         filename_filter.add_pattern('*.pdf')
         self['save_dialog'].add_filter(filename_filter)
         
-        # TODO: wasnt able to do this in View constructor?
-        self['save_dialog'].set_transient_for(
-            self.application.get_main_view()['scan_window'])
+        # Setup custom control
+        self['keywords_entry'] = nostaples.utils.gui.KeywordsCompletionEntry()
+        self['keywords_hbox'].pack_start(self['keywords_entry'])
+        self['keywords_hbox'].reorder_child(self['keywords_entry'], 1)
+        self['keywords_entry'].show()
+        
+        model = self['keywords_entry'].get_liststore()
+        for word in ["abc", "def", "ghi", "jkl", "mno", "pqr", "stu", "vwx", "yz"]:
+            model.append([word])
         
         self.application.get_save_controller().register_view(self)
         

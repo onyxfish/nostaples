@@ -23,6 +23,84 @@ reading from pygtk controls.
 import gtk
 import gobject
 
+class KeywordsCompletionEntry(gtk.Entry):
+    """
+    A specialized gtk.Entry widget which integrates completion support
+    for tags or keywords stored in a gtk.ListStore.
+    
+    Inspired by 
+    U{http://www.oluyede.org/blog/2005/04/25/pygtk-entrymulticompletion/}.
+    """
+    def __init__(self):
+        """
+        Construct the widget and setup its completion handler.
+        """
+        gtk.Entry.__init__(self) 
+        
+        self.completion = gtk.EntryCompletion()
+        self.completion.set_model(gtk.ListStore(gobject.TYPE_STRING))
+        self.completion.set_text_column(0)
+        self.completion.set_match_func(self.matching_function, None)
+        self.completion.set_popup_completion(True)
+        self.completion.connect("match-selected", self.on_match_selected) 
+        
+        self.set_completion(self.completion)
+        self.connect("activate", self.on_entry_activate)
+
+    def matching_function(self, completion, key_string, iter, data):
+        """
+        Match partial keywords.
+        """
+        model = self.completion.get_model()
+        match_test = model[iter][0]
+        
+        # If nothing has been keyed, no match
+        if len(key_string) == 0:
+            return False
+        
+        # If the last character was a space then no match
+        if key_string[-1] == " ":
+            return False
+        
+        # Get characters keyed since last space
+        word = key_string.split()[-1]
+        
+        return match_test.startswith(word)
+
+    def on_match_selected(self, completion, model, iter):
+        """
+        Insert matches into text without overwriting existing
+        keywords.
+        """
+        current_text = self.get_text()
+        
+        # If no other words, then the new word is the only text
+        if len(current_text) == 0 or current_text.find(" ") == -1:
+            current_text = "%s " % (model[iter][0])
+        # Append new word to existing words
+        else:
+            current_text = " ".join(current_text.split()[:-1])
+            current_text = "%s %s " % (current_text, model[iter][0])
+            
+        self.set_text(current_text)
+        self.set_position(-1)
+
+        # stop the event propagation
+        return True
+        
+    def on_entry_activate(self, entry):
+        """
+        Move to next keyword.
+        """
+        self.set_text("%s " % self.get_text())
+        self.set_position(-1)
+        
+    def get_liststore(self):
+        """
+        Return the gtk.ListStore containing the keywords.
+        """
+        return self.completion.get_model()
+
 def flush_pending_events():
     """
     This event flushes any pending idle operations
