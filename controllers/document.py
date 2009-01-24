@@ -387,31 +387,51 @@ class DocumentController(Controller):
         """
         Rotate the page counter-clockwise.
         """
+        status_controller = self.application.get_status_controller()
+        
         if not rotate_all:
             page_model = self.application.get_current_page_model()
+            status_controller.push(self.status_context, 'Rotating current page...')
+            nostaples.utils.gui.flush_pending_events()
             page_model.rotate_counter_clockwise()
+            status_controller.pop(self.status_context)
         else:
             document_model = self.application.get_document_model()
             page_iter = document_model.get_iter_first()
+            i = 1
             while page_iter:
                 page_model = document_model.get_value(page_iter, 0)
+                status_controller.push(self.status_context, 'Rotating page %i...' % i)
+                nostaples.utils.gui.flush_pending_events()
                 page_model.rotate_counter_clockwise()
-                page_iter = document_model.iter_next(page_iter)              
+                status_controller.pop(self.status_context)
+                page_iter = document_model.iter_next(page_iter)
+                i = i + 1            
     
     def rotate_clockwise(self, rotate_all):
         """
         Rotate the page clockwise.
         """
+        status_controller = self.application.get_status_controller()
+        
         if not rotate_all:
             page_model = self.application.get_current_page_model()
+            status_controller.push(self.status_context, 'Rotating current page...')
+            nostaples.utils.gui.flush_pending_events()
             page_model.rotate_clockwise()
+            status_controller.pop(self.status_context)
         else:
             document_model = self.application.get_document_model()
             page_iter = document_model.get_iter_first()
+            i = 1
             while page_iter:
                 page_model = document_model.get_value(page_iter, 0)
+                status_controller.push(self.status_context, 'Rotating page %i...' % i)
+                nostaples.utils.gui.flush_pending_events()
                 page_model.rotate_clockwise()
-                page_iter = document_model.iter_next(page_iter)  
+                status_controller.pop(self.status_context)
+                page_iter = document_model.iter_next(page_iter)
+                i = i + 1  
             
     def goto_first_page(self):
         """Select the first scanned page."""
