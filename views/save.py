@@ -43,8 +43,8 @@ class SaveView(View):
             constants.GUI_DIRECTORY, 'save_dialog.glade')
         View.__init__(
             self, self.application.get_save_controller(), 
-            save_dialog_glade, ['save_dialog', 'pdf_dialog'], 
-            self.application.get_main_view(), False)
+            save_dialog_glade, 'save_dialog', 
+            None, False)
             
         self.log = logging.getLogger(self.__class__.__name__)
         
@@ -54,6 +54,10 @@ class SaveView(View):
         filename_filter.add_mime_type('application/pdf')
         filename_filter.add_pattern('*.pdf')
         self['save_dialog'].add_filter(filename_filter)
+        
+        # TODO: wasnt able to do this in View constructor?
+        self['save_dialog'].set_transient_for(
+            self.application.get_main_view()['scan_window'])
         
         self.application.get_save_controller().register_view(self)
         

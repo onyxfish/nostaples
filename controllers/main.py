@@ -628,6 +628,8 @@ class MainController(Controller):
         main_view = self.application.get_main_view()
         status_controller = self.application.get_status_controller()
         
+        # TODO: verify that a scanner is available to scan... should do this earlier
+        
         status_controller.push(self.status_context, 'Scanning...')
         
         main_model.scan_in_progress = True

@@ -33,7 +33,9 @@ class SaveModel(Model):
     __properties__ = \
     {
         'save_path' : '',
+        'title' : '',
         'author' : '',
+        'keywords' : '',
         
         'filename' : '',
     }

@@ -42,6 +42,7 @@ class PageModel(Model):
         'sharpness' : 1.0,
         'resolution' : 75,
         
+        'pil_image' : None,
         'pixbuf' : None,
         'thumbnail_pixbuf': None,
     }
@@ -174,7 +175,8 @@ class PageModel(Model):
             image = image.transpose(Image.ROTATE_180)
         elif abs(self.rotation % 360) == 270:
             image = image.transpose(Image.ROTATE_270)
-            
+        
+        self.pil_image = image
         self.pixbuf = convert_pil_image_to_pixbuf(image)
         
     def _update_thumbnail_pixbuf(self):
