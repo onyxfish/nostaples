@@ -64,7 +64,6 @@ class SaveView(View):
         # Setup custom control
         self['keywords_entry'] = nostaples.utils.gui.KeywordsCompletionEntry()
         self['keywords_hbox'].pack_start(self['keywords_entry'])
-        self['keywords_hbox'].reorder_child(self['keywords_entry'], 1)
         self['keywords_entry'].show()
         
         model = self['keywords_entry'].get_liststore()

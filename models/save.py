@@ -37,6 +37,8 @@ class SaveModel(Model):
         'author' : '',
         'keywords' : '',
         
+        'saved_keywords' : '',
+        
         'filename' : '',
     }
 
@@ -64,6 +66,10 @@ class SaveModel(Model):
         self.author = state_manager.init_state(
             'author', constants.DEFAULT_AUTHOR, 
             self.state_author_change)
+        
+        self.saved_keywords = state_manager.init_state(
+            'saved_keywords', constants.DEFAULT_SAVED_KEYWORDS, 
+            self.state_saved_keywords_change)
         
     # Property setters
     # (see gtkmvc.support.metaclass_base.py for the origin of these accessors)
@@ -94,6 +100,19 @@ class SaveModel(Model):
         self.notify_property_value_change(
             'author', old_value, value)
         
+    def set_prop_saved_keywords(self, value):
+        """
+        Write state.
+        See L{MainModel.set_prop_active_scanner} for detailed comments.
+        """
+        old_value = self._prop_saved_keywords
+        if old_value == value:
+            return
+        self._prop_saved_keywords = value
+        self.application.get_state_manager()['saved_keywords'] = value
+        self.notify_property_value_change(
+            'saved_keywords', old_value, value)
+        
     # STATE CALLBACKS
     
     def state_save_path_change(self):
@@ -105,3 +124,8 @@ class SaveModel(Model):
         """Read state."""
         self.author = \
             self.application.get_state_manager()['author']
+    
+    def state_saved_keywords_change(self):
+        """Read state."""
+        self.saved_keywords = \
+            self.application.get_state_manager()['saved_keywords']

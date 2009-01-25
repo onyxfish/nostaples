@@ -24,7 +24,7 @@ end of this module so that can be effectively used as a Singleton.
 """
 
 import logging
-from types import IntType, StringType, FloatType, BooleanType, TupleType
+from types import IntType, StringType, FloatType, BooleanType, TupleType, ListType
 
 import gconf
 
@@ -57,6 +57,8 @@ class GConfState():
         elif self.python_type is BooleanType:
             self.gconf_type = gconf.VALUE_BOOL
         elif self.python_type is TupleType:
+            self.gconf_type = gconf.VALUE_STRING
+        elif self.python_type is ListType:
             self.gconf_type = gconf.VALUE_STRING
         else:
             raise TypeError
@@ -112,7 +114,7 @@ class GConfStateManager(dict):
             # This error is rethrown so it can be handled at the interface level
             # as it is probably breaking and should absolutely never happen
             self.log.error(
-                'Type %s is not supported GConf.' % str(self.python_type))
+                'Type %s is not supported GConf.' % str(state.python_type))
             raise            
     
         # Load any value already stored in GConf
@@ -128,8 +130,17 @@ class GConfStateManager(dict):
             elif state.python_type is BooleanType:
                 state.value = stored_value.get_bool()
             elif state.python_type is TupleType:
-                state.value = tuple(stored_value.get_string().split(
-                    constants.GCONF_TUPLE_SEPARATOR))
+                if stored_value.get_string() == '':
+                    state.value = ()
+                else:
+                    state.value = tuple(stored_value.get_string().split(
+                        constants.GCONF_TUPLE_SEPARATOR))
+            elif state.python_type is ListType:
+                if stored_value.get_string() == '':
+                    state.value = []
+                else:
+                    state.value = list(stored_value.get_string().split(
+                        constants.GCONF_LIST_SEPARATOR))
             else:
                 # It should not be possible to get here due to previous
                 # error-checking.
@@ -150,6 +161,10 @@ class GConfStateManager(dict):
                 packed_tuple = constants.GCONF_TUPLE_SEPARATOR.join(
                     default_value)
                 self.gconf_client.set_string(state.path, packed_tuple)
+            elif state.python_type is ListType:
+                packed_list = constants.GCONF_LIST_SEPARATOR.join(
+                    default_value)
+                self.gconf_client.set_string(state.path, packed_list)
             else:
                 # It should not be possible to get here due to previous
                 # error-checking.
@@ -224,6 +239,10 @@ class GConfStateManager(dict):
             packed_tuple = constants.GCONF_TUPLE_SEPARATOR.join(
                 new_value)
             self.gconf_client.set_string(state.path, packed_tuple)
+        elif state.python_type is ListType:
+            packed_list = constants.GCONF_LIST_SEPARATOR.join(
+                new_value)
+            self.gconf_client.set_string(state.path, packed_list)
         else:
             # It should not be possible to get here due to error-checking
             # when the state was initialized.
@@ -274,8 +293,17 @@ class GConfStateManager(dict):
         elif state.python_type is BooleanType:
             new_value_typed = new_value.get_bool()
         elif state.python_type is TupleType:
-            new_value_typed = tuple(new_value.get_string().split(
-                constants.GCONF_TUPLE_SEPARATOR))
+            if new_value.get_string() == '':
+                new_value_typed = ()
+            else:
+                new_value_typed = tuple(new_value.get_string().split(
+                    constants.GCONF_TUPLE_SEPARATOR))
+        elif state.python_type is ListType:
+            if new_value.get_string() == '':
+                new_value_typed = []
+            else:
+                new_value_typed = list(new_value.get_string().split(
+                    constants.GCONF_LIST_SEPARATOR))
         else:
             # It should not be possible to get here due to prior error-checking
             self.log.error(

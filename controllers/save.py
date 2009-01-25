@@ -63,6 +63,15 @@ class SaveController(Controller):
         """
         Controller.register_view(self, view)
         
+        save_model = self.application.get_save_model()
+        
+        # Force refresh of keyword list
+        keywords_liststore = view['keywords_entry'].get_liststore()
+        keywords_liststore.clear()
+        
+        for keyword in save_model.saved_keywords:
+            keywords_liststore.append([keyword])
+        
         self.log.debug('%s registered.', view.__class__.__name__)
         
     def register_adapters(self):
@@ -82,7 +91,6 @@ class SaveController(Controller):
         Copy the selected filename to the pdf title property.
         """
         save_view = self.application.get_save_view()
-        
         
         title = save_view['save_dialog'].get_filename()
         
@@ -104,10 +112,6 @@ class SaveController(Controller):
     def on_clear_author_button_clicked(self, button):
         """Clear the author."""
         self.application.get_save_model().author = ''
-        
-    def on_manage_keywords_button_clicked(self, button):
-        """TODO"""
-        pass
     
     def on_clear_keywords_button_clicked(self, button):
         """Clear the keywords."""
@@ -140,9 +144,26 @@ class SaveController(Controller):
         else:
             self.log.error('Unknown file type: %s.' % save_model.filename)
             
+        self._update_saved_keywords()
+            
         main_view['scan_window'].window.set_cursor(None)
             
         save_model.save_path = save_view['save_dialog'].get_current_folder()
+        
+    # PROPERTY CALLBACKS
+    
+    def property_saved_keywords_value_change(self, model, old_value, new_value):
+        """
+        Update the keywords auto-completion control with the new
+        keywords.
+        """
+        save_view = self.application.get_save_view()
+        
+        keywords_liststore = save_view['keywords_entry'].get_liststore()
+        keywords_liststore.clear()
+        
+        for keyword in new_value:
+            keywords_liststore.append([keyword])
         
     # PRIVATE METHODS
         
@@ -247,6 +268,24 @@ class SaveController(Controller):
             assert nearest_size != None, 'No nearest size found.'
                 
         return nearest_size
+        
+    def _update_saved_keywords(self):
+        """
+        Update the saved keywords with any new keywords that
+        have been used.
+        """
+        save_model = self.application.get_save_model()
+                        
+        new_keywords = []        
+        for keyword in save_model.keywords.split():
+            if keyword not in save_model.saved_keywords:
+                new_keywords.append(keyword)
+                
+        if new_keywords:
+            temp_list = []
+            temp_list.extend(save_model.saved_keywords)
+            temp_list.extend(new_keywords)
+            save_model.saved_keywords = temp_list
         
     # PUBLIC METHODS
     

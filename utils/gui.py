@@ -50,9 +50,17 @@ class KeywordsCompletionEntry(gtk.Entry):
     def matching_function(self, completion, key_string, iter, data):
         """
         Match partial keywords.
+        
+        For an explanation of why match_test is validated, see here:
+        U{http://faq.pygtk.org/index.py?file=faq13.028.htp&req=show}
         """
         model = self.completion.get_model()
         match_test = model[iter][0]
+        
+        # Attempting to match a row which has been created,
+        # but not set.
+        if not match_test:
+            return False
         
         # If nothing has been keyed, no match
         if len(key_string) == 0:
