@@ -95,6 +95,13 @@ class MainView(View):
         self['scanner_menu_item'].set_sensitive(sensitive)
         self['scan_mode_menu_item'].set_sensitive(sensitive)
         self['scan_resolution_menu_item'].set_sensitive(sensitive)
+        
+    def set_refresh_scanner_controls_sensitive(self, sensitive):
+        """
+        Enable or disable all gui widgets related to refreshing the
+        available hardware for scanning.
+        """
+        self['refresh_available_scanners_menu_item'].set_sensitive(sensitive)        
             
     def set_delete_controls_sensitive(self, sensitive):
         """

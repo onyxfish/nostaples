@@ -45,9 +45,13 @@ class PreferencesView(View):
         View.__init__(
             self, application.get_preferences_controller(), 
             preferences_dialog_glade, 'preferences_dialog', 
-            application.get_main_view(), False)
+            None, False)
             
         self.log = logging.getLogger(self.__class__.__name__)
+        
+        # Can not configure this via constructor do to the multiple
+        # root windows in the Main View.
+        self['preferences_dialog'].set_transient_for(application.get_main_view()['scan_window'])
         
         setup_combobox(
             self['preview_mode_combobox'],

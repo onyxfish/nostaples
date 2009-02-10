@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Sat Jan 24 11:50:17 2009 -->
+<!--Generated with glade3 3.4.5 on Mon Feb  9 20:37:25 2009 -->
 <glade-interface>
   <widget class="GtkWindow" id="scan_window">
     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
@@ -271,6 +271,14 @@
                 <child>
                   <widget class="GtkMenu" id="menu7">
                     <property name="visible">True</property>
+                    <child>
+                      <widget class="GtkMenuItem" id="refresh_available_scanners_menu_item">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Refresh Available Scanners</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_refresh_available_scanners_menu_item_activate"/>
+                      </widget>
+                    </child>
                     <child>
                       <widget class="GtkMenuItem" id="scanner_menu_item">
                         <property name="visible">True</property>
@@ -888,6 +896,7 @@
                     <property name="expand">False</property>
                     <property name="fill">False</property>
                     <property name="pack_type">GTK_PACK_END</property>
+                    <property name="position">1</property>
                   </packing>
                 </child>
               </widget>

@@ -53,7 +53,6 @@ class MainController(Controller):
         status_controller = application.get_status_controller()
         self.status_context = \
             status_controller.get_context_id(self.__class__.__name__)
-        status_controller.push(self.status_context, 'Ready')
         
         self.log = logging.getLogger(self.__class__.__name__)
         self.log.debug('Created.')
@@ -323,6 +322,7 @@ class MainController(Controller):
         Update the menu and valid scanner options to match the new device.
         """
         main_view = self.application.get_main_view()
+        status_controller = self.application.get_status_controller()
         
         for menu_item in main_view['scanner_sub_menu'].get_children():
             if menu_item.get_children()[0].get_text() == new_value.display_name:
@@ -376,10 +376,6 @@ class MainController(Controller):
                         first_item, new_value[i].display_name)
                 
                 main_view['scanner_sub_menu'].append(menu_item)
-        
-        menu_item = gtk.MenuItem('Refresh List')
-        menu_item.connect('activate', self.on_refresh_available_scanners_menu_item_activate)
-        main_view['scanner_sub_menu'].append(menu_item)
         
         main_view['scanner_sub_menu'].show_all()
         
@@ -441,16 +437,19 @@ class MainController(Controller):
         """Disable or re-enable scan controls."""
         self._toggle_scan_controls()
         self._toggle_document_controls()
+        self._update_status()
         
     def property_updating_available_scanners_value_change(self, model, old_value, new_value):
         """Disable or re-enable scan controls."""
         self._toggle_scan_controls()
         self._toggle_document_controls()
+        self._update_status()
     
     def property_updating_scan_options_value_change(self, model, old_value, new_value):
         """Disable or re-enable scan controls."""
         self._toggle_scan_controls()
         self._toggle_document_controls()
+        self._update_status()
         
     # DocumentModel PROPERTY CALLBACKS
     
@@ -499,8 +498,7 @@ class MainController(Controller):
         main_view['scan_again_button'].set_sensitive(True)
         main_view['quick_save_button'].set_sensitive(True)
         main_view['scan_cancel_button'].set_label(gtk.STOCK_CLOSE)
-              
-        status_controller.pop(self.status_context)        
+        
         main_model.scan_in_progress = False
     
     def on_scan_failed(self, scanning_thread, reason):
@@ -521,7 +519,6 @@ class MainController(Controller):
         main_view['quick_save_button'].set_sensitive(True)
         main_view['scan_cancel_button'].set_label(gtk.STOCK_CLOSE)
         
-        status_controller.pop(self.status_context)
         main_model.scan_in_progress = False
         
     def on_update_available_scanners_thread_finished(self, update_thread, scanner_list):
@@ -531,8 +528,6 @@ class MainController(Controller):
         
         main_model.available_scanners = scanner_list
         main_model.updating_available_scanners = False
-        
-        status_controller.pop(self.status_context)
             
     def on_update_scanner_options_thread_finished(self, update_thread, mode_list, resolution_list):
         """
@@ -545,8 +540,6 @@ class MainController(Controller):
         main_model.valid_modes = mode_list
         main_model.valid_resolutions = resolution_list
         main_model.updating_scan_options = False
-        
-        status_controller.pop(self.status_context)
         
     # PUBLIC METHODS
         
@@ -586,8 +579,12 @@ class MainController(Controller):
         if main_model.scan_in_progress or main_model.updating_available_scanners or \
             main_model.updating_scan_options:
             main_view.set_scan_controls_sensitive(False)
+            main_view.set_refresh_scanner_controls_sensitive(False)
         else:
-            main_view.set_scan_controls_sensitive(True)
+            if main_model.active_scanner != None:
+                main_view.set_scan_controls_sensitive(True)
+                
+            main_view.set_refresh_scanner_controls_sensitive(True)
             
     def _toggle_document_controls(self):
         """
@@ -626,17 +623,35 @@ class MainController(Controller):
                 if count > 1:      
                     main_view.set_navigation_controls_sensitive(True)
                 else:
-                    main_view.set_navigation_controls_sensitive(False)                    
+                    main_view.set_navigation_controls_sensitive(False)      
+                    
+    def _update_status(self):
+        """
+        Update the text of the statusbar based on the current state
+        of the application.
+        """
+        main_model = self.application.get_main_model()
+        status_controller = self.application.get_status_controller()
+        
+        status_controller.pop(self.status_context)
+        
+        if main_model.scan_in_progress:
+            status_controller.push(self.status_context, 'Scanning...')
+        elif main_model.updating_available_scanners:
+            status_controller.push(self.status_context, 'Querying hardware...')
+        elif main_model.updating_scan_options:
+            status_controller.push(self.status_context, 'Querying options...')
+        else:
+            if main_model.active_scanner:
+                status_controller.push(self.status_context,
+                    'Ready with %s.' % main_model.active_scanner.display_name)
+            else:
+                status_controller.push(self.status_context, 'No scanner available.')
     
     def _scan(self):
         """Begin a scan."""
         main_model = self.application.get_main_model()
         main_view = self.application.get_main_view()
-        status_controller = self.application.get_status_controller()
-        
-        # TODO: verify that a scanner is available to scan... should do this earlier
-        
-        status_controller.push(self.status_context, 'Scanning...')
         
         main_model.scan_in_progress = True
         scanning_thread = ScanningThread(
@@ -666,9 +681,6 @@ class MainController(Controller):
         """
         sane = self.application.get_sane()
         main_model = self.application.get_main_model()
-        status_controller = self.application.get_status_controller()
-        
-        status_controller.push(self.status_context, 'Querying devices...')
         
         main_model.updating_available_scanners = True
         update_thread = UpdateAvailableScannersThread(sane)
@@ -678,9 +690,6 @@ class MainController(Controller):
     def _update_scanner_options(self):
         """Determine the valid options for the current scanner."""  
         main_model = self.application.get_main_model()
-        status_controller = self.application.get_status_controller()
-        
-        status_controller.push(self.status_context, 'Querying scanner options...')
                   
         main_model.updating_scan_options = True
         update_thread = UpdateScannerOptionsThread(main_model.active_scanner)
