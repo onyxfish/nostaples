@@ -21,8 +21,6 @@ of SANE's status codes in the Pythonic reimplementation of the API.
 These are the errors that users will need to handle.
 """
 
-# TODO: add detail parameters, e.g.: SaneUnsupportedOperationError should include the device as an attribute
-
 class SaneError(Exception):
     """
     Base class for all SANE Errors.

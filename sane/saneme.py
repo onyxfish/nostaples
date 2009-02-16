@@ -35,7 +35,7 @@ from PIL import Image
 from errors import *
 from saneh import *
 
-# Redeclare saneh enumerations which are visible to the end user
+# Redeclare saneh enumerations which are visible to the application
 (OPTION_TYPE_BOOL,
     OPTION_TYPE_INT,
     OPTION_TYPE_FIXED,
@@ -89,13 +89,11 @@ class SaneMe(object):
     def _setup(self):
         """
         Iniitalize SANE and retrieve the current installed version.
-        
-        TODO: handle the authentication callback... or not
         """
         version_code = SANE_Int()
-        callback = SANE_Auth_Callback(sane_auth_callback)
+        auth_callback = SANE_Auth_Callback(self._sane_auth_callback)
         
-        status = sane_init(byref(version_code), callback) 
+        status = sane_init(byref(version_code), auth_callback) 
         
         if status != SANE_STATUS_GOOD.value:
             raise SaneUnknownError(
@@ -107,6 +105,13 @@ class SaneMe(object):
         
         if self._log:
             self._log.debug('SANE version %s initalized.', self._version)
+            
+    def _sane_auth_callback(self, resource, username, password):
+        """
+        TODO
+        """
+        raise NotImplementedError(
+            'sane_auth_callback requested, but not yet implemented.')
         
     def _shutdown(self):
         """
@@ -137,22 +142,17 @@ class SaneMe(object):
         devices to workaround a limitation in SANE's USB driver
         which causes the device list to only be updated on init.
         
+        This means that all settings applied to all devices will be
+        B{lost} and must be restored by the calling application.
+        
         This was found documented here:        
         U{http://www.nabble.com/sane_get_devices-and-sanei_usb_init-td20766234.html}
         """
         assert self._version is not None
-            
-        for device in self._devices:
-            if device.is_open():
-                device.close()
         
         # See docstring for details on this voodoo
-        sane_exit()        
-        status = sane_init(byref(SANE_Int()), SANE_Auth_Callback(sane_auth_callback)) 
-        
-        if status != SANE_STATUS_GOOD.value:
-            raise SaneUnknownError(
-                'sane_init returned an invalid status.')
+        self._shutdown()
+        self._setup()
         
         cdevices = POINTER(POINTER(SANE_Device))()
         status = sane_get_devices(byref(cdevices), SANE_Bool(0))
@@ -195,8 +195,6 @@ class Device(object):
     This is the primary object for interacting with SANE.  It represents
     a single device and handles enumeration of options, getting and
     setting of options, and starting and stopping of scanning jobs.
-    
-    TODO: make open/close implicit?
     """   
     _log = None
     
@@ -268,7 +266,7 @@ class Device(object):
     display_name = property(__get_display_name)
     
     def __get_options(self):
-        """Get the list of options that this device has."""
+        """Get the dictionary of options that this device has."""
         return self._options
         
     options = property(__get_options)
@@ -287,7 +285,26 @@ class Device(object):
         option_value = pointer(c_int())
         status = sane_control_option(self._handle, 0, SANE_ACTION_GET_VALUE, option_value, None)
         
-        # TODO: handle statuses/exceptions
+        if status == SANE_STATUS_GOOD.value:
+            pass
+        elif status == SANE_STATUS_UNSUPPORTED.value:
+            raise SaneUnsupportedOperationError(
+                'sane_control_option reported that a value was outside the option\'s constraint.')
+        elif status == SANE_STATUS_INVAL.value:
+            raise AssertionError(
+                'sane_open reported that the device name was invalid.')
+        elif status == SANE_STATUS_IO_ERROR.value:
+            raise SaneIOError(
+                'sane_open reported a communications error.')
+        elif status == SANE_STATUS_NO_MEM.value:
+            raise SaneOutOfMemoryError(
+                'sane_open ran out of memory.')
+        elif status == SANE_STATUS_ACCESS_DENIED.value:
+            raise SaneAccessDeniedError(
+                'sane_open requires greater access to open the device.')
+        else:
+            raise SaneUnknownError(
+                'sane_open returned an invalid status.')
         
         option_count = option_value.contents.value
         
@@ -433,7 +450,7 @@ class Device(object):
         status = sane_get_parameters(self._handle, byref(sane_parameters))
         
         if status != SANE_STATUS_GOOD.value:
-                raise SaneUnknownError()
+            raise SaneUnknownError()
 
         scan_info = ScanInfo(sane_parameters)
         
@@ -503,8 +520,9 @@ class Device(object):
                 'RGB', (scan_info.width, scan_info.height), 
                 data_array, 'raw', 'RGB', 0, 1)
         else:
-            # TODO - handle seperate frames for R, G, and B
-            raise NotImplementedError()
+            # TODO
+            raise NotImplementedError(
+               'Individual color frame scanned, but not yet supported.')
             
         return pil_image
     
@@ -682,8 +700,8 @@ class Option(object):
         if status == SANE_STATUS_GOOD.value:
             pass
         elif status ==  SANE_STATUS_UNSUPPORTED.value:
-            # Constraint checking ensures this should NEVER happen
-            raise SaneUnsupportedOperationError(
+            # Constraint checking ensures this should never happen
+            raise AssertionError(
                 'sane_control_option reported that a value was outside the option\'s constraint.')
         elif status == SANE_STATUS_INVAL.value:
             raise AssertionError(
@@ -762,8 +780,8 @@ class Option(object):
         if status == SANE_STATUS_GOOD.value:
             pass
         elif status ==  SANE_STATUS_UNSUPPORTED.value:
-            # Constraint checking ensures this should NEVER happen
-            raise SaneUnsupportedOperationError(
+            # Constraint checking ensures this should never happen
+            raise AssertionError(
                 'sane_control_option reported that a value was outside the option\'s constraint.')
         elif status == SANE_STATUS_INVAL.value:
             raise AssertionError(
