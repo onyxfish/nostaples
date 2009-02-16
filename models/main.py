@@ -206,7 +206,20 @@ class MainModel(Model):
         # transitions if a scanner is disconnected and reconnected.
         if value is not None:
             self.application.get_state_manager()['active_scanner'] = value.name
-            value.open()
+            
+            # TODO: handle exceptions
+            try:
+                value.open()
+            except saneme.SaneDeviceBusyError:
+                raise
+            except saneme.SaneIOError:
+                raise
+            except saneme.SaneOutOfMemoryError:
+                raise
+            except saneme.SaneAccessDeniedError:
+                raise
+            except saneme.SaneUnknownError:
+                raise
             
         # Emit the property change notification to all observers.
         self.notify_property_value_change(
@@ -259,7 +272,20 @@ class MainModel(Model):
                 self._prop_active_scanner = value[0]
                 self.application.get_state_manager()['active_scanner'] = \
                     value[0].name
-                self._prop_active_scanner.open()
+                    
+                # TODO: handle exceptions
+                try:
+                    self._prop_active_scanner.open()
+                except saneme.SaneDeviceBusyError:
+                    raise
+                except saneme.SaneIOError:
+                    raise
+                except saneme.SaneOutOfMemoryError:
+                    raise
+                except saneme.SaneAccessDeniedError:
+                    raise
+                except saneme.SaneUnknownError:
+                    raise
             # Otherwise maintain current selection
             else:
                 pass

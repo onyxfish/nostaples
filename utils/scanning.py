@@ -138,21 +138,37 @@ class ScanningThread(IdleObject, threading.Thread):
     
     def run(self):
         """
-        Scan a page and emit status callbacks.
+        Set scanner options, scan a page and emit status callbacks.
         """
         assert self.sane_device.is_open()
         
         self.log.debug('Setting device options.')
         
+        # TODO: handle exceptions
         try:
             self.sane_device.options['mode'].value = self.mode
-        # TODO
+        except saneme.SaneIOError:
+            raise
+        except saneme.SaneOutOfMemoryError:
+            raise
+        except saneme.SaneAccessDeniedError:
+            raise
+        except saneme.SaneUnknownError:
+            raise
         except saneme.SaneReloadOptionsError:
             pass
-        
+            
+        # TODO: handle exceptions   
         try:
             self.sane_device.options['resolution'].value = int(self.resolution)
-        # TODO
+        except saneme.SaneIOError:
+            raise
+        except saneme.SaneOutOfMemoryError:
+            raise
+        except saneme.SaneAccessDeniedError:
+            raise
+        except saneme.SaneUnknownError:
+            raise
         except saneme.SaneReloadOptionsError:
             pass
         
@@ -160,10 +176,24 @@ class ScanningThread(IdleObject, threading.Thread):
         
         pil_image = None
         
+        # TODO: handle exceptions
         try:
             pil_image = self.sane_device.scan(self.progress_callback)
-        # TODO: handle individual errors
-        except saneme.SaneError:
+        except saneme.SaneDeviceBusyError:
+            raise
+        except saneme.SaneDeviceJammedError:
+            raise
+        except saneme.SaneNoDocumentsError:
+            raise
+        except saneme.SaneCoverOpenError:
+            raise
+        except saneme.SaneIOError:
+            raise
+        except saneme.SaneOutOfMemoryError:
+            raise
+        except saneme.SaneInvalidDataError:
+            raise
+        except saneme.SaneUnknownError:
             raise
         
         if self.cancel_event.isSet():
