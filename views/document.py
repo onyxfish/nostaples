@@ -25,6 +25,8 @@ import os
 
 import gtk
 from gtkmvc.view import View
+import pango
+import pangocairo
 
 from nostaples import constants
 
@@ -32,7 +34,6 @@ class DocumentView(View):
     """
     Exposes the document being scanned as a thumbnail list.
     """
-
     def __init__(self, application):
         """
         Constructs the DocumentView, including setting up controls that could
@@ -82,11 +83,51 @@ class DocumentView(View):
         
     def thumbnails_column_cell_data_func(self, column, cell_renderer, document_model, iter):
         """
-        Extracts the thumbnail pixbuf from the PageModel stored in the
-        DocumentModel ListStore.
+        Extract the thumbnail pixbuf from the PageModel stored in the
+        DocumentModel ListStore, composite a page number into that image,
+        and set the resulting pixbuf to the cell renderer.
+        
+        Pixbuf manipulation from: U{http://faq.pygtk.org/index.py?req=all#8.20}
         """
         page_model = document_model.get_value(iter, 0)
-        cell_renderer.set_property('pixbuf', page_model.thumbnail_pixbuf)
+        page_number = document_model.get_path(iter)[0]
+
+        # Copy thumbnail pixbuf, get pixmap of image, and create cairo context
+        pixbuf = page_model.thumbnail_pixbuf.copy()
+        pixmap, mask = pixbuf.render_pixmap_and_mask()
+        context = pangocairo.CairoContext(pixmap.cairo_create())
+        
+        # Setup layout to render page number
+        layout = context.create_layout()
+        layout.set_text(str(page_number))
+        layout.set_font_description(pango.FontDescription('Sans 10'))
+        
+        # Compute text area
+        text_extents = layout.get_pixel_size()
+        
+        x_margin = 2
+        y_margin = 1
+        
+        x = 0
+        width = x_margin + text_extents[0] + x_margin
+        height = y_margin + text_extents[1] + y_margin
+        y = pixbuf.get_height() - height
+        
+        # Render background for page number
+        text_width, text_height = layout.get_pixel_size()
+        context.rectangle(x, y, width, height)
+        context.set_source_rgb(255, 255, 255)
+        context.fill()
+        
+        # Render page number layout
+        context.set_source_rgb(0, 0, 0)
+        context.move_to(x + x_margin, y + y_margin)
+        context.show_layout(layout)
+        
+        # Get pixbuf back from pixmap
+        pixbuf.get_from_drawable(pixmap, pixmap.get_colormap(), 0, 0, 0, 0, -1, -1)
+        
+        cell_renderer.set_property('pixbuf', pixbuf)
         
     def set_adjustments_sensitive(self, sensitive):
         """
