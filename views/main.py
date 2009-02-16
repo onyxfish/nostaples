@@ -89,7 +89,6 @@ class MainView(View):
         setting of scanner options.
         """
         self['scan_menu_item'].set_sensitive(sensitive)
-        self['insert_scan_menu_item'].set_sensitive(sensitive)
         self['scan_button'].set_sensitive(sensitive)
         
         self['scanner_menu_item'].set_sensitive(sensitive)
@@ -101,7 +100,8 @@ class MainView(View):
         Enable or disable all gui widgets related to refreshing the
         available hardware for scanning.
         """
-        self['refresh_available_scanners_menu_item'].set_sensitive(sensitive)        
+        self['refresh_available_scanners_menu_item'].set_sensitive(sensitive)  
+        self['refresh_available_scanners_button'].set_sensitive(sensitive)         
             
     def set_delete_controls_sensitive(self, sensitive):
         """

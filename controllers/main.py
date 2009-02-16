@@ -96,10 +96,6 @@ class MainController(Controller):
     def on_delete_menu_item_activate(self, menu_item):
         self.application.get_document_controller().delete_selected()
     
-    def on_insert_scan_menu_item_activate(self, menu_item):
-        """Scan a page into the current document."""
-        self._scan()
-    
     def on_preferences_menu_item_activate(self, menu_item):
         """Creates and displays a preferences dialog."""
         self.application.show_preferences_dialog()
@@ -194,6 +190,9 @@ class MainController(Controller):
         """Scan a page into the current document."""
         self._scan()
         
+    def on_refresh_available_scanners_button_clicked(self, button):
+        self._update_available_scanners()
+        
     def on_save_as_button_clicked(self, button):
         """Saves the current document to a file."""
         self.application.show_save_dialog()
@@ -272,8 +271,18 @@ class MainController(Controller):
         self._scan()
         
     def on_quick_save_button_clicked(self, button):
-        """TODO"""
-        pass
+        """
+        Show the save dialog.  If the user completes a save
+        then disable the quick save button until another
+        page is scanned.
+        """
+        main_view = self.application.get_main_view()
+        document_model = self.application.get_document_model()
+        
+        self.application.show_save_dialog()
+        
+        if document_model.count == 0:
+            main_view['quick_save_button'].set_sensitive(False)
     
     # MainModel PROPERTY CALLBACKS
     

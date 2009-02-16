@@ -23,6 +23,7 @@ scanned as a thumbnail list.
 import logging
 import os
 
+import cairo
 import gtk
 from gtkmvc.view import View
 import pango
@@ -86,16 +87,15 @@ class DocumentView(View):
         Extract the thumbnail pixbuf from the PageModel stored in the
         DocumentModel ListStore, composite a page number into that image,
         and set the resulting pixbuf to the cell renderer.
-        
-        Pixbuf manipulation from: U{http://faq.pygtk.org/index.py?req=all#8.20}
         """
         page_model = document_model.get_value(iter, 0)
-        page_number = document_model.get_path(iter)[0]
+        page_number = document_model.get_path(iter)[0] + 1
 
         # Copy thumbnail pixbuf, get pixmap of image, and create cairo context
         pixbuf = page_model.thumbnail_pixbuf.copy()
         pixmap, mask = pixbuf.render_pixmap_and_mask()
         context = pangocairo.CairoContext(pixmap.cairo_create())
+        context.set_antialias(cairo.ANTIALIAS_NONE)
         
         # Setup layout to render page number
         layout = context.create_layout()
@@ -115,18 +115,17 @@ class DocumentView(View):
         
         # Render background for page number
         text_width, text_height = layout.get_pixel_size()
-        context.rectangle(x, y, width, height)
+        context.rectangle(x, y, width, height - 1)
         context.set_source_rgb(255, 255, 255)
-        context.fill()
+        context.fill_preserve()
         
         # Render page number layout
         context.set_source_rgb(0, 0, 0)
         context.move_to(x + x_margin, y + y_margin)
         context.show_layout(layout)
         
-        # Get pixbuf back from pixmap
+        # Get pixbuf back from pixmap and set to cell renderer
         pixbuf.get_from_drawable(pixmap, pixmap.get_colormap(), 0, 0, 0, 0, -1, -1)
-        
         cell_renderer.set_property('pixbuf', pixbuf)
         
     def set_adjustments_sensitive(self, sensitive):
