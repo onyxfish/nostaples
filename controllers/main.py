@@ -88,6 +88,10 @@ class MainController(Controller):
     def on_scan_menu_item_activate(self, menu_item):
         """Scan a page into the current document."""
         self._scan()
+                
+    def on_refresh_available_scanners_menu_item_activate(self, menu_item):
+        """Refresh the list of connected scanners from SANE."""
+        self._update_available_scanners()
     
     def on_save_as_menu_item_activate(self, menu_item):
         """Saves the current document to a file."""
@@ -143,10 +147,6 @@ class MainController(Controller):
                 if scanner.display_name == menu_item.get_children()[0].get_text():
                     main_model.active_scanner = scanner
                     return
-                
-    def on_refresh_available_scanners_menu_item_activate(self, menu_item):
-        """Refresh the list of connected scanners from SANE."""
-        self._update_available_scanners()
         
     def on_valid_mode_menu_item_toggled(self, menu_item):
         """Sets the active scan mode."""
