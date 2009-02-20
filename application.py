@@ -150,7 +150,6 @@ class Application(object):
         """Execute the GTK main loop."""
         assert isinstance(self._main_view, MainView)
         self._main_view.show()
-        gtk.gdk.threads_init()
         gtk.main()
         
     def get_state_manager(self):

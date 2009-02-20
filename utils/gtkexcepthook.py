@@ -158,12 +158,12 @@ def _gtkexcepthook(exception_type, instance, traceback):
     dialog.add_button(gtk.STOCK_QUIT, 1)
 
     response = dialog.run()
-
+    
     if response == 1 and gtk.main_level() > 0:
         gtk.main_quit()
     else:
         pass
-
+    
     dialog.destroy()
 
 sys.excepthook = _gtkexcepthook
