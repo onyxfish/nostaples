@@ -44,16 +44,35 @@ class IdleObject(gobject.GObject):
         gobject.GObject.__init__(self)
 
     def emit(self, *args):
-        gobject.idle_add(gobject.GObject.emit,self,*args)
+        gobject.idle_add(gobject.GObject.emit, self, *args)
         
+def abort_on_exception(func):
+    """
+    This function decorator wraps the run() method of a thread
+    so that any exceptions in that thread will be logged and
+    cause the threads 'abort' signal to be emitted with the exception
+    as an argument.  This way all exception handling can occur
+    on the main thread.
+    """
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception, e:
+            thread_object = args[0]
+            thread_object.log.error('Exception type %s: %s' % (e.__class__.__name__, e.message))
+            thread_object.emit('aborted', e)
+    return wrapper
+
 class UpdateAvailableScannersThread(IdleObject, threading.Thread):
     """
     Responsible for getting an updated list of available scanners
     and passing it back to the main thread.
     """
     __gsignals__ =  {
-            "finished": (
-                gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, [gobject.TYPE_PYOBJECT]),
+            'finished': (
+                gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, (gobject.TYPE_PYOBJECT,)),
+            'aborted': (
+                gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, (gobject.TYPE_PYOBJECT,)),
             }
     
     def __init__(self, sane):
@@ -69,6 +88,7 @@ class UpdateAvailableScannersThread(IdleObject, threading.Thread):
         
         self.log.debug('Created.')
     
+    @abort_on_exception
     def run(self):
         """
         Queries SANE for a list of connected scanners and updates
@@ -76,17 +96,10 @@ class UpdateAvailableScannersThread(IdleObject, threading.Thread):
         """
         self.log.debug('Updating available scanners.')
 
-        try:
-            devices = self.sane.get_device_list()
-        except saneme.SaneOutOfMemoryError:
-            # TODO
-            raise
-        except saneme.SaneUnknownError:
-            # TODO
-            raise
+        devices = self.sane.get_device_list()
         
         # NB: We callback with the lists so that they can updated on the main thread
-        self.emit("finished", devices)        
+        self.emit('finished', devices)
 
 class ScanningThread(IdleObject, threading.Thread):
     """
@@ -98,15 +111,15 @@ class ScanningThread(IdleObject, threading.Thread):
     the Model thread-safe.
     """
     __gsignals__ =  {
-            "progress": (
+            'progress': (
                 gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, (gobject.TYPE_PYOBJECT, gobject.TYPE_INT)),
-            "succeeded": (
+            'succeeded': (
                 gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, (gobject.TYPE_PYOBJECT,)),
-            "failed": (
-                gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, (gobject.TYPE_STRING,))
+            'failed': (
+                gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, (gobject.TYPE_STRING,)),
+            'aborted': (
+                gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, (gobject.TYPE_PYOBJECT,)),
             }
-    
-    # TODO: add cancel event
     
     def __init__(self, sane_device, mode, resolution):
         """
@@ -136,71 +149,39 @@ class ScanningThread(IdleObject, threading.Thread):
         else:
             return False
     
+    @abort_on_exception
     def run(self):
         """
         Set scanner options, scan a page and emit status callbacks.
         """
-        assert self.sane_device.is_open()
-        
+        if not self.sane_device.is_open():
+            raise AssertionError('sane_device.is_open() returned false')
+
         self.log.debug('Setting device options.')
         
-        # TODO: handle exceptions
         try:
             self.sane_device.options['mode'].value = self.mode
-        except saneme.SaneIOError:
-            raise
-        except saneme.SaneOutOfMemoryError:
-            raise
-        except saneme.SaneAccessDeniedError:
-            raise
-        except saneme.SaneUnknownError:
-            raise
         except saneme.SaneReloadOptionsError:
+            # TODO
             pass
-            
-        # TODO: handle exceptions   
+             
         try:
             self.sane_device.options['resolution'].value = int(self.resolution)
-        except saneme.SaneIOError:
-            raise
-        except saneme.SaneOutOfMemoryError:
-            raise
-        except saneme.SaneAccessDeniedError:
-            raise
-        except saneme.SaneUnknownError:
-            raise
         except saneme.SaneReloadOptionsError:
+            # TODO
             pass
         
         self.log.debug('Beginning scan.')
         
         pil_image = None
-        
-        # TODO: handle exceptions
-        try:
-            pil_image = self.sane_device.scan(self.progress_callback)
-        except saneme.SaneDeviceBusyError:
-            raise
-        except saneme.SaneDeviceJammedError:
-            raise
-        except saneme.SaneNoDocumentsError:
-            raise
-        except saneme.SaneCoverOpenError:
-            raise
-        except saneme.SaneIOError:
-            raise
-        except saneme.SaneOutOfMemoryError:
-            raise
-        except saneme.SaneInvalidDataError:
-            raise
-        except saneme.SaneUnknownError:
-            raise
+        pil_image = self.sane_device.scan(self.progress_callback)
         
         if self.cancel_event.isSet():
             self.emit("failed", "Scan cancelled")
         else:
-            assert pil_image is not None
-            self.emit("succeeded", pil_image)
+            if not pil_image:
+                raise AssertionError('sane_device.scan() returned None')
+            self.emit('succeeded', pil_image)
         
 class UpdateScannerOptionsThread(IdleObject, threading.Thread):
     """
@@ -208,8 +189,10 @@ class UpdateScannerOptionsThread(IdleObject, threading.Thread):
     and passing it back to the main thread.
     """
     __gsignals__ =  {
-            "finished": (
-                gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, [gobject.TYPE_PYOBJECT, gobject.TYPE_PYOBJECT]),
+            'finished': (
+                gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, (gobject.TYPE_PYOBJECT, gobject.TYPE_PYOBJECT)),
+            'aborted': (
+                gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, (gobject.TYPE_PYOBJECT,)),
             }
     
     def __init__(self, sane_device):
@@ -225,6 +208,7 @@ class UpdateScannerOptionsThread(IdleObject, threading.Thread):
         
         self.log.debug('Created.')
     
+    @abort_on_exception
     def run(self):
         """
         Queries SANE for a list of available options for the specified scanner.    
@@ -237,4 +221,4 @@ class UpdateScannerOptionsThread(IdleObject, threading.Thread):
         resolution_list = [str(i) for i in self.sane_device.options['resolution'].constraint]
         
         # NB: We callback with the lists so that they can updated on the main thread
-        self.emit("finished", mode_list, resolution_list)
+        self.emit('finished', mode_list, resolution_list)

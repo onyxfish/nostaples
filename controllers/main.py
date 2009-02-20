@@ -32,6 +32,7 @@ from gtkmvc.controller import Controller
 
 from nostaples.models.page import PageModel
 from nostaples.utils.scanning import *
+import saneme
 
 class MainController(Controller):
     """
@@ -518,17 +519,32 @@ class MainController(Controller):
         main_model = self.application.get_main_model()
         main_view = self.application.get_main_view()
         status_controller = self.application.get_status_controller()
-              
-        #main_view['scan_progressbar'].set_fraction(0)
-        #main_view['scan_progressbar'].set_text('No data')
+
         main_view['progress_secondary_label'].set_markup(
             '<i>%s</i>' % reason)
         
         main_view['scan_again_button'].set_sensitive(True)
-        main_view['quick_save_button'].set_sensitive(True)
+        if self.application.get_document_model().count > 0:
+            main_view['quick_save_button'].set_sensitive(True)
         main_view['scan_cancel_button'].set_label(gtk.STOCK_CLOSE)
         
         main_model.scan_in_progress = False
+        
+    def on_scan_aborted(self, scanning_thread, e):
+        """
+        Change display to indicate that scanning failed and
+        convey the to the user the reason why the thread aborted.
+        
+        If the failure was from a SANE exception then give the
+        user the option to blacklist the device.  If not, then
+        reraise the error and let the sys.excepthook deal with it.
+        """
+        self.on_scan_failed(scanning_thread, 'An error occurred.')
+        
+        if isinstance(e, saneme.SaneError):
+            self.display_device_exception_dialog(e)
+        else:
+            raise e
         
     def on_update_available_scanners_thread_finished(self, update_thread, scanner_list):
         """Set the new list of available scanners."""
@@ -537,6 +553,20 @@ class MainController(Controller):
         
         main_model.available_scanners = scanner_list
         main_model.updating_available_scanners = False
+        
+    def on_update_available_scanners_thread_aborted(self, update_thread, e):
+        """
+        Change the display to indicate that no scanners are available and
+        reraise the exception so that it can be caught by the sys.excepthook.
+        
+        There is no reason to handle these cases with a special dialog,
+        if the application failed to even enumerate the available devices then
+        no other action will be possible.
+        
+        This should be fantastically rare.
+        """
+        self.on_update_available_scanners_thread_finished(update_thread, [])
+        raise e
             
     def on_update_scanner_options_thread_finished(self, update_thread, mode_list, resolution_list):
         """
@@ -549,6 +579,25 @@ class MainController(Controller):
         main_model.valid_modes = mode_list
         main_model.valid_resolutions = resolution_list
         main_model.updating_scan_options = False
+        
+    def on_update_scanner_options_thread_aborted(self, update_thread, e):
+        """
+        Change display to indicate that updating the options failed and
+        convey the to the user the reason why the thread aborted.
+        
+        If the failure was from a SANE exception then give the
+        user the option to blacklist the device.  If not, then
+        reraise the error and let the sys.excepthook deal with it.
+        """
+        # TODO: If this fails the scanner icon will still stay lit,
+        # and when the user clicks it the app will error again since it
+        # will not have a valid mode/resolution.
+        self.on_update_scanner_options_thread_finished(update_thread, [], [])
+        
+        if isinstance(e, saneme.SaneError):
+            self.display_device_exception_dialog(e)
+        else:
+            raise e
         
     # PUBLIC METHODS
         
@@ -668,6 +717,7 @@ class MainController(Controller):
         scanning_thread.connect("progress", self.on_scan_progress)
         scanning_thread.connect("succeeded", self.on_scan_succeeded)
         scanning_thread.connect("failed", self.on_scan_failed)
+        scanning_thread.connect("aborted", self.on_scan_aborted)
         self.cancel_event = scanning_thread.cancel_event
         
         main_view['progress_primary_label'].set_markup(
@@ -675,8 +725,10 @@ class MainController(Controller):
         main_view['scan_progressbar'].set_fraction(0)
         main_view['scan_progressbar'].set_text('Waiting for data')
         main_view['progress_secondary_label'].set_markup('<i>Preparing device.</i>')
-        main_view['progress_mode_label'].set_markup(main_model.active_mode)
-        main_view['progress_resolution_label'].set_markup('%s DPI' % main_model.active_resolution)
+        mode = main_model.active_mode if main_model.active_mode else 'Not set'
+        main_view['progress_mode_label'].set_markup(mode)
+        dpi = '%s DPI' % main_model.active_resolution if main_model.active_resolution else 'Not set'
+        main_view['progress_resolution_label'].set_markup(dpi)
         main_view['scan_again_button'].set_sensitive(False)
         main_view['quick_save_button'].set_sensitive(False)
         main_view['scan_cancel_button'].set_label(gtk.STOCK_CANCEL)
@@ -694,6 +746,7 @@ class MainController(Controller):
         main_model.updating_available_scanners = True
         update_thread = UpdateAvailableScannersThread(sane)
         update_thread.connect("finished", self.on_update_available_scanners_thread_finished)
+        update_thread.connect("aborted", self.on_update_available_scanners_thread_aborted)
         update_thread.start()
     
     def _update_scanner_options(self):
@@ -703,4 +756,32 @@ class MainController(Controller):
         main_model.updating_scan_options = True
         update_thread = UpdateScannerOptionsThread(main_model.active_scanner)
         update_thread.connect("finished", self.on_update_scanner_options_thread_finished)
+        update_thread.connect("aborted", self.on_update_scanner_options_thread_aborted)
         update_thread.start()
+        
+    def display_device_exception_dialog(self, exception):
+        """
+        Display an error dialog that provides the user with the option of
+        blacklisting the device which caused the error.
+        """
+        dialog = gtk.MessageDialog(
+            parent=None, flags=0, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_NONE)
+        dialog.set_title("")
+        
+        # TODO: is this needed?
+        if gtk.check_version (2, 4, 0) is not None:
+            dialog.set_has_separator (False)
+    
+        primary = "<big><b>A hardware exception has been logged.</b></big>"
+        secondary = '%s\n\n%s' % (exception.message, 'If this error continues to occur you may choose to blacklist the device so that it no longer appears in the list of available scanners.')
+    
+        dialog.set_markup(primary)
+        dialog.format_secondary_markup(secondary)
+    
+        dialog.add_button('Blacklist Device', 1)
+        dialog.add_button(gtk.STOCK_CLOSE, gtk.RESPONSE_CLOSE)
+    
+        response = dialog.run()        
+        dialog.destroy()
+        
+        # TODO: handle blacklisting
