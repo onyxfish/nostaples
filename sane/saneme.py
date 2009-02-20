@@ -23,7 +23,8 @@ user's view.  This enumerations and definiations which are absolutely
 necessary to the end user have been redeclared.
 """
 
-# TODO: document what exceptions can be thrown by each method
+# TODO: document what exceptions can be thrown by each method,
+# including those that could bubble up
 
 from array import *
 import atexit
@@ -148,7 +149,8 @@ class SaneMe(object):
         This was found documented here:        
         U{http://www.nabble.com/sane_get_devices-and-sanei_usb_init-td20766234.html}
         """
-        assert self._version is not None
+        if not self._version:
+            raise AssertionError('version was None')
         
         # See docstring for details on this voodoo
         self._shutdown()
@@ -216,10 +218,14 @@ class Device(object):
         """
         self._log = log
         
-        assert type(ctypes_device.name) is StringType
-        assert type(ctypes_device.vendor) is StringType
-        assert type(ctypes_device.model) is StringType
-        assert type(ctypes_device.type) is StringType
+        if type(ctypes_device.name) is not StringType:
+            raise AssertionError('device name was not of StringType')
+        if type(ctypes_device.vendor) is not StringType:
+            raise AssertionError('device vendor was not of StringType')
+        if type(ctypes_device.model) is not StringType:
+            raise AssertionError('device model was not of StringType')
+        if type(ctypes_device.type) is not StringType:
+            raise AssertionError('device type was not of StringType')
         
         self._name = ctypes_device.name
         self._vendor = ctypes_device.vendor
@@ -279,8 +285,10 @@ class Device(object):
         are immutable, this should only need to be called when the Device
         is first instantiated.
         """
-        assert self._handle is not None
-        assert self._handle != c_void_p(None)
+        if not self._handle:
+            raise AssertionError('device handle was None.')
+        if self._handle == c_void_p(None):
+            raise AssertionError('device handle was a null pointer.')
         
         option_value = pointer(c_int())
         status = sane_control_option(self._handle, 0, SANE_ACTION_GET_VALUE, option_value, None)
@@ -327,8 +335,10 @@ class Device(object):
         
         To be called by Options of this device so that they may set themselves.
         """
-        assert self._handle is not None
-        assert self._handle != c_void_p(None)
+        if not self._handle:
+            raise AssertionError('device handle was None.')
+        if self._handle == c_void_p(None):
+            raise AssertionError('device handle was a null pointer.')
         
         return self._handle
         
@@ -341,7 +351,8 @@ class Device(object):
         Must be called before any operations (including setting options)
         are performed on this device.
         """
-        assert self._handle is None
+        if self._handle:
+            raise AssertionError('device handle already exists.')
         self._handle = SANE_Handle()
         
         status = sane_open(self.name, byref(self._handle))
@@ -368,7 +379,8 @@ class Device(object):
             raise SaneUnknownError(
                 'sane_open returned an invalid status.')
         
-        assert self._handle != c_void_p(None)
+        if self._handle == c_void_p(None):
+            raise AssertionError('device handle was a null pointer.')
         
         if self._log:
             self._log.debug('Device %s open.', self._name)
@@ -386,8 +398,10 @@ class Device(object):
         Close the current handle to this device.  All changes made
         to its options will be lost.
         """
-        assert self._handle is not None
-        assert self._handle != c_void_p(None)
+        if not self._handle:
+            raise AssertionError('device handle was None.')
+        if self._handle == c_void_p(None):
+            raise AssertionError('device handle was a null pointer.')
         
         sane_close(self._handle)        
         self._handle = None
@@ -408,8 +422,10 @@ class Device(object):
         @return: A PIL image containing the scanned
             page.
         """
-        assert self._handle is not None
-        assert self._handle != c_void_p(None)
+        if not self._handle:
+            raise AssertionError('device handle was None.')
+        if self._handle == c_void_p(None):
+            raise AssertionError('device handle was a null pointer.')
         
         # See SANE API 4.3.9
         status = sane_start(self._handle)
@@ -505,11 +521,13 @@ class Device(object):
                     sane_cancel(self._handle)
                     return None
 
-        assert not cancel
+        if cancel:
+            raise AssertionError('cancel was true after scan completed.')
         
         sane_cancel(self._handle)
         
-        assert scan_info.total_bytes == len(data_array)
+        if scan_info.total_bytes != len(data_array):
+            raise AssertionError('length of scanned data did not match expected length.')
         
         if sane_parameters.format == SANE_FRAME_GRAY.value:
             pil_image = Image.frombuffer(
@@ -559,14 +577,22 @@ class Option(object):
         self._device = device
         self._option_number = option_number
         
-        assert type(ctypes_option.name) is StringType
-        assert type(ctypes_option.title) is StringType
-        assert type(ctypes_option.desc) is StringType
-        assert type(ctypes_option.type) is IntType
-        assert type(ctypes_option.unit) is IntType
-        assert type(ctypes_option.size) is IntType
-        assert type(ctypes_option.cap) is IntType
-        assert type(ctypes_option.constraint_type) is IntType
+        if type(ctypes_option.name) is not StringType:
+            raise AssertionError('option name was not of StringType.')
+        if type(ctypes_option.title) is not StringType:
+            raise AssertionError('option title was not of StringType.')
+        if type(ctypes_option.desc) is not StringType:
+            raise AssertionError('option description was not of StringType.')
+        if type(ctypes_option.type) is not IntType:
+            raise AssertionError('option type was not of IntType.')
+        if type(ctypes_option.unit) is not IntType:
+            raise AssertionError('option unit was not of IntType.')
+        if type(ctypes_option.size) is not IntType:
+            raise AssertionError('option size was not of IntType.')
+        if type(ctypes_option.cap) is not IntType:
+            raise AssertionError('option capabilities was not of IntType.')
+        if type(ctypes_option.constraint_type) is not IntType:
+            raise AssertionError('option constraint_type was not of IntType.')
         
         self._name = ctypes_option.name
         self._title = ctypes_option.title
@@ -580,17 +606,22 @@ class Option(object):
         if self._constraint_type == SANE_CONSTRAINT_NONE.value:
             pass
         elif self._constraint_type == SANE_CONSTRAINT_RANGE.value:
-            assert type(ctypes_option.constraint.range) is POINTER(SANE_Range)
-            assert type(ctypes_option.constraint.range.contents.min) is IntType
-            assert type(ctypes_option.constraint.range.contents.max) is IntType
-            assert type(ctypes_option.constraint.range.contents.quant) is IntType
+            if type(ctypes_option.constraint.range) is not POINTER(SANE_Range):
+                raise AssertionError('option\'s constraint range was not a pointer to a SANE_Range.')
+            if type(ctypes_option.constraint.range.contents.min) is not IntType:
+                raise AssertionError('option\'s constraint range min was not of IntType.')
+            if type(ctypes_option.constraint.range.contents.max) is not IntType:
+                raise AssertionError('option\'s constraint range max was not of IntType.')
+            if type(ctypes_option.constraint.range.contents.quant) is not IntType:
+                raise AssertionError('option\'s constraint range quant was not of IntType.')
             
             self._constraint = (
                 ctypes_option.constraint.range.contents.min,
                 ctypes_option.constraint.range.contents.max,
                 ctypes_option.constraint.range.contents.quant)
         elif self._constraint_type == SANE_CONSTRAINT_WORD_LIST.value:
-            assert type(ctypes_option.constraint.word_list) is POINTER(SANE_Word)
+            if type(ctypes_option.constraint.word_list) is not POINTER(SANE_Word):
+                raise AssertionError('option\'s constraint range was not a pointer to a SANE_Word.')
             
             word_count = ctypes_option.constraint.word_list[0]
             self._constraint = []
@@ -600,7 +631,8 @@ class Option(object):
                 self._constraint.append(ctypes_option.constraint.word_list[i])
                 i = i + 1                
         elif self._constraint_type == SANE_CONSTRAINT_STRING_LIST.value:
-            assert type(ctypes_option.constraint.string_list) is POINTER(SANE_String_Const)
+            if type(ctypes_option.constraint.string_list) is not POINTER(SANE_String_Const):
+                raise AssertionError('option\'s constraint range was not a pointer to a SANE_String_Const.')
 
             string_count = 0
             self._constraint = []
@@ -739,19 +771,24 @@ class Option(object):
         
         # Type checking
         if self._type == SANE_TYPE_BOOL.value:
-            assert type(value) is BooleanType
+            if type(value) is not BooleanType:
+                raise AssertionError('option expected BooleanType')
             c_value = pointer(c_int(value))
         elif self._type == SANE_TYPE_INT.value:
             # TODO: these may not always be a single char wide, see SANE doc 4.2.9.6
-            assert type(value) is IntType
+            if type(value) is not IntType:
+                raise AssertionError('option expected IntType')
             c_value = pointer(c_int(value))
         elif self._type == SANE_TYPE_FIXED.value:
             # TODO: these may not always be a single char wide, see SANE doc 4.2.9.6
-            assert type(value) is IntType
+            if type(value) is not IntType:
+                raise AssertionError('option expected IntType')
             c_value = pointer(c_int(value))
         elif self._type == SANE_TYPE_STRING.value:
-            assert type(value) is StringType
-            assert len(value) + 1 < self._size
+            if type(value) is not StringType:
+                raise AssertionError('option expected StringType')
+            if len(value) + 1 > self._size:
+                raise AssertionError('value for option is longer than max string size')
             c_value = c_char_p(value)
         elif self._type == SANE_TYPE_BUTTON.value:
             raise TypeError('SANE_TYPE_BUTTON has no value.')
@@ -764,13 +801,18 @@ class Option(object):
         if self._constraint_type == SANE_CONSTRAINT_NONE.value:
             pass
         elif self._constraint_type == SANE_CONSTRAINT_RANGE.value:
-            assert value >= self._constraint[0]
-            assert value <= self._constraint[1]
-            assert value % self._constraint[2] == 0
+            if value < self._constraint[0]:
+                raise AssertionError('value for option is less than min.')
+            if value > self._constraint[1]:
+                raise AssertionError('value for option is greater than max.')
+            if value % self._constraint[2] != 0:
+                raise AssertionError('value for option is not divisible by quant.')
         elif self._constraint_type == SANE_CONSTRAINT_WORD_LIST.value:
-            assert value in self._constraint
+            if value not in self._constraint:
+                raise AssertionError('value for option not in list of valid values.')
         elif self._constraint_type == SANE_CONSTRAINT_STRING_LIST.value:
-            assert value in self._constraint
+            if value not in self._constraint:
+                raise AssertionError('value for option not in list of valid strings.')
             
         info_flags = SANE_Int()
         
