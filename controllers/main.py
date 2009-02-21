@@ -595,7 +595,7 @@ class MainController(Controller):
         # will not have a valid mode/resolution.
         self.on_update_scanner_options_thread_finished(update_thread, [], [])
         
-        if isinstance(e, saneme.SaneError):
+        if isinstance(exc_info[1], saneme.SaneError):
             self.display_device_exception_dialog(exc_info)
         else:
             raise exc_info[0], exc_info[1], exc_info[2]

@@ -50,7 +50,7 @@ class SaveView(View):
         self.log = logging.getLogger(self.__class__.__name__)
         
         # Can't do this in constructor as main_view has multiple
-        # top widgets
+        # top-level widgets
         self['save_dialog'].set_transient_for(
             self.application.get_main_view()['scan_window'])
         

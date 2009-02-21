@@ -54,6 +54,9 @@ def abort_on_exception(func):
     cause the threads 'abort' signal to be emitted with the exception
     as an argument.  This way all exception handling can occur
     on the main thread.
+    
+    Note that the entire sys.exc_info() tuple is passed out, this
+    allows the current traceback to be used in the other thread.
     """
     def wrapper(*args, **kwargs):
         try:
