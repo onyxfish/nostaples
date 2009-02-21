@@ -82,6 +82,7 @@ class SaveController(Controller):
         self.adapt('title', 'title_entry')
         self.adapt('author', 'author_entry')
         self.adapt('keywords', 'keywords_entry')
+        self.adapt('show_document_metadata', 'document_metadata_expander')
         self.log.debug('Adapters registered.')
         
     # USER INTERFACE CALLBACKS

@@ -25,6 +25,7 @@ import logging
 from gtkmvc.model import Model
 
 from nostaples import constants
+import nostaples.utils.properties
 
 class SaveModel(Model):
     """
@@ -38,6 +39,8 @@ class SaveModel(Model):
         'keywords' : '',
         
         'saved_keywords' : '',
+        
+        'show_document_metadata' : True,
         
         'filename' : '',
     }
@@ -61,71 +64,27 @@ class SaveModel(Model):
         
         self.save_path = state_manager.init_state(
             'save_path', constants.DEFAULT_SAVE_PATH, 
-            self.state_save_path_change)
+            nostaples.utils.properties.GenericStateCallback(self, 'save_path'))
         
         self.author = state_manager.init_state(
             'author', constants.DEFAULT_AUTHOR, 
-            self.state_author_change)
+            nostaples.utils.properties.GenericStateCallback(self, 'author'))
         
         self.saved_keywords = state_manager.init_state(
             'saved_keywords', constants.DEFAULT_SAVED_KEYWORDS, 
-            self.state_saved_keywords_change)
+            nostaples.utils.properties.GenericStateCallback(self, 'saved_keywords'))
         
-    # Property setters
-    # (see gtkmvc.support.metaclass_base.py for the origin of these accessors)
+        self.show_document_metadata = state_manager.init_state(
+            'show_document_metadata', constants.DEFAULT_SHOW_DOCUMENT_METADATA, 
+            nostaples.utils.properties.GenericStateCallback(self, 'show_document_metadata'))
         
-    def set_prop_save_path(self, value):
-        """
-        Write state.
-        See L{MainModel.set_prop_active_scanner} for detailed comments.
-        """
-        old_value = self._prop_save_path
-        if old_value == value:
-            return
-        self._prop_save_path = value
-        self.application.get_state_manager()['save_path'] = value
-        self.notify_property_value_change(
-            'save_path', old_value, value)
-        
-    def set_prop_author(self, value):
-        """
-        Write state.
-        See L{MainModel.set_prop_active_scanner} for detailed comments.
-        """
-        old_value = self._prop_author
-        if old_value == value:
-            return
-        self._prop_author = value
-        self.application.get_state_manager()['author'] = value
-        self.notify_property_value_change(
-            'author', old_value, value)
-        
-    def set_prop_saved_keywords(self, value):
-        """
-        Write state.
-        See L{MainModel.set_prop_active_scanner} for detailed comments.
-        """
-        old_value = self._prop_saved_keywords
-        if old_value == value:
-            return
-        self._prop_saved_keywords = value
-        self.application.get_state_manager()['saved_keywords'] = value
-        self.notify_property_value_change(
-            'saved_keywords', old_value, value)
-        
-    # STATE CALLBACKS
+    # PROPERTY SETTERS
     
-    def state_save_path_change(self):
-        """Read state."""
-        self.save_path = \
-            self.application.get_state_manager()['save_path']
-    
-    def state_author_change(self):
-        """Read state."""
-        self.author = \
-            self.application.get_state_manager()['author']
-    
-    def state_saved_keywords_change(self):
-        """Read state."""
-        self.saved_keywords = \
-            self.application.get_state_manager()['saved_keywords']
+    set_prop_save_path = nostaples.utils.properties.GenericPropertySetter(
+        'save_path')
+    set_prop_author = nostaples.utils.properties.GenericPropertySetter(
+        'author')
+    set_prop_saved_keywords = nostaples.utils.properties.GenericPropertySetter(
+        'saved_keywords')
+    set_prop_show_document_metadata = nostaples.utils.properties.GenericPropertySetter(
+        'show_document_metadata')

@@ -25,6 +25,7 @@ import logging
 from gtkmvc.model import Model
 
 from nostaples import constants
+import nostaples.utils.properties
 import saneme
 
 class MainModel(Model):
@@ -76,23 +77,23 @@ class MainModel(Model):
         
         self.show_toolbar = state_manager.init_state(
             'show_toolbar', constants.DEFAULT_SHOW_TOOLBAR, 
-            self.state_show_toolbar_change)
+            nostaples.utils.properties.GenericStateCallback(self, 'show_toolbar'))
         
         self.show_statusbar = state_manager.init_state(
             'show_statusbar', constants.DEFAULT_SHOW_STATUSBAR, 
-            self.state_show_statusbar_change)
+            nostaples.utils.properties.GenericStateCallback(self, 'show_statusbar'))
         
         self.show_thumbnails = state_manager.init_state(
             'show_thumbnails', constants.DEFAULT_SHOW_THUMBNAILS, 
-            self.state_show_thumbnails_change)
+            nostaples.utils.properties.GenericStateCallback(self, 'show_thumbnails'))
         
         self.show_adjustments = state_manager.init_state(
             'show_adjustments', constants.DEFAULT_SHOW_ADJUSTMENTS, 
-            self.state_show_adjustments_change)
+            nostaples.utils.properties.GenericStateCallback(self, 'show_adjustments'))
         
         self.rotate_all_pages = state_manager.init_state(
             'rotate_all_pages', constants.DEFAULT_ROTATE_ALL_PAGES, 
-            self.state_rotate_all_pages_change)
+            nostaples.utils.properties.GenericStateCallback(self, 'rotate_all_pages'))
 
         # The local representation of active_scanner is a
         # saneme.Device, but it is persisted by its name attribute only.
@@ -112,46 +113,18 @@ class MainModel(Model):
             'scan_resolution', constants.DEFAULT_SCAN_RESOLUTION, 
             self.state_scan_resolution_change)
         
-    # Property setters
-    # (see gtkmvc.support.metaclass_base.py for the origin of these accessors)
+    # PROPERTY SETTERS
     
-    class GenericPropertySetter(object):
-        """
-        This callable object overrides the python-gtkmvc
-        accessors established in gtkmvc.support.metaclass_base.py.
-        
-        It handles not only notifying observers of changes in the 
-        property, but also persist changes to the state backend.
-        """
-        def __init__(self, property_name, state_name):
-            """
-            Store the property name which is visible to the
-            application as well as its attribute name.
-            """
-            self.property_name = property_name
-            self.state_name = state_name
-            self.property_attr_name = '_prop_%s' % self.property_name
-        
-        def __call__(self, cls, value):
-            """
-            Write state to gconf and notify observers of changes.
-            
-            For more details on how this works see
-            L{set_prop_active_scanner}.
-            """
-            old_value = getattr(cls, self.property_attr_name)
-            if old_value == value:
-                return
-            setattr(cls, self.property_attr_name, value)
-            cls.application.get_state_manager()[self.state_name] = value
-            cls.notify_property_value_change(
-                self.property_name, old_value, value)
-    
-    set_prop_show_toolbar = GenericPropertySetter('show_toolbar', 'show_toolbar')
-    set_prop_show_statusbar = GenericPropertySetter('show_statusbar', 'show_statusbar')
-    set_prop_show_thumbnails = GenericPropertySetter('show_thumbnails', 'show_thumbnails')
-    set_prop_show_adjustments = GenericPropertySetter('show_adjustments', 'show_adjustments')
-    set_prop_rotate_all_pages = GenericPropertySetter('rotate_all_pages', 'rotate_all_pages')
+    set_prop_show_toolbar = nostaples.utils.properties.GenericPropertySetter(
+        'show_toolbar')
+    set_prop_show_statusbar = nostaples.utils.properties.GenericPropertySetter(
+        'show_statusbar')
+    set_prop_show_thumbnails = nostaples.utils.properties.GenericPropertySetter(
+        'show_thumbnails')
+    set_prop_show_adjustments = nostaples.utils.properties.GenericPropertySetter(
+        'show_adjustments')
+    set_prop_rotate_all_pages = nostaples.utils.properties.GenericPropertySetter(
+        'rotate_all_pages')
         
     def set_prop_active_scanner(self, value):
         """
@@ -318,31 +291,6 @@ class MainModel(Model):
             'active_resolution', None, self._prop_active_resolution)
         
     # STATE CALLBACKS
-       
-    def state_show_toolbar_change(self):
-        """Read state."""
-        self.show_toolbar = \
-            self.application.get_state_manager()['show_toolbar']
-            
-    def state_show_statusbar_change(self):
-        """Read state."""
-        self.show_statusbar = \
-            self.application.get_state_manager()['show_statusbar']
-            
-    def state_show_thumbnails_change(self):
-        """Read state."""
-        self.show_thumbnails = \
-            self.application.get_state_manager()['show_thumbnails']   
-    
-    def state_show_adjustments_change(self):
-        """Read state."""
-        self.show_adjustments = \
-            self.application.get_state_manager()['show_adjustments']
-    
-    def state_rotate_all_pages_change(self):
-        """Read state."""
-        self.rotate_all_pages = \
-            self.application.get_state_manager()['rotate_all_pages']
         
     def state_active_scanner_change(self):
         """Read state, validating the input."""
