@@ -24,6 +24,7 @@ import commands
 import logging
 import os
 import re
+import sys
 import tempfile
 import threading
 
@@ -59,8 +60,9 @@ def abort_on_exception(func):
             return func(*args, **kwargs)
         except Exception, e:
             thread_object = args[0]
+            exc_info = sys.exc_info()
             thread_object.log.error('Exception type %s: %s' % (e.__class__.__name__, e.message))
-            thread_object.emit('aborted', e)
+            thread_object.emit('aborted', exc_info)
     return wrapper
 
 class UpdateAvailableScannersThread(IdleObject, threading.Thread):

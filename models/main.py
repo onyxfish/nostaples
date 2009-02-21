@@ -117,13 +117,11 @@ class MainModel(Model):
     
     class GenericPropertySetter(object):
         """
-        This 'function factory' produces callable objects
-        to override the python-gtkmvc accessors established in
-        gtkmvc.support.metaclass_base.py.
+        This callable object overrides the python-gtkmvc
+        accessors established in gtkmvc.support.metaclass_base.py.
         
-        These functions not only handle notifying observers
-        of changes in the property, but also persist changes
-        to the gconf backend.
+        It handles not only notifying observers of changes in the 
+        property, but also persist changes to the state backend.
         """
         def __init__(self, property_name, state_name):
             """

@@ -531,7 +531,7 @@ class MainController(Controller):
         
         main_model.scan_in_progress = False
         
-    def on_scan_aborted(self, scanning_thread, e):
+    def on_scan_aborted(self, scanning_thread, exc_info):
         """
         Change display to indicate that scanning failed and
         convey the to the user the reason why the thread aborted.
@@ -541,11 +541,11 @@ class MainController(Controller):
         reraise the error and let the sys.excepthook deal with it.
         """
         self.on_scan_failed(scanning_thread, 'An error occurred.')
-        
-        if isinstance(e, saneme.SaneError):
-            self.display_device_exception_dialog(e)
+                
+        if isinstance(exc_info[1], saneme.SaneError):
+            self.display_device_exception_dialog(exc_info)
         else:
-            raise e
+            raise exc_info[0], exc_info[1], exc_info[2]
         
     def on_update_available_scanners_thread_finished(self, update_thread, scanner_list):
         """Set the new list of available scanners."""
@@ -555,7 +555,7 @@ class MainController(Controller):
         main_model.available_scanners = scanner_list
         main_model.updating_available_scanners = False
         
-    def on_update_available_scanners_thread_aborted(self, update_thread, e):
+    def on_update_available_scanners_thread_aborted(self, update_thread, exc_info):
         """
         Change the display to indicate that no scanners are available and
         reraise the exception so that it can be caught by the sys.excepthook.
@@ -567,7 +567,7 @@ class MainController(Controller):
         This should be fantastically rare.
         """
         self.on_update_available_scanners_thread_finished(update_thread, [])
-        raise e
+        raise exc_info[0], exc_info[1], exc_info[2]
             
     def on_update_scanner_options_thread_finished(self, update_thread, mode_list, resolution_list):
         """
@@ -581,7 +581,7 @@ class MainController(Controller):
         main_model.valid_resolutions = resolution_list
         main_model.updating_scan_options = False
         
-    def on_update_scanner_options_thread_aborted(self, update_thread, e):
+    def on_update_scanner_options_thread_aborted(self, update_thread, exc_info):
         """
         Change display to indicate that updating the options failed and
         convey the to the user the reason why the thread aborted.
@@ -596,9 +596,9 @@ class MainController(Controller):
         self.on_update_scanner_options_thread_finished(update_thread, [], [])
         
         if isinstance(e, saneme.SaneError):
-            self.display_device_exception_dialog(e)
+            self.display_device_exception_dialog(exc_info)
         else:
-            raise e
+            raise exc_info[0], exc_info[1], exc_info[2]
         
     # PUBLIC METHODS
         
@@ -760,7 +760,7 @@ class MainController(Controller):
         update_thread.connect("aborted", self.on_update_scanner_options_thread_aborted)
         update_thread.start()
         
-    def display_device_exception_dialog(self, exception):
+    def display_device_exception_dialog(self, exc_info):
         """
         Display an error dialog that provides the user with the option of
         blacklisting the device which caused the error.
@@ -774,7 +774,7 @@ class MainController(Controller):
             dialog.set_has_separator (False)
     
         primary = "<big><b>A hardware exception has been logged.</b></big>"
-        secondary = '%s\n\n%s' % (exception.message, 'If this error continues to occur you may choose to blacklist the device so that it no longer appears in the list of available scanners.')
+        secondary = '%s\n\n%s' % (exc_info[1].message, 'If this error continues to occur you may choose to blacklist the device so that it no longer appears in the list of available scanners.')
     
         dialog.set_markup(primary)
         dialog.format_secondary_markup(secondary)
