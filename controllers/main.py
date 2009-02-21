@@ -322,6 +322,7 @@ class MainController(Controller):
     def property_show_adjustments_value_change(self, model, old_value, new_value):
         """Update the visibility of the adjustments controls."""
         main_view = self.application.get_main_view()
+        
         menu_item = main_view['show_adjustments_menu_item']
         menu_item.set_active(new_value)
         
