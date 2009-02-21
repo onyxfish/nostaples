@@ -357,14 +357,18 @@ class Device(object):
         
         status = sane_open(self.name, byref(self._handle))
         
+        # If and exception will be thrown, nullify device handle
+        # so is_open() will return false for the device.
+        if status != SANE_STATUS_GOOD.value:
+            self._handle = None
+        
         if status == SANE_STATUS_GOOD.value:
             pass
         elif status == SANE_STATUS_DEVICE_BUSY.value:
             raise SaneDeviceBusyError(
                 'sane_open reported that the device was busy.')
         elif status == SANE_STATUS_INVAL.value:
-            # TODO - invalid device name?  disconnected?
-            raise AssertionError(
+            raise SaneInvalidParameterError(
                 'sane_open reported that the device name was invalid.')
         elif status == SANE_STATUS_IO_ERROR.value:
             raise SaneIOError(

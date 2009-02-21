@@ -57,7 +57,16 @@ class SaneDeviceBusyError(SaneError):
     Corresponds to SANE status code SANE_STATUS_DEVICE_BUSY.
     """
     pass
+
+class SaneInvalidParameterError(SaneError):
+    """
+    Exception denoting that SANE received an invalid parameter
+    to a function call.
     
+    Corresponds to SANE status code SANE_STATUS_INVAL.
+    """
+    pass
+
 class SaneInvalidDataError(SaneError):
     """
     Exception denoting that some data or argument was not
