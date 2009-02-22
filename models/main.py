@@ -129,7 +129,15 @@ class MainModel(Model):
         
     def set_prop_active_scanner(self, value):
         """
-        Write state.
+        Open the new scanner and write its name to the StateManager.
+        
+        Note: This and all other propertys setters related to scanner hardware
+        will force notifications to all observers by setting the old_value
+        parameter to None when calling notify_property_value_change().  This
+        has the effect of making changes in the active scanner or its available
+        options propagate down to the active mode and other dependent
+        properties.  This way the GUI and the settings applied to the SANE
+        device are kept synchronized.
         """
         main_controller = self.application.get_main_controller()
         
@@ -170,7 +178,8 @@ class MainModel(Model):
         
     def set_prop_active_mode(self, value):
         """
-        Write state.
+        Update the scanner options and write state to the StateManager.
+        
         See L{set_prop_active_scanner} for detailed comments.
         """
         self._prop_active_mode = value    
@@ -192,7 +201,8 @@ class MainModel(Model):
         
     def set_prop_active_resolution(self, value):
         """
-        Write state.
+        Update the scanner options and write state to the StateManager.
+        
         See L{set_prop_active_scanner} for detailed comments.
         """
         self._prop_active_resolution = value
@@ -215,6 +225,8 @@ class MainModel(Model):
     def set_prop_available_scanners(self, value):
         """
         Set the list of available scanners and update the active_scanner.
+        
+        See L{set_prop_active_scanner} for detailed comments.
         """
         main_controller = self.application.get_main_controller()
         
@@ -237,8 +249,8 @@ class MainModel(Model):
         
     def set_prop_valid_modes(self, value):
         """
-        Set the list of valid scan modes, updating the active_mode
-        if it is no longer in the list.
+        Set the list of valid scan modes, update the active mode and write state
+        to the StateManager.
         
         See L{set_prop_available_scanners} for detailed comments.
         """
@@ -258,8 +270,8 @@ class MainModel(Model):
         
     def set_prop_valid_resolutions(self, value):
         """
-        Set the list of valid scan resolutions, updating the 
-        active_resolution if it is no longer in the list.
+        Set the list of valid scan resolutions, update the active resolution
+        and write state to the StateManager.
         
         See L{set_prop_available_scanners} for detailed comments.
         """

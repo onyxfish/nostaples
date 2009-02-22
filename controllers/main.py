@@ -548,7 +548,7 @@ class MainController(Controller):
         status_controller = self.application.get_status_controller()
         
         # Remove scanners that do not support necessary options
-        preferences_model.unsupported_scanners = []      
+        preferences_model.unsupported_scanners = []
         
         for scanner in scanner_list:
             if not scanner.has_option('mode') or \
