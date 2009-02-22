@@ -302,22 +302,28 @@ class Device(object):
             pass
         elif status == SANE_STATUS_UNSUPPORTED.value:
             raise SaneUnsupportedOperationError(
-                'sane_control_option reported that a value was outside the option\'s constraint.')
+                'sane_control_option reported that a value was outside the option\'s constraint.',
+                device=self)
         elif status == SANE_STATUS_INVAL.value:
             raise SaneInvalidParameterError(
-                'sane_open reported that the device name was invalid.')
+                'sane_open reported that the device name was invalid.',
+                device=self)
         elif status == SANE_STATUS_IO_ERROR.value:
             raise SaneIOError(
-                'sane_open reported a communications error.')
+                'sane_open reported a communications error.',
+                device=self)
         elif status == SANE_STATUS_NO_MEM.value:
             raise SaneOutOfMemoryError(
-                'sane_open ran out of memory.')
+                'sane_open ran out of memory.',
+                device=self)
         elif status == SANE_STATUS_ACCESS_DENIED.value:
             raise SaneAccessDeniedError(
-                'sane_open requires greater access to open the device.')
+                'sane_open requires greater access to open the device.',
+                device=self)
         else:
             raise SaneUnknownError(
-                'sane_open returned an invalid status: %i.' % status)
+                'sane_open returned an invalid status: %i.' % status,
+                device=self)
         
         option_count = option_value.contents.value
         
@@ -371,22 +377,28 @@ class Device(object):
             pass
         elif status == SANE_STATUS_DEVICE_BUSY.value:
             raise SaneDeviceBusyError(
-                'sane_open reported that the device was busy.')
+                'sane_open reported that the device was busy.',
+                device=self)
         elif status == SANE_STATUS_INVAL.value:
             raise SaneInvalidParameterError(
-                'sane_open reported that the device name was invalid.')
+                'sane_open reported that the device name was invalid.',
+                device=self)
         elif status == SANE_STATUS_IO_ERROR.value:
             raise SaneIOError(
-                'sane_open reported a communications error.')
+                'sane_open reported a communications error.',
+                device=self)
         elif status == SANE_STATUS_NO_MEM.value:
             raise SaneOutOfMemoryError(
-                'sane_open ran out of memory.')
+                'sane_open ran out of memory.',
+                device=self)
         elif status == SANE_STATUS_ACCESS_DENIED.value:
             raise SaneAccessDeniedError(
-                'sane_open requires greater access to open the device.')
+                'sane_open requires greater access to open the device.',
+                device=self)
         else:
             raise SaneUnknownError(
-                'sane_open returned an invalid status: %i.' % status)
+                'sane_open returned an invalid status: %i.' % status,
+                device=self)
         
         if self._handle == c_void_p(None):
             raise AssertionError('device handle was a null pointer.')
@@ -443,31 +455,40 @@ class Device(object):
             pass
         elif status == SANE_STATUS_CANCELLED.value:
             raise AssertionError(
-                'sane_start reported cancelled status before it was set.')
+                'sane_start reported cancelled status before it was set.',
+                device=self)
         elif status == SANE_STATUS_DEVICE_BUSY.value:
             raise SaneDeviceBusyError(
-                'sane_start reported the device was in use.')
+                'sane_start reported the device was in use.',
+                device=self)
         elif status == SANE_STATUS_JAMMED.value:
             raise SaneDeviceJammedError(
-                'sane_start reported a paper jam.')
+                'sane_start reported a paper jam.',
+                device=self)
         elif status == SANE_STATUS_NO_DOCS.value:
             raise SaneNoDocumentsError(
-                'sane_start reported that the document feeder was empty.')
+                'sane_start reported that the document feeder was empty.',
+                device=self)
         elif status == SANE_STATUS_COVER_OPEN.value:
             raise SaneCoverOpenError(
-                'sane_start reported that the device cover was open.')
+                'sane_start reported that the device cover was open.',
+                device=self)
         elif status == SANE_STATUS_IO_ERROR.value:
             raise SaneIOError(
-                'sane_start encountered a communications error.')
+                'sane_start encountered a communications error.',
+                device=self)
         elif status == SANE_STATUS_NO_MEM.value:
             raise SaneOutOfMemoryError(
-                'sane_start ran out of memory.')
+                'sane_start ran out of memory.',
+                device=self)
         elif status == SANE_STATUS_INVAL.value:
             #TODO - see docs
-            raise SaneInvalidDataError()
+            raise SaneInvalidDataError(
+                device=self)
         else:
             raise SaneUnknownError(
-                'sane_start returned an invalid status: %i.' % status)
+                'sane_start returned an invalid status: %i.' % status,
+                device=self)
         
         sane_parameters = SANE_Parameters()
         
@@ -476,7 +497,8 @@ class Device(object):
         
         if status != SANE_STATUS_GOOD.value:
             raise SaneUnknownError(
-                'sane_get_parameters returned an invalid status: %i.' % status)
+                'sane_get_parameters returned an invalid status: %i.' % status,
+                device=self)
 
         scan_info = ScanInfo(sane_parameters)
         
@@ -502,25 +524,32 @@ class Device(object):
                 return None
             elif status == SANE_STATUS_JAMMED.value:
                 raise SaneDeviceJammedError(
-                    'sane_read reported a paper jam.')
+                    'sane_read reported a paper jam.',
+                    device=self)
             elif status == SANE_STATUS_NO_DOCS.value:
                 raise SaneNoDocumentsError(
-                    'sane_read reported that the document feeder was empty.')
+                    'sane_read reported that the document feeder was empty.',
+                    device=self)
             elif status == SANE_STATUS_COVER_OPEN.value:
                 raise SaneCoverOpenError(
-                    'sane_read reported that the device cover was open.')
+                    'sane_read reported that the device cover was open.',
+                    device=self)
             elif status == SANE_STATUS_IO_ERROR.value:
                 raise SaneIOError(
-                    'sane_read encountered a communications error.')
+                    'sane_read encountered a communications error.',
+                    device=self)
             elif status == SANE_STATUS_NO_MEM.value:
                 raise SaneOutOfMemoryError(
-                    'sane_read ran out of memory.')
+                    'sane_read ran out of memory.',
+                    device=self)
             elif status == SANE_STATUS_ACCESS_DENIED.value:
                 raise SaneAccessDeniedError(
-                    'sane_read requires greater access to open the device.')
+                    'sane_read requires greater access to open the device.',
+                    device=self)
             else:
                 raise SaneUnknownError(
-                    'sane_read returned an invalid status: %i.' % status)
+                    'sane_read returned an invalid status: %i.' % status,
+                    device=self)
             
             data_array.extend(temp_array[0:actual_size.value])
             
@@ -675,7 +704,8 @@ class Option(object):
     title = property(__get_title)
 
     def __get_description(self):
-        """
+        """,
+                    device=self
         Get the full description of this option,
         e.g. 'Selects the scan mode (e.g., lineart, monochrome, or color).'
         """
@@ -759,16 +789,20 @@ class Option(object):
                 'sane_control_option reported a value was invalid, but no value was being set.')
         elif status == SANE_STATUS_IO_ERROR.value:
             raise SaneIOError(
-                'sane_control_option reported a communications error.')
+                'sane_control_option reported a communications error.',
+                device=self._device)
         elif status == SANE_STATUS_NO_MEM.value:
             raise SaneOutOfMemoryError(
-                'sane_control_option ran out of memory.')
+                'sane_control_option ran out of memory.',
+                device=self._device)
         elif status == SANE_STATUS_ACCESS_DENIED.value:
             raise SaneAccessDeniedError(
-                'sane_control_option requires greater access to open the device.')
+                'sane_control_option requires greater access to open the device.',
+                device=self._device)
         else:
             raise SaneUnknownError(
-                'sane_control_option returned an invalid status: %i.' % status)
+                'sane_control_option returned an invalid status: %i.' % status,
+                device=self._device)
         
         if self._type == SANE_TYPE_STRING.value:
             option_value = option_value.value
@@ -860,16 +894,20 @@ class Option(object):
                 'sane_control_option reported that the value to be set was invalid, despite checks.')
         elif status == SANE_STATUS_IO_ERROR.value:
             raise SaneIOError(
-                'sane_control_option reported a communications error.')
+                'sane_control_option reported a communications error.',
+                device=self._device)
         elif status == SANE_STATUS_NO_MEM.value:
             raise SaneOutOfMemoryError(
-                'sane_control_option ran out of memory.')
+                'sane_control_option ran out of memory.',
+                device=self._device)
         elif status == SANE_STATUS_ACCESS_DENIED.value:
             raise SaneAccessDeniedError(
-                'sane_control_option requires greater access to open the device.')
+                'sane_control_option requires greater access to open the device.',
+                device=self._device)
         else:
             raise SaneUnknownError(
-                'sane_control_option returned an invalid status: %i .' % status)
+                'sane_control_option returned an invalid status: %i .' % status,
+                device=self._device)
         
         if self._log:
             self._log.debug('Option %s set to value %s.', self._name, value)
