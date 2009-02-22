@@ -35,6 +35,7 @@ class PreferencesModel(Model):
         'preview_mode' : constants.DEFAULT_PREVIEW_MODE,
         'thumbnail_size' : constants.DEFAULT_THUMBNAIL_SIZE,
         
+        'unsupported_scanners' : [],    # Not persisted
         'blacklisted_scanners' : [],    # List of scanner display names
         
         'saved_keywords' : '',
