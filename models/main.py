@@ -130,18 +130,17 @@ class MainModel(Model):
     def set_prop_active_scanner(self, value):
         """
         Write state.
-        See L{set_prop_active_scanner} for detailed comments.
         """
         main_controller = self.application.get_main_controller()
         
         # Ignore spurious updates
         old_value = self._prop_active_scanner
-        if old_value == value:
-            return
         
         # Close the old scanner
-        old_value.close()
+        if isinstance(old_value, saneme.Device):
+            old_value.close()
         
+        # Verify that the proper type is being set
         if value is not None:
             assert isinstance(value, saneme.Device)
         
@@ -156,6 +155,9 @@ class MainModel(Model):
         if value is not None:
             try:
                 value.open()
+                self.valid_modes = value.options['mode'].constraint
+                self.valid_resolutions = \
+                    [str(i) for i in value.options['resolution'].constraint]
             except saneme.SaneError:
                 exc_info = sys.exc_info()
                 main_controller.run_device_exception_dialog(exc_info)
@@ -171,73 +173,67 @@ class MainModel(Model):
         Write state.
         See L{set_prop_active_scanner} for detailed comments.
         """
-        old_value = self._prop_active_mode
-        if old_value == value:
-            return        
-        self._prop_active_mode = value        
+        self._prop_active_mode = value    
+            
         if value is not None:
-            self.application.get_state_manager()['scan_mode'] = value            
+            # This catches the case where the value is being loaded from state
+            # but a scanner has not yet been activated.
+            if self.active_scanner:
+                try:
+                    self.active_scanner.options['mode'].value = value
+                except saneme.SaneReloadOptionsError:
+                    # TODO
+                    pass
+            
+            self.application.get_state_manager()['scan_mode'] = value   
+                     
         self.notify_property_value_change(
-            'active_mode', old_value, value)
+            'active_mode', None, value)    
         
     def set_prop_active_resolution(self, value):
         """
         Write state.
         See L{set_prop_active_scanner} for detailed comments.
         """
-        old_value = self._prop_active_resolution
-        if old_value == value:
-            return
         self._prop_active_resolution = value
+        
         if value is not None:
+            # This catches the case where the value is being loaded from state
+            # but a scanner has not yet been activated.
+            if self.active_scanner:
+                try:
+                    self.active_scanner.options['resolution'].value = int(value)
+                except saneme.SaneReloadOptionsError:
+                    # TODO
+                    pass
+                
             self.application.get_state_manager()['scan_resolution'] = value
+            
         self.notify_property_value_change(
-            'active_resolution', old_value, value)
+            'active_resolution', None, value)
         
     def set_prop_available_scanners(self, value):
         """
-        Set the list of available scanners, updating the active_scanner
-        if it is no longer in the list.
+        Set the list of available scanners and update the active_scanner.
         """
         main_controller = self.application.get_main_controller()
         
-        old_value = self._prop_available_scanners
+        self._prop_available_scanners = value
+        
+        # Force notification
+        self.notify_property_value_change(
+            'available_scanners', None, value)
         
         if len(value) == 0:
-            self._prop_active_scanner = None
+            self.active_scanner = None
         else:           
             # Select the first available scanner if the previously 
             # selected scanner is not in the new list
-            # We avoid the active_scanner property setter so that
-            # The property notification callbacks will not be fired
-            # until after the menu has been updated.
             if self._prop_active_scanner not in value:
-                try:
-                    value[0].open()
-                    
-                    self._prop_active_scanner = value[0]
-                    self.application.get_state_manager()['active_scanner'] = \
-                        value[0].name
-                except saneme.SaneError:
-                    exc_info = sys.exc_info()
-                    main_controller.run_device_exception_dialog(exc_info)
+                self.active_scanner = value[0]
             # Otherwise maintain current selection
             else:
-                pass
-        
-        self._prop_available_scanners = value
-        
-        # This will only actually cause an update if
-        # old_value != value
-        self.notify_property_value_change(
-            'available_scanners', old_value, value)
-        
-        # Force the scanner options to update, even if the active
-        # scanner did not change.  This is necessary in case the 
-        # current value was loaded from state, in which case the 
-        # options will not yet have been loaded).
-        self.notify_property_value_change(
-            'active_scanner', None, self._prop_active_scanner)
+                self.active_scanner = self.active_scanner
         
     def set_prop_valid_modes(self, value):
         """
@@ -246,24 +242,19 @@ class MainModel(Model):
         
         See L{set_prop_available_scanners} for detailed comments.
         """
-        old_value = self._prop_valid_modes
-        
-        if len(value) == 0:
-            self._prop_active_mode = None
-        else:
-            if self._prop_active_mode not in value:
-                self._prop_active_mode = value[0]
-                self.application.get_state_manager()['scan_mode'] = value[0]
-            else:
-                pass
-        
         self._prop_valid_modes = value
         
         self.notify_property_value_change(
-            'valid_modes', old_value, value)
+            'valid_modes', None, value)
         
-        self.notify_property_value_change(
-            'active_mode', None, self._prop_active_mode)
+        # Update the active mode
+        if len(value) == 0:
+            self.active_mode = None
+        else:
+            if self.active_mode not in value:
+                self.active_mode = value[0]
+            else:
+                self.active_mode = self.active_mode   
         
     def set_prop_valid_resolutions(self, value):
         """
@@ -272,25 +263,19 @@ class MainModel(Model):
         
         See L{set_prop_available_scanners} for detailed comments.
         """
-        old_value = self._prop_valid_resolutions
-        
-        if len(value) == 0:
-            self._prop_active_resolution = None
-        else:
-            if self._prop_active_resolution not in value:
-                self._prop_active_resolution = value[0]
-                self.application.get_state_manager()['scan_resolution'] = \
-                    value[0]
-            else:
-                pass
-        
         self._prop_valid_resolutions = value
         
         self.notify_property_value_change(
-            'valid_resolutions', old_value, value)
-        
-        self.notify_property_value_change(
-            'active_resolution', None, self._prop_active_resolution)
+            'valid_resolutions', None, value)
+            
+        # Update the active resolution
+        if len(value) == 0:
+            self.active_resolution = None
+        else:
+            if self.active_resolution not in value:
+                self.active_resolution = value[0]
+            else:
+                self.active_resolution = self.active_resolution
         
     # STATE CALLBACKS
         

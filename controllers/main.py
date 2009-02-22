@@ -321,17 +321,19 @@ class MainController(Controller):
 
     def property_show_adjustments_value_change(self, model, old_value, new_value):
         """Update the visibility of the adjustments controls."""
+        document_controller = self.application.get_document_controller()
         main_view = self.application.get_main_view()
         
         menu_item = main_view['show_adjustments_menu_item']
         menu_item.set_active(new_value)
         
-        self.application.get_document_controller().toggle_adjustments_visible(new_value)    
+        document_controller.toggle_adjustments_visible(new_value)    
         
     def property_active_scanner_value_change(self, model, old_value, new_value):
         """
         Update the menu and valid scanner options to match the new device.
         """
+        main_model = self.application.get_main_model()
         main_view = self.application.get_main_view()
         status_controller = self.application.get_status_controller()
         
@@ -339,8 +341,6 @@ class MainController(Controller):
             if menu_item.get_children()[0].get_text() == new_value.display_name:
                 menu_item.set_active(True)
                 break
-        
-        self._update_scanner_options()
         
     def property_active_mode_value_change(self, model, old_value, new_value):
         """Select the active mode from in the menu."""
@@ -451,12 +451,6 @@ class MainController(Controller):
         self._update_status()
         
     def property_updating_available_scanners_value_change(self, model, old_value, new_value):
-        """Disable or re-enable scan controls."""
-        self._toggle_scan_controls()
-        self._toggle_document_controls()
-        self._update_status()
-    
-    def property_updating_scan_options_value_change(self, model, old_value, new_value):
         """Disable or re-enable scan controls."""
         self._toggle_scan_controls()
         self._toggle_document_controls()
@@ -583,37 +577,6 @@ class MainController(Controller):
         """
         self.on_update_available_scanners_thread_finished(update_thread, [])
         raise exc_info[0], exc_info[1], exc_info[2]
-            
-    def on_update_scanner_options_thread_finished(self, update_thread, mode_list, resolution_list):
-        """
-        Update the mode and resolution lists and rark that
-        the scanner is no longer in use.
-        """
-        main_model = self.application.get_main_model()
-        status_controller = self.application.get_status_controller()
-        
-        main_model.valid_modes = mode_list
-        main_model.valid_resolutions = resolution_list
-        main_model.updating_scan_options = False
-        
-    def on_update_scanner_options_thread_aborted(self, update_thread, exc_info):
-        """
-        Change display to indicate that updating the options failed and
-        convey the to the user the reason why the thread aborted.
-        
-        If the failure was from a SANE exception then give the
-        user the option to blacklist the device.  If not, then
-        reraise the error and let the sys.excepthook deal with it.
-        """
-        # TODO: If this fails the scanner icon will still stay lit,
-        # and when the user clicks it the app will error again since it
-        # will not have a valid mode/resolution.
-        self.on_update_scanner_options_thread_finished(update_thread, [], [])
-        
-        if isinstance(exc_info[1], saneme.SaneError):
-            self.run_device_exception_dialog(exc_info)
-        else:
-            raise exc_info[0], exc_info[1], exc_info[2]
         
     # PUBLIC METHODS
         
@@ -669,8 +632,7 @@ class MainController(Controller):
         main_model = self.application.get_main_model()
         main_view = self.application.get_main_view()
         
-        if main_model.scan_in_progress or main_model.updating_available_scanners or \
-            main_model.updating_scan_options:
+        if main_model.scan_in_progress or main_model.updating_available_scanners:
             main_view.set_scan_controls_sensitive(False)
             main_view.set_refresh_scanner_controls_sensitive(False)
         else:
@@ -688,8 +650,7 @@ class MainController(Controller):
         main_view = self.application.get_main_view()
         
         # Disable all controls when the scanner is in use
-        if main_model.scan_in_progress or main_model.updating_available_scanners or \
-            main_model.updating_scan_options:
+        if main_model.scan_in_progress or main_model.updating_available_scanners:
             main_view.set_file_controls_sensitive(False)
             main_view.set_delete_controls_sensitive(False)
             main_view.set_zoom_controls_sensitive(False)
@@ -732,8 +693,6 @@ class MainController(Controller):
             status_controller.push(self.status_context, 'Scanning...')
         elif main_model.updating_available_scanners:
             status_controller.push(self.status_context, 'Querying hardware...')
-        elif main_model.updating_scan_options:
-            status_controller.push(self.status_context, 'Querying options...')
         else:
             if main_model.active_scanner:
                 status_controller.push(self.status_context,
@@ -747,8 +706,7 @@ class MainController(Controller):
         main_view = self.application.get_main_view()
         
         main_model.scan_in_progress = True
-        scanning_thread = ScanningThread(
-            main_model.active_scanner, main_model.active_mode, main_model.active_resolution)
+        scanning_thread = ScanningThread(main_model.active_scanner)
         scanning_thread.connect("progress", self.on_scan_progress)
         scanning_thread.connect("succeeded", self.on_scan_succeeded)
         scanning_thread.connect("failed", self.on_scan_failed)
@@ -782,14 +740,4 @@ class MainController(Controller):
         update_thread = UpdateAvailableScannersThread(sane)
         update_thread.connect("finished", self.on_update_available_scanners_thread_finished)
         update_thread.connect("aborted", self.on_update_available_scanners_thread_aborted)
-        update_thread.start()
-    
-    def _update_scanner_options(self):
-        """Determine the valid options for the current scanner."""  
-        main_model = self.application.get_main_model()
-                  
-        main_model.updating_scan_options = True
-        update_thread = UpdateScannerOptionsThread(main_model.active_scanner)
-        update_thread.connect("finished", self.on_update_scanner_options_thread_finished)
-        update_thread.connect("aborted", self.on_update_scanner_options_thread_aborted)
         update_thread.start()

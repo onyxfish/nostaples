@@ -126,7 +126,7 @@ class ScanningThread(IdleObject, threading.Thread):
                 gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, (gobject.TYPE_PYOBJECT,)),
             }
     
-    def __init__(self, sane_device, mode, resolution):
+    def __init__(self, sane_device):
         """
         Initialize the thread and get a tempfile name that
         will house the scanned image.
@@ -137,8 +137,6 @@ class ScanningThread(IdleObject, threading.Thread):
         self.log = logging.getLogger(self.__class__.__name__)
         
         self.sane_device = sane_device
-        self.mode = mode
-        self.resolution = resolution
         
         self.cancel_event = threading.Event()
         
@@ -161,20 +159,6 @@ class ScanningThread(IdleObject, threading.Thread):
         """
         if not self.sane_device.is_open():
             raise AssertionError('sane_device.is_open() returned false')
-
-        self.log.debug('Setting device options.')
-        
-        try:
-            self.sane_device.options['mode'].value = self.mode
-        except saneme.SaneReloadOptionsError:
-            # TODO
-            pass
-             
-        try:
-            self.sane_device.options['resolution'].value = int(self.resolution)
-        except saneme.SaneReloadOptionsError:
-            # TODO
-            pass
         
         self.log.debug('Beginning scan.')
         
@@ -187,43 +171,3 @@ class ScanningThread(IdleObject, threading.Thread):
             if not pil_image:
                 raise AssertionError('sane_device.scan() returned None')
             self.emit('succeeded', pil_image)
-        
-class UpdateScannerOptionsThread(IdleObject, threading.Thread):
-    """
-    Responsible for getting an up-to-date list of valid scanner options
-    and passing it back to the main thread.
-    """
-    __gsignals__ =  {
-            'finished': (
-                gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, (gobject.TYPE_PYOBJECT, gobject.TYPE_PYOBJECT)),
-            'aborted': (
-                gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, (gobject.TYPE_PYOBJECT,)),
-            }
-    
-    def __init__(self, sane_device):
-        """
-        Initialize the thread.
-        """
-        IdleObject.__init__(self)
-        threading.Thread.__init__(self)
-        
-        self.log = logging.getLogger(self.__class__.__name__)
-        
-        self.sane_device = sane_device
-        
-        self.log.debug('Created.')
-    
-    @abort_on_exception
-    def run(self):
-        """
-        Queries SANE for a list of available options for the specified scanner.    
-        """
-        assert self.sane_device.is_open()
-        
-        self.log.debug('Updating scanner options.')
-
-        mode_list = self.sane_device.options['mode'].constraint
-        resolution_list = [str(i) for i in self.sane_device.options['resolution'].constraint]
-        
-        # NB: We callback with the lists so that they can updated on the main thread
-        self.emit('finished', mode_list, resolution_list)
