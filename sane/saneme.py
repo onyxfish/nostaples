@@ -239,6 +239,10 @@ class Device(object):
         
         self._display_name = ' '.join([self._vendor, self._model])
         
+        # Temporarily open the device to populate its options
+        self.open()
+        self.close()
+        
     # Read only properties
 
     def __get_name(self):
