@@ -430,6 +430,10 @@ class Device(object):
         if self._log:
             self._log.debug('Device %s closed.', self._name)
             
+    def has_option(self, option_name):
+        """Return true if option_name is available for this scanner."""
+        return (option_name in self.options.keys())
+            
     def scan(self, progress_callback=None):
         """
         Scan a document using this device.
