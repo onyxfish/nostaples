@@ -543,14 +543,20 @@ class MainController(Controller):
         self.on_scan_failed(scanning_thread, 'An error occurred.')
                 
         if isinstance(exc_info[1], saneme.SaneError):
-            self.display_device_exception_dialog(exc_info)
+            self.run_device_exception_dialog(exc_info)
         else:
             raise exc_info[0], exc_info[1], exc_info[2]
         
     def on_update_available_scanners_thread_finished(self, update_thread, scanner_list):
         """Set the new list of available scanners."""
         main_model = self.application.get_main_model()
+        preferences_model = self.application.get_preferences_model()
         status_controller = self.application.get_status_controller()
+        
+        # Remove blacklisted scanners
+        scanner_list = \
+            [scanner for scanner in scanner_list if not \
+             scanner.display_name in preferences_model.blacklisted_scanners]
         
         main_model.available_scanners = scanner_list
         main_model.updating_available_scanners = False
@@ -596,7 +602,7 @@ class MainController(Controller):
         self.on_update_scanner_options_thread_finished(update_thread, [], [])
         
         if isinstance(exc_info[1], saneme.SaneError):
-            self.display_device_exception_dialog(exc_info)
+            self.run_device_exception_dialog(exc_info)
         else:
             raise exc_info[0], exc_info[1], exc_info[2]
         
@@ -606,6 +612,25 @@ class MainController(Controller):
         """Exits the application."""
         self.log.debug('Quit.')
         gtk.main_quit()
+        
+    def run_device_exception_dialog(self, exc_info):
+        """
+        Display an error dialog that provides the user with the option of
+        blacklisting the device which caused the error.
+        
+        TODO: Move into MainView.
+        """
+        main_model = self.application.get_main_model()
+        main_view = self.application.get_main_view()
+        preferences_model = self.application.get_preferences_model()
+        
+        response = main_view.run_device_exception_dialog(exc_info)
+        
+        if response == constants.RESPONSE_BLACKLIST_DEVICE:
+            temp_blacklist = list(preferences_model.blacklisted_scanners)
+            temp_blacklist.append(exc_info[1].device.display_name)
+            temp_blacklist.sort()
+            preferences_model.blacklisted_scanners = temp_blacklist
 
     # PRIVATE METHODS
         
@@ -759,30 +784,3 @@ class MainController(Controller):
         update_thread.connect("finished", self.on_update_scanner_options_thread_finished)
         update_thread.connect("aborted", self.on_update_scanner_options_thread_aborted)
         update_thread.start()
-        
-    def display_device_exception_dialog(self, exc_info):
-        """
-        Display an error dialog that provides the user with the option of
-        blacklisting the device which caused the error.
-        """
-        dialog = gtk.MessageDialog(
-            parent=None, flags=0, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_NONE)
-        dialog.set_title("")
-        
-        # TODO: is this needed?
-        if gtk.check_version (2, 4, 0) is not None:
-            dialog.set_has_separator (False)
-    
-        primary = "<big><b>A hardware exception has been logged.</b></big>"
-        secondary = '%s\n\n%s' % (exc_info[1].message, 'If this error continues to occur you may choose to blacklist the device so that it no longer appears in the list of available scanners.')
-    
-        dialog.set_markup(primary)
-        dialog.format_secondary_markup(secondary)
-    
-        dialog.add_button('Blacklist Device', 1)
-        dialog.add_button(gtk.STOCK_CLOSE, gtk.RESPONSE_CLOSE)
-    
-        response = dialog.run()        
-        dialog.destroy()
-        
-        # TODO: handle blacklisting

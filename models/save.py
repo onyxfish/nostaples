@@ -38,8 +38,6 @@ class SaveModel(Model):
         'author' : '',
         'keywords' : '',
         
-        'saved_keywords' : '',
-        
         'show_document_metadata' : True,
         
         'filename' : '',
@@ -64,27 +62,21 @@ class SaveModel(Model):
         
         self.save_path = state_manager.init_state(
             'save_path', constants.DEFAULT_SAVE_PATH, 
-            nostaples.utils.properties.GenericStateCallback(self, 'save_path'))
+            nostaples.utils.properties.PropertyStateCallback(self, 'save_path'))
         
         self.author = state_manager.init_state(
             'author', constants.DEFAULT_AUTHOR, 
-            nostaples.utils.properties.GenericStateCallback(self, 'author'))
-        
-        self.saved_keywords = state_manager.init_state(
-            'saved_keywords', constants.DEFAULT_SAVED_KEYWORDS, 
-            nostaples.utils.properties.GenericStateCallback(self, 'saved_keywords'))
+            nostaples.utils.properties.PropertyStateCallback(self, 'author'))
         
         self.show_document_metadata = state_manager.init_state(
             'show_document_metadata', constants.DEFAULT_SHOW_DOCUMENT_METADATA, 
-            nostaples.utils.properties.GenericStateCallback(self, 'show_document_metadata'))
+            nostaples.utils.properties.PropertyStateCallback(self, 'show_document_metadata'))
         
     # PROPERTY SETTERS
     
-    set_prop_save_path = nostaples.utils.properties.GenericPropertySetter(
+    set_prop_save_path = nostaples.utils.properties.StatefulPropertySetter(
         'save_path')
-    set_prop_author = nostaples.utils.properties.GenericPropertySetter(
+    set_prop_author = nostaples.utils.properties.StatefulPropertySetter(
         'author')
-    set_prop_saved_keywords = nostaples.utils.properties.GenericPropertySetter(
-        'saved_keywords')
-    set_prop_show_document_metadata = nostaples.utils.properties.GenericPropertySetter(
+    set_prop_show_document_metadata = nostaples.utils.properties.StatefulPropertySetter(
         'show_document_metadata')

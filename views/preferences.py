@@ -40,10 +40,12 @@ class PreferencesView(View):
         could not be configured in Glade.
         """
         self.application = application
+        preferences_controller = application.get_preferences_controller()
+        
         preferences_dialog_glade = os.path.join(
             constants.GUI_DIRECTORY, 'preferences_dialog.glade')
         View.__init__(
-            self, application.get_preferences_controller(), 
+            self, preferences_controller, 
             preferences_dialog_glade, 'preferences_dialog', 
             None, False)
             
@@ -51,17 +53,63 @@ class PreferencesView(View):
         
         # Can not configure this via constructor do to the multiple
         # root windows in the Main View.
-        self['preferences_dialog'].set_transient_for(application.get_main_view()['scan_window'])
+        self['preferences_dialog'].set_transient_for(
+            application.get_main_view()['scan_window'])
         
+        # These two combobox's are setup dynamically. Because of this they
+        # must have their signal handlers connected manually.  Otherwise
+        # their signals will fire before the view creation is finished.
         setup_combobox(
             self['preview_mode_combobox'],
             constants.PREVIEW_MODES_LIST, 
             application.get_preferences_model().preview_mode)
         
+        self['preview_mode_combobox'].connect(
+            'changed', 
+            preferences_controller.on_preview_mode_combobox_changed)
+        
         setup_combobox(
             self['thumbnail_size_combobox'],
             constants.THUMBNAIL_SIZE_LIST, 
             application.get_preferences_model().thumbnail_size)
+        
+        self['thumbnail_size_combobox'].connect(
+            'changed', 
+            preferences_controller.on_thumbnail_size_combobox_changed)
+        
+        # Setup the blacklist tree view
+        blacklist_liststore = gtk.ListStore(str)
+        self['blacklist_tree_view'] = gtk.TreeView()
+        self['blacklist_tree_view'].set_model(blacklist_liststore)
+        self['blacklist_column'] = gtk.TreeViewColumn(None)
+        self['blacklist_cell'] = gtk.CellRendererText()
+        self['blacklist_tree_view'].append_column(self['blacklist_column'])
+        self['blacklist_column'].pack_start(self['blacklist_cell'], True)        
+        self['blacklist_column'].add_attribute(self['blacklist_cell'], 'text', 0)
+        self['blacklist_tree_view'].get_selection().set_mode(
+            gtk.SELECTION_SINGLE)
+        self['blacklist_tree_view'].set_headers_visible(False)
+        self['blacklist_tree_view'].set_property('can-focus', False)
+        
+        self['blacklist_scrolled_window'].add(self['blacklist_tree_view'])
+        self['blacklist_scrolled_window'].show_all()
+        
+        # Setup the keywords tree view
+        keywords_liststore = gtk.ListStore(str)
+        self['keywords_tree_view'] = gtk.TreeView()
+        self['keywords_tree_view'].set_model(keywords_liststore)
+        self['keywords_column'] = gtk.TreeViewColumn(None)
+        self['keywords_cell'] = gtk.CellRendererText()
+        self['keywords_tree_view'].append_column(self['keywords_column'])
+        self['keywords_column'].pack_start(self['keywords_cell'], True)        
+        self['keywords_column'].add_attribute(self['keywords_cell'], 'text', 0)
+        self['keywords_tree_view'].get_selection().set_mode(
+            gtk.SELECTION_SINGLE)
+        self['keywords_tree_view'].set_headers_visible(False)
+        self['keywords_tree_view'].set_property('can-focus', False)
+        
+        self['keywords_scrolled_window'].add(self['keywords_tree_view'])
+        self['keywords_scrolled_window'].show_all()
         
         application.get_preferences_controller().register_view(self)
         

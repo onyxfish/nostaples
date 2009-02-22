@@ -20,10 +20,11 @@ This module holds the utilities that ease the burden of working with
 python-gtkmvc properties.
 """
     
-class GenericPropertySetter(object):
+class StatefulPropertySetter(object):
     """
-    This callable object overrides the python-gtkmvc
-    accessors established in gtkmvc.support.metaclass_base.py.
+    This callable object can override the python-gtkmvc
+    accessor functions created for properties in
+    gtkmvc.support.metaclass_base.py.
     
     It handles not only notifying observers of changes in the 
     property, but also persist changes to the state backend.
@@ -51,7 +52,7 @@ class GenericPropertySetter(object):
         cls.notify_property_value_change(
             self.property_name, old_value, value)
         
-class GenericStateCallback(object):
+class PropertyStateCallback(object):
     """
     This callable object encasuplates the most common reaction to
     a state callback: setting the attribute on the model

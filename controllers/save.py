@@ -63,13 +63,14 @@ class SaveController(Controller):
         """
         Controller.register_view(self, view)
         
+        preferences_model = self.application.get_preferences_model()
         save_model = self.application.get_save_model()
         
         # Force refresh of keyword list
         keywords_liststore = view['keywords_entry'].get_liststore()
         keywords_liststore.clear()
         
-        for keyword in save_model.saved_keywords:
+        for keyword in preferences_model.saved_keywords:
             keywords_liststore.append([keyword])
         
         self.log.debug('%s registered.', view.__class__.__name__)
@@ -275,18 +276,20 @@ class SaveController(Controller):
         Update the saved keywords with any new keywords that
         have been used.
         """
+        preferences_model = self.application.get_preferences_model()
         save_model = self.application.get_save_model()
                         
         new_keywords = []        
         for keyword in save_model.keywords.split():
-            if keyword not in save_model.saved_keywords:
+            if keyword not in preferences_model.saved_keywords:
                 new_keywords.append(keyword)
                 
         if new_keywords:
             temp_list = []
-            temp_list.extend(save_model.saved_keywords)
+            temp_list.extend(preferences_model.saved_keywords)
             temp_list.extend(new_keywords)
-            save_model.saved_keywords = temp_list
+            temp_list.sort()
+            preferences_model.saved_keywords = temp_list
         
     # PUBLIC METHODS
     

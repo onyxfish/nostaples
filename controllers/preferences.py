@@ -42,7 +42,7 @@ class PreferencesController(Controller):
         """
         self.application = application
         Controller.__init__(self, application.get_preferences_model())
-
+        
         self.log = logging.getLogger(self.__class__.__name__)
         self.log.debug('Created.')
 
@@ -61,25 +61,87 @@ class PreferencesController(Controller):
         """
         pass
     
-    # PUBLIC METHODS
-    
-    def run(self):
-        """Run the preferences dialog."""
-        preferences_view = self.application.get_preferences_view()
-        
-        preferences_view.run()
-    
     # USER INTERFACE CALLBACKS
-
-    def on_preferences_dialog_response(self, dialog, response):
-        """Close the preferences dialog."""
+    
+    def on_preview_mode_combobox_changed(self, combobox):
         preferences_model = self.application.get_preferences_model()
         preferences_view = self.application.get_preferences_view()
         
         preferences_model.preview_mode = \
             read_combobox(preferences_view['preview_mode_combobox'])
+    
+    def on_thumbnail_size_combobox_changed(self, combobox):
+        preferences_model = self.application.get_preferences_model()
+        preferences_view = self.application.get_preferences_view()
         
         preferences_model.thumbnail_size = \
             int(read_combobox(preferences_view['thumbnail_size_combobox']))
+            
+    def on_remove_from_blacklist_button_clicked(self, button):
+        """
+        Remove the currently selected blacklist device from the list.
+        """
+        preferences_model = self.application.get_preferences_model()
+        preferences_view = self.application.get_preferences_view()
+        
+        model, selection_iter = \
+            preferences_view['blacklist_tree_view'].get_selection().get_selected()
+            
+        if not selection_iter:
+            return
+            
+        selection_text = model.get_value(selection_iter, 0)
+        model.remove(selection_iter)
+        
+        temp_blacklist = list(preferences_model.blacklisted_scanners)
+        temp_blacklist.remove(selection_text)
+        preferences_model.blacklisted_scanners = temp_blacklist
+    
+    def on_remove_from_keywords_button_clicked(self, button):
+        """
+        Remove the currently selected keyword from the list.
+        """
+        preferences_model = self.application.get_preferences_model()
+        preferences_view = self.application.get_preferences_view()
+        
+        model, selection_iter = \
+            preferences_view['keywords_tree_view'].get_selection().get_selected()
+            
+        if not selection_iter:
+            return
+        
+        selection_text = model.get_value(selection_iter, 0)
+        model.remove(selection_iter)
+        
+        temp_keywords = list(preferences_model.saved_keywords)
+        temp_keywords.remove(selection_text)
+        preferences_model.saved_keywords = temp_keywords
+
+    def on_preferences_dialog_response(self, dialog, response):
+        """Close the preferences dialog."""
+        preferences_view = self.application.get_preferences_view()
         
         preferences_view['preferences_dialog'].hide()
+    
+    # PUBLIC METHODS
+    
+    def run(self):
+        """Run the preferences dialog."""
+        preferences_model = self.application.get_preferences_model()
+        preferences_view = self.application.get_preferences_view()
+        
+        # Refresh blacklist
+        blacklist_liststore = preferences_view['blacklist_tree_view'].get_model()
+        blacklist_liststore.clear()
+        
+        for blacklist_item in preferences_model.blacklisted_scanners:
+            blacklist_liststore.append([blacklist_item])
+            
+        # Refresh keywords
+        keywords_liststore = preferences_view['keywords_tree_view'].get_model()
+        keywords_liststore.clear()
+        
+        for keyword in preferences_model.saved_keywords:
+            keywords_liststore.append([keyword])
+        
+        preferences_view.run()

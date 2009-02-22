@@ -55,7 +55,8 @@ class DocumentView(View):
         self['thumbnails_column'] = gtk.TreeViewColumn(None)
         self['thumbnails_cell'] = gtk.CellRendererPixbuf()
         self['thumbnails_column'].set_sizing(gtk.TREE_VIEW_COLUMN_FIXED)
-        self['thumbnails_column'].set_fixed_width(constants.DEFAULT_THUMBNAIL_SIZE)
+        self['thumbnails_column'].set_fixed_width(
+            constants.DEFAULT_THUMBNAIL_SIZE)
         self['thumbnails_tree_view'].append_column(self['thumbnails_column'])
         self['thumbnails_column'].pack_start(self['thumbnails_cell'], True)
         self['thumbnails_column'].set_cell_data_func(
@@ -82,7 +83,8 @@ class DocumentView(View):
         
         self.log.debug('Created.')
         
-    def thumbnails_column_cell_data_func(self, column, cell_renderer, document_model, iter):
+    def thumbnails_column_cell_data_func(
+            self, column, cell_renderer, document_model, iter):
         """
         Extract the thumbnail pixbuf from the PageModel stored in the
         DocumentModel ListStore, composite a page number into that image,
@@ -125,7 +127,8 @@ class DocumentView(View):
         context.show_layout(layout)
         
         # Get pixbuf back from pixmap and set to cell renderer
-        pixbuf.get_from_drawable(pixmap, pixmap.get_colormap(), 0, 0, 0, 0, -1, -1)
+        pixbuf.get_from_drawable(
+            pixmap, pixmap.get_colormap(), 0, 0, 0, 0, -1, -1)
         cell_renderer.set_property('pixbuf', pixbuf)
         
     def set_adjustments_sensitive(self, sensitive):

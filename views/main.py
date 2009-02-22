@@ -148,3 +148,35 @@ class MainView(View):
         self['go_previous_button'].set_sensitive(sensitive)
         self['go_next_button'].set_sensitive(sensitive)
         self['go_last_button'].set_sensitive(sensitive)
+        
+    def run_device_exception_dialog(self, exc_info):
+        """
+        Display an error dialog that provides the user with the option of
+        blacklisting the device which caused the error.
+        
+        TODO: Rebuild dialog in Glade.
+        """
+        dialog = gtk.MessageDialog(
+            parent=None, flags=0, type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_NONE)
+        dialog.set_title('')
+        
+        # TODO: is this needed?
+        if gtk.check_version (2, 4, 0) is not None:
+            dialog.set_has_separator (False)
+    
+        primary = "<big><b>A hardware exception has been logged.</b></big>"
+        secondary = '<b>Device:</b> %s\n<b>Exception:</b> %s\n\n%s' % (
+            exc_info[1].device.display_name,
+            exc_info[1].message, 
+            'If this error continues to occur you may choose to blacklist the device so that it no longer appears in the list of available scanners.')
+    
+        dialog.set_markup(primary)
+        dialog.format_secondary_markup(secondary)
+    
+        dialog.add_button('Blacklist Device', constants.RESPONSE_BLACKLIST_DEVICE)
+        dialog.add_button(gtk.STOCK_CLOSE, gtk.RESPONSE_CLOSE)
+    
+        response = dialog.run()        
+        dialog.destroy()
+        
+        return response

@@ -21,6 +21,7 @@ data.
 """
 
 import logging
+import sys
 
 from gtkmvc.model import Model
 
@@ -77,23 +78,23 @@ class MainModel(Model):
         
         self.show_toolbar = state_manager.init_state(
             'show_toolbar', constants.DEFAULT_SHOW_TOOLBAR, 
-            nostaples.utils.properties.GenericStateCallback(self, 'show_toolbar'))
+            nostaples.utils.properties.PropertyStateCallback(self, 'show_toolbar'))
         
         self.show_statusbar = state_manager.init_state(
             'show_statusbar', constants.DEFAULT_SHOW_STATUSBAR, 
-            nostaples.utils.properties.GenericStateCallback(self, 'show_statusbar'))
+            nostaples.utils.properties.PropertyStateCallback(self, 'show_statusbar'))
         
         self.show_thumbnails = state_manager.init_state(
             'show_thumbnails', constants.DEFAULT_SHOW_THUMBNAILS, 
-            nostaples.utils.properties.GenericStateCallback(self, 'show_thumbnails'))
+            nostaples.utils.properties.PropertyStateCallback(self, 'show_thumbnails'))
         
         self.show_adjustments = state_manager.init_state(
             'show_adjustments', constants.DEFAULT_SHOW_ADJUSTMENTS, 
-            nostaples.utils.properties.GenericStateCallback(self, 'show_adjustments'))
+            nostaples.utils.properties.PropertyStateCallback(self, 'show_adjustments'))
         
         self.rotate_all_pages = state_manager.init_state(
             'rotate_all_pages', constants.DEFAULT_ROTATE_ALL_PAGES, 
-            nostaples.utils.properties.GenericStateCallback(self, 'rotate_all_pages'))
+            nostaples.utils.properties.PropertyStateCallback(self, 'rotate_all_pages'))
 
         # The local representation of active_scanner is a
         # saneme.Device, but it is persisted by its name attribute only.
@@ -115,15 +116,15 @@ class MainModel(Model):
         
     # PROPERTY SETTERS
     
-    set_prop_show_toolbar = nostaples.utils.properties.GenericPropertySetter(
+    set_prop_show_toolbar = nostaples.utils.properties.StatefulPropertySetter(
         'show_toolbar')
-    set_prop_show_statusbar = nostaples.utils.properties.GenericPropertySetter(
+    set_prop_show_statusbar = nostaples.utils.properties.StatefulPropertySetter(
         'show_statusbar')
-    set_prop_show_thumbnails = nostaples.utils.properties.GenericPropertySetter(
+    set_prop_show_thumbnails = nostaples.utils.properties.StatefulPropertySetter(
         'show_thumbnails')
-    set_prop_show_adjustments = nostaples.utils.properties.GenericPropertySetter(
+    set_prop_show_adjustments = nostaples.utils.properties.StatefulPropertySetter(
         'show_adjustments')
-    set_prop_rotate_all_pages = nostaples.utils.properties.GenericPropertySetter(
+    set_prop_rotate_all_pages = nostaples.utils.properties.StatefulPropertySetter(
         'rotate_all_pages')
         
     def set_prop_active_scanner(self, value):
@@ -153,11 +154,11 @@ class MainModel(Model):
         # value in the state backend and also allows for smooth
         # transitions if a scanner is disconnected and reconnected.
         if value is not None:
-            # TODO: handle exceptions
             try:
                 value.open()
-            except saneme.SaneError, e:
-                main_controller.display_device_exception_dialog(e)
+            except saneme.SaneError:
+                exc_info = sys.exc_info()
+                main_controller.run_device_exception_dialog(exc_info)
             
             self.application.get_state_manager()['active_scanner'] = value.name
             
@@ -217,8 +218,9 @@ class MainModel(Model):
                     self._prop_active_scanner = value[0]
                     self.application.get_state_manager()['active_scanner'] = \
                         value[0].name
-                except saneme.SaneError, e:
-                    main_controller.display_device_exception_dialog(e)
+                except saneme.SaneError:
+                    exc_info = sys.exc_info()
+                    main_controller.run_device_exception_dialog(exc_info)
             # Otherwise maintain current selection
             else:
                 pass
@@ -298,10 +300,7 @@ class MainModel(Model):
         sane = self.application.get_sane()
         
         if state_manager['active_scanner'] in self.available_scanners:
-            try:
-                self.active_scanner = sane.get_device_by_name(state_manager['active_scanner'])
-            except SaneNoSuchDeviceError:
-                raise
+            self.active_scanner = sane.get_device_by_name(state_manager['active_scanner'])
         else:
             state_manager['active_scanner'] = self.active_scanner.name
         

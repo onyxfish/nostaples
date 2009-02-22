@@ -24,6 +24,7 @@ import logging
 from gtkmvc.model import Model
 
 from nostaples import constants
+import nostaples.utils.properties
 
 class PreferencesModel(Model):
     """
@@ -32,7 +33,11 @@ class PreferencesModel(Model):
     __properties__ = \
     {
         'preview_mode' : constants.DEFAULT_PREVIEW_MODE,
-        'thumbnail_size' : constants.DEFAULT_THUMBNAIL_SIZE
+        'thumbnail_size' : constants.DEFAULT_THUMBNAIL_SIZE,
+        
+        'blacklisted_scanners' : [],    # List of scanner display names
+        
+        'saved_keywords' : '',
     }
 
     def __init__(self, application):
@@ -54,49 +59,27 @@ class PreferencesModel(Model):
         
         self.preview_mode = state_manager.init_state(
             'preview_mode', constants.DEFAULT_PREVIEW_MODE, 
-            self.state_preview_mode_change)
+            nostaples.utils.properties.PropertyStateCallback(self, 'preview_mode'))
         
         self.thumbnail_size = state_manager.init_state(
             'thumbnail_size', constants.DEFAULT_THUMBNAIL_SIZE, 
-            self.state_thumbnail_size_change)
+            nostaples.utils.properties.PropertyStateCallback(self, 'thumbnail_size'))
         
-    # Property setters
-    # (see gtkmvc.support.metaclass_base.py for the origin of these accessors)
+        self.blacklisted_scanners = state_manager.init_state(
+            'blacklisted_scanners', constants.DEFAULT_BLACKLISTED_SCANNERS, 
+            nostaples.utils.properties.PropertyStateCallback(self, 'blacklisted_scanners'))
         
-    def set_prop_preview_mode(self, value):
-        """
-        Write state.
-        See L{MainModel.set_prop_active_scanner} for detailed comments.
-        """
-        old_value = self._prop_preview_mode
-        if old_value == value:
-            return
-        self._prop_preview_mode = value
-        self.application.get_state_manager()['preview_mode'] = value
-        self.notify_property_value_change(
-            'preview_mode', old_value, value)
+        self.saved_keywords = state_manager.init_state(
+            'saved_keywords', constants.DEFAULT_SAVED_KEYWORDS, 
+            nostaples.utils.properties.PropertyStateCallback(self, 'saved_keywords'))
         
-    def set_prop_thumbnail_size(self, value):
-        """
-        Write state.
-        See L{MainModel.set_prop_active_scanner} for detailed comments.
-        """
-        old_value = self._prop_thumbnail_size
-        if old_value == value:
-            return
-        self._prop_thumbnail_size = value
-        self.application.get_state_manager()['thumbnail_size'] = value
-        self.notify_property_value_change(
-            'thumbnail_size', old_value, value)
+    # PROPERTY SETTERS
         
-    # STATE CALLBACKS
-    
-    def state_preview_mode_change(self):
-        """Read state."""
-        self.preview_mode = \
-            self.application.get_state_manager()['preview_mode']
-    
-    def state_thumbnail_size_change(self):
-        """Read state."""
-        self.thumbnail_size = \
-            self.application.get_state_manager()['thumbnail_size']
+    set_prop_preview_mode = nostaples.utils.properties.StatefulPropertySetter(
+        'preview_mode')
+    set_prop_thumbnail_size = nostaples.utils.properties.StatefulPropertySetter(
+        'thumbnail_size')
+    set_prop_blacklisted_scanners = nostaples.utils.properties.StatefulPropertySetter(
+        'blacklisted_scanners')
+    set_prop_saved_keywords = nostaples.utils.properties.StatefulPropertySetter(
+        'saved_keywords')
