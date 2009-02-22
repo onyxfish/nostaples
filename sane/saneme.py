@@ -94,11 +94,11 @@ class SaneMe(object):
         version_code = SANE_Int()
         auth_callback = SANE_Auth_Callback(self._sane_auth_callback)
         
-        status = sane_init(byref(version_code), auth_callback) 
+        status = sane_init(byref(version_code), auth_callback)
         
         if status != SANE_STATUS_GOOD.value:
             raise SaneUnknownError(
-                'sane_init returned an invalid status.')
+                'sane_init returned an invalid status: %i.' % status)
         
         self._version = (SANE_VERSION_MAJOR(version_code), 
             SANE_VERSION_MINOR(version_code), 
@@ -166,7 +166,7 @@ class SaneMe(object):
                 'sane_get_devices ran out of memory.')
         else:
             raise SaneUnknownError(
-                'sane_get_devices returned an invalid status.')
+                'sane_get_devices returned an invalid status: %i.' % status)
 
         device_count = 0
         self._devices = []
@@ -190,7 +190,8 @@ class SaneMe(object):
             if device.name == name:
                 return device
             
-        raise SaneNoSuchDeviceError()
+        raise SaneNoSuchDeviceError(
+            'The requested device does not exist.')
         
 class Device(object):
     """
@@ -218,14 +219,18 @@ class Device(object):
         """
         self._log = log
         
-        if type(ctypes_device.name) is not StringType:
-            raise AssertionError('device name was not of StringType')
-        if type(ctypes_device.vendor) is not StringType:
-            raise AssertionError('device vendor was not of StringType')
-        if type(ctypes_device.model) is not StringType:
-            raise AssertionError('device model was not of StringType')
-        if type(ctypes_device.type) is not StringType:
-            raise AssertionError('device type was not of StringType')
+        if type(ctypes_device.name) is not str:
+            raise AssertionError(
+                'device name was %s, expected StringType' % type(ctypes_device.name))
+        if type(ctypes_device.vendor) is not str:
+            raise AssertionError(
+                'device vendor was %s, expected StringType' % type(ctypes_device.vendor))
+        if type(ctypes_device.model) is not str:
+            raise AssertionError(
+                'device model was %s, expected StringType' % type(ctypes_device.model))
+        if type(ctypes_device.type) is not str:
+            raise AssertionError(
+                'device type was %s, expected StringType' % type(ctypes_device.type))
         
         self._name = ctypes_device.name
         self._vendor = ctypes_device.vendor
@@ -299,7 +304,7 @@ class Device(object):
             raise SaneUnsupportedOperationError(
                 'sane_control_option reported that a value was outside the option\'s constraint.')
         elif status == SANE_STATUS_INVAL.value:
-            raise AssertionError(
+            raise SaneInvalidParameterError(
                 'sane_open reported that the device name was invalid.')
         elif status == SANE_STATUS_IO_ERROR.value:
             raise SaneIOError(
@@ -312,7 +317,7 @@ class Device(object):
                 'sane_open requires greater access to open the device.')
         else:
             raise SaneUnknownError(
-                'sane_open returned an invalid status.')
+                'sane_open returned an invalid status: %i.' % status)
         
         option_count = option_value.contents.value
         
@@ -350,9 +355,7 @@ class Device(object):
         
         Must be called before any operations (including setting options)
         are performed on this device.
-        """
-        raise SaneDeviceBusyError('FIXME FIXME FIXME', device=self)
-    
+        """    
         if self._handle:
             raise AssertionError('device handle already exists.')
         self._handle = SANE_Handle()
@@ -383,7 +386,7 @@ class Device(object):
                 'sane_open requires greater access to open the device.')
         else:
             raise SaneUnknownError(
-                'sane_open returned an invalid status.')
+                'sane_open returned an invalid status: %i.' % status)
         
         if self._handle == c_void_p(None):
             raise AssertionError('device handle was a null pointer.')
@@ -464,7 +467,7 @@ class Device(object):
             raise SaneInvalidDataError()
         else:
             raise SaneUnknownError(
-                'sane_start returned an invalid status.')
+                'sane_start returned an invalid status: %i.' % status)
         
         sane_parameters = SANE_Parameters()
         
@@ -472,7 +475,8 @@ class Device(object):
         status = sane_get_parameters(self._handle, byref(sane_parameters))
         
         if status != SANE_STATUS_GOOD.value:
-            raise SaneUnknownError()
+            raise SaneUnknownError(
+                'sane_get_parameters returned an invalid status: %i.' % status)
 
         scan_info = ScanInfo(sane_parameters)
         
@@ -516,7 +520,7 @@ class Device(object):
                     'sane_read requires greater access to open the device.')
             else:
                 raise SaneUnknownError(
-                    'sane_read returned an invalid status.')
+                    'sane_read returned an invalid status: %i.' % status)
             
             data_array.extend(temp_array[0:actual_size.value])
             
@@ -533,7 +537,8 @@ class Device(object):
         sane_cancel(self._handle)
         
         if scan_info.total_bytes != len(data_array):
-            raise AssertionError('length of scanned data did not match expected length.')
+            raise AssertionError(
+                'length of scanned data did not match expected length.')
         
         if sane_parameters.format == SANE_FRAME_GRAY.value:
             pil_image = Image.frombuffer(
@@ -584,21 +589,29 @@ class Option(object):
         self._option_number = option_number
         
         if type(ctypes_option.name) is not StringType:
-            raise AssertionError('option name was not of StringType.')
+            raise AssertionError(
+                'option name was %s, expected StringType.' % type(ctypes_option.name))
         if type(ctypes_option.title) is not StringType:
-            raise AssertionError('option title was not of StringType.')
+            raise AssertionError(
+                'option title was %s, expected StringType.' % type(ctypes_option.title))
         if type(ctypes_option.desc) is not StringType:
-            raise AssertionError('option description was not of StringType.')
+            raise AssertionError(
+                'option description was %s, expected StringType.' % type(ctypes_option.desc))
         if type(ctypes_option.type) is not IntType:
-            raise AssertionError('option type was not of IntType.')
+            raise AssertionError(
+                'option type was %s, expected IntType.' % type(ctypes_option.type))
         if type(ctypes_option.unit) is not IntType:
-            raise AssertionError('option unit was not of IntType.')
+            raise AssertionError(
+                'option unit was %s, expected IntType.' % type(ctypes_option.unit))
         if type(ctypes_option.size) is not IntType:
-            raise AssertionError('option size was not of IntType.')
+            raise AssertionError(
+                'option size was %s, expected IntType.' % type(ctypes_option.size))
         if type(ctypes_option.cap) is not IntType:
-            raise AssertionError('option capabilities was not of IntType.')
+            raise AssertionError(
+                'option cap was %s, expected IntType.' % type(ctypes_option.cap))
         if type(ctypes_option.constraint_type) is not IntType:
-            raise AssertionError('option constraint_type was not of IntType.')
+            raise AssertionError(
+                'option constraint_type was %s, expected IntType.' % type(ctypes_option.constraint_type))
         
         self._name = ctypes_option.name
         self._title = ctypes_option.title
@@ -743,7 +756,7 @@ class Option(object):
                 'sane_control_option reported that a value was outside the option\'s constraint.')
         elif status == SANE_STATUS_INVAL.value:
             raise AssertionError(
-                'sane_control_option reported a value was invalid, but no values was being set.')
+                'sane_control_option reported a value was invalid, but no value was being set.')
         elif status == SANE_STATUS_IO_ERROR.value:
             raise SaneIOError(
                 'sane_control_option reported a communications error.')
@@ -755,7 +768,7 @@ class Option(object):
                 'sane_control_option requires greater access to open the device.')
         else:
             raise SaneUnknownError(
-                'sane_control_option returned an invalid status.')
+                'sane_control_option returned an invalid status: %i.' % status)
         
         if self._type == SANE_TYPE_STRING.value:
             option_value = option_value.value
@@ -763,7 +776,10 @@ class Option(object):
             option_value = option_value.contents.value
             
         if self._log:
-            self._log.debug('Option %s queried, its current value is %s.', self._name, option_value)
+            self._log.debug(
+                'Option %s queried, its current value is %s.', 
+                self._name, 
+                option_value)
             
         return option_value
     
@@ -778,23 +794,28 @@ class Option(object):
         # Type checking
         if self._type == SANE_TYPE_BOOL.value:
             if type(value) is not BooleanType:
-                raise AssertionError('option expected BooleanType')
+                raise AssertionError(
+                    'option set with %s, expected BooleanType' % type(value))
             c_value = pointer(c_int(value))
         elif self._type == SANE_TYPE_INT.value:
             # TODO: these may not always be a single char wide, see SANE doc 4.2.9.6
             if type(value) is not IntType:
-                raise AssertionError('option expected IntType')
+                raise AssertionError(
+                    'option set with %s, expected IntType' % type(value))
             c_value = pointer(c_int(value))
         elif self._type == SANE_TYPE_FIXED.value:
             # TODO: these may not always be a single char wide, see SANE doc 4.2.9.6
             if type(value) is not IntType:
-                raise AssertionError('option expected IntType')
+                raise AssertionError(
+                    'option set with %s, expected IntType' % type(value))
             c_value = pointer(c_int(value))
         elif self._type == SANE_TYPE_STRING.value:
             if type(value) is not StringType:
-                raise AssertionError('option expected StringType')
+                raise AssertionError(
+                    'optionset with %s, expected StringType' % type(value))
             if len(value) + 1 > self._size:
-                raise AssertionError('value for option is longer than max string size')
+                raise AssertionError(
+                    'value for option is longer than max string size')
             c_value = c_char_p(value)
         elif self._type == SANE_TYPE_BUTTON.value:
             raise TypeError('SANE_TYPE_BUTTON has no value.')
@@ -812,13 +833,16 @@ class Option(object):
             if value > self._constraint[1]:
                 raise AssertionError('value for option is greater than max.')
             if value % self._constraint[2] != 0:
-                raise AssertionError('value for option is not divisible by quant.')
+                raise AssertionError(
+                    'value for option is not divisible by quant.')
         elif self._constraint_type == SANE_CONSTRAINT_WORD_LIST.value:
             if value not in self._constraint:
-                raise AssertionError('value for option not in list of valid values.')
+                raise AssertionError(
+                    'value for option not in list of valid values.')
         elif self._constraint_type == SANE_CONSTRAINT_STRING_LIST.value:
             if value not in self._constraint:
-                raise AssertionError('value for option not in list of valid strings.')
+                raise AssertionError(
+                    'value for option not in list of valid strings.')
             
         info_flags = SANE_Int()
         
@@ -845,7 +869,7 @@ class Option(object):
                 'sane_control_option requires greater access to open the device.')
         else:
             raise SaneUnknownError(
-                'sane_control_option returned an invalid status.')
+                'sane_control_option returned an invalid status: %i .' % status)
         
         if self._log:
             self._log.debug('Option %s set to value %s.', self._name, value)
