@@ -351,6 +351,8 @@ class Device(object):
         Must be called before any operations (including setting options)
         are performed on this device.
         """
+        raise SaneDeviceBusyError('FIXME FIXME FIXME', device=self)
+    
         if self._handle:
             raise AssertionError('device handle already exists.')
         self._handle = SANE_Handle()
@@ -430,7 +432,7 @@ class Device(object):
             raise AssertionError('device handle was None.')
         if self._handle == c_void_p(None):
             raise AssertionError('device handle was a null pointer.')
-        
+    
         # See SANE API 4.3.9
         status = sane_start(self._handle)
         

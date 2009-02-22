@@ -25,7 +25,9 @@ class SaneError(Exception):
     """
     Base class for all SANE Errors.
     """
-    pass
+    def __init__(self, message='', device=None):
+        self.message = message
+        self.device = device
     
 class SaneUnknownError(SaneError):
     """
