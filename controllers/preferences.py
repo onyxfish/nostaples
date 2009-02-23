@@ -130,6 +130,13 @@ class PreferencesController(Controller):
         preferences_model = self.application.get_preferences_model()
         preferences_view = self.application.get_preferences_view()
         
+        # Refresh unavailable scanners
+        unavailable_liststore = preferences_view['unavailable_tree_view'].get_model()
+        unavailable_liststore.clear()
+        
+        for unavailable_item in preferences_model.unavailable_scanners:
+            unavailable_liststore.append([unavailable_item])
+        
         # Refresh blacklist
         blacklist_liststore = preferences_view['blacklist_tree_view'].get_model()
         blacklist_liststore.clear()
