@@ -77,6 +77,24 @@ class PreferencesView(View):
             'changed', 
             preferences_controller.on_thumbnail_size_combobox_changed)
         
+        # Setup the unavailable scanners tree view
+        unavailable_liststore = gtk.ListStore(str)
+        self['unavailable_tree_view'] = gtk.TreeView()
+        self['unavailable_tree_view'].set_model(unavailable_liststore)
+        self['unavailable_column'] = gtk.TreeViewColumn(None)
+        self['unavailable_cell'] = gtk.CellRendererText()
+        self['unavailable_tree_view'].append_column(self['unavailable_column'])
+        self['unavailable_column'].pack_start(self['unavailable_cell'], True)        
+        self['unavailable_column'].add_attribute(
+            self['unavailable_cell'], 'text', 0)
+        self['unavailable_tree_view'].get_selection().set_mode(
+            gtk.SELECTION_NONE)
+        self['unavailable_tree_view'].set_headers_visible(False)
+        self['unavailable_tree_view'].set_property('can-focus', False)
+        
+        self['unavailable_scrolled_window'].add(self['unavailable_tree_view'])
+        self['unavailable_scrolled_window'].show_all()
+        
         # Setup the blacklist tree view
         blacklist_liststore = gtk.ListStore(str)
         self['blacklist_tree_view'] = gtk.TreeView()

@@ -547,19 +547,28 @@ class MainController(Controller):
         preferences_model = self.application.get_preferences_model()
         status_controller = self.application.get_status_controller()
         
-        # Remove scanners that do not support necessary options
-        preferences_model.unsupported_scanners = []
-        
-        for scanner in scanner_list:
-            if not scanner.has_option('mode') or \
-                not scanner.has_option('resolution'):
-                preferences_model.unsupported_scanners.append(scanner.display_name)
-                scanner_list.remove(scanner)
-        
         # Remove blacklisted scanners
         scanner_list = \
             [scanner for scanner in scanner_list if not \
              scanner.display_name in preferences_model.blacklisted_scanners]
+        
+        # Remove scanners that do not support necessary options or fail to
+        # open entirely
+        preferences_model.unavailable_scanners = []
+        
+        for scanner in scanner_list:
+            try:
+                scanner.open()
+                    
+                if not scanner.has_option('mode') or \
+                    not scanner.has_option('resolution'):
+                    preferences_model.unavailable_scanners.append(scanner.display_name)
+                    scanner_list.remove(scanner)
+                    
+                scanner.close()   
+            except saneme.SaneError:
+                preferences_model.unavailable_scanners.append(scanner.display_name)
+                scanner_list.remove(scanner)
         
         main_model.available_scanners = scanner_list
         main_model.updating_available_scanners = False

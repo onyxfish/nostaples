@@ -85,6 +85,7 @@
                         </child>
                       </widget>
                       <packing>
+                        <property name="expand">False</property>
                         <property name="position">1</property>
                       </packing>
                     </child>
@@ -114,15 +115,15 @@
                     <property name="visible">True</property>
                     <property name="spacing">6</property>
                     <child>
-                      <widget class="GtkLabel" id="label7">
+                      <widget class="GtkLabel" id="label8">
                         <property name="visible">True</property>
                         <property name="xalign">0</property>
-                        <property name="label" translatable="yes">Blacklisted devices:</property>
+                        <property name="label" translatable="yes">Unavailable devices:</property>
                         <property name="wrap_mode">PANGO_WRAP_WORD_CHAR</property>
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkScrolledWindow" id="blacklist_scrolled_window">
+                      <widget class="GtkScrolledWindow" id="unavailable_scrolled_window">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="hscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
@@ -137,6 +138,32 @@
                       </packing>
                     </child>
                     <child>
+                      <widget class="GtkLabel" id="label7">
+                        <property name="visible">True</property>
+                        <property name="xalign">0</property>
+                        <property name="label" translatable="yes">Blacklisted devices:</property>
+                        <property name="wrap_mode">PANGO_WRAP_WORD_CHAR</property>
+                      </widget>
+                      <packing>
+                        <property name="position">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkScrolledWindow" id="blacklist_scrolled_window">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="hscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
+                        <property name="vscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
+                        <property name="shadow_type">GTK_SHADOW_IN</property>
+                        <child>
+                          <placeholder/>
+                        </child>
+                      </widget>
+                      <packing>
+                        <property name="position">3</property>
+                      </packing>
+                    </child>
+                    <child>
                       <widget class="GtkButton" id="remove_from_blacklist_button">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
@@ -148,7 +175,7 @@
                       <packing>
                         <property name="expand">False</property>
                         <property name="fill">False</property>
-                        <property name="position">2</property>
+                        <property name="position">4</property>
                       </packing>
                     </child>
                   </widget>
@@ -188,6 +215,9 @@
                         <property name="use_markup">True</property>
                         <property name="wrap">True</property>
                       </widget>
+                      <packing>
+                        <property name="expand">False</property>
+                      </packing>
                     </child>
                     <child>
                       <widget class="GtkScrolledWindow" id="keywords_scrolled_window">
