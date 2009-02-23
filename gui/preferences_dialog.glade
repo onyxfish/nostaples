@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Sat Feb 21 22:48:17 2009 -->
+<!--Generated with glade3 3.4.5 on Sun Feb 22 20:48:25 2009 -->
 <glade-interface>
   <widget class="GtkDialog" id="preferences_dialog">
     <property name="border_width">5</property>
@@ -42,7 +42,7 @@
                         <child>
                           <widget class="GtkLabel" id="label4">
                             <property name="visible">True</property>
-                            <property name="label" translatable="yes">Preview Mode:</property>
+                            <property name="label" translatable="yes">Preview Scaling Mode:</property>
                           </widget>
                           <packing>
                             <property name="expand">False</property>

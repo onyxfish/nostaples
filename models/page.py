@@ -221,6 +221,6 @@ class PageModel(Model):
         
         image = image.resize(
             (target_width, target_height), 
-            Image.ANTIALIAS)
+            constants.THUMBNAILS_SCALING_MODE)
         
         self.thumbnail_pixbuf = convert_pil_image_to_pixbuf(image)
