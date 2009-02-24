@@ -146,7 +146,8 @@ class MainModel(Model):
         
         # Close the old scanner
         if isinstance(old_value, saneme.Device):
-            old_value.close()
+            if old_value.is_open():
+                old_value.close()
         
         # Verify that the proper type is being set
         if value is not None:

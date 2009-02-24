@@ -337,6 +337,9 @@ class MainController(Controller):
         main_view = self.application.get_main_view()
         status_controller = self.application.get_status_controller()
         
+        if new_value == None:
+            return
+        
         for menu_item in main_view['scanner_sub_menu'].get_children():
             if menu_item.get_children()[0].get_text() == new_value.display_name:
                 menu_item.set_active(True)
@@ -346,6 +349,9 @@ class MainController(Controller):
         """Select the active mode from in the menu."""
         main_view = self.application.get_main_view()
         
+        if new_value == None:
+            return
+        
         for menu_item in main_view['scan_mode_sub_menu'].get_children():
             if menu_item.get_children()[0].get_text() == new_value:
                 menu_item.set_active(True)
@@ -354,6 +360,9 @@ class MainController(Controller):
     def property_active_resolution_value_change(self, model, old_value, new_value):
         """Select the active resolution from in the menu."""
         main_view = self.application.get_main_view()
+        
+        if new_value == None:
+            return
         
         for menu_item in main_view['scan_resolution_sub_menu'].get_children():
             if menu_item.get_children()[0].get_text() == new_value:

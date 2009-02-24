@@ -43,6 +43,8 @@ class PreferencesController(Controller):
         self.application = application
         Controller.__init__(self, application.get_preferences_model())
         
+        application.get_main_model().register_observer(self)
+        
         self.log = logging.getLogger(self.__class__.__name__)
         self.log.debug('Created.')
 
@@ -81,6 +83,7 @@ class PreferencesController(Controller):
         """
         Remove the currently selected blacklist device from the list.
         """
+        main_controller = self.application.get_main_controller()
         preferences_model = self.application.get_preferences_model()
         preferences_view = self.application.get_preferences_view()
         
@@ -96,6 +99,31 @@ class PreferencesController(Controller):
         temp_blacklist = list(preferences_model.blacklisted_scanners)
         temp_blacklist.remove(selection_text)
         preferences_model.blacklisted_scanners = temp_blacklist
+        
+        main_controller._update_available_scanners()
+            
+    def on_add_to_blacklist_button_clicked(self, button):
+        """
+        Move the currently selected available scanner to the blacklist.
+        """
+        main_controller = self.application.get_main_controller()
+        preferences_model = self.application.get_preferences_model()
+        preferences_view = self.application.get_preferences_view()
+        
+        model, selection_iter = \
+            preferences_view['available_tree_view'].get_selection().get_selected()
+            
+        if not selection_iter:
+            return
+            
+        selection_text = model.get_value(selection_iter, 0)
+        model.remove(selection_iter)
+        
+        temp_blacklist = list(preferences_model.blacklisted_scanners)
+        temp_blacklist.append(selection_text)
+        preferences_model.blacklisted_scanners = temp_blacklist
+        
+        main_controller._update_available_scanners()
     
     def on_remove_from_keywords_button_clicked(self, button):
         """
@@ -122,33 +150,67 @@ class PreferencesController(Controller):
         preferences_view = self.application.get_preferences_view()
         
         preferences_view['preferences_dialog'].hide()
+        
+    # PROPERTY CALLBACKS
+    
+    def property_unavailable_scanners_value_change(self, model, old_value, new_value):
+        """Update unavailable scanners liststore."""
+        preferences_view = self.application.get_preferences_view()
+        
+        unavailable_liststore = preferences_view['unavailable_tree_view'].get_model()
+        unavailable_liststore.clear()
+        
+        for unavailable_item in new_value:
+            unavailable_liststore.append([unavailable_item])
+    
+    def property_blacklisted_scanners_value_change(self, model, old_value, new_value):
+        """Update blacklisted scanners liststore."""
+        preferences_view = self.application.get_preferences_view()
+        
+        blacklist_liststore = preferences_view['blacklist_tree_view'].get_model()
+        blacklist_liststore.clear()
+        
+        for blacklist_item in new_value:
+            blacklist_liststore.append([blacklist_item])
+    
+    def property_available_scanners_value_change(self, model, old_value, new_value):
+        """Update available scanners liststore."""
+        preferences_view = self.application.get_preferences_view()
+        
+        available_liststore = preferences_view['available_tree_view'].get_model()
+        available_liststore.clear()
+        
+        for available_item in new_value:
+            available_liststore.append([available_item.display_name])
+            
+    def property_saved_keywords_value_change(self, model, old_value, new_value):
+        """Update keywords liststore."""
+        preferences_view = self.application.get_preferences_view()
+        
+        keywords_liststore = preferences_view['keywords_tree_view'].get_model()
+        keywords_liststore.clear()
+        
+        for keyword in new_value:
+            keywords_liststore.append([keyword])
     
     # PUBLIC METHODS
     
     def run(self):
         """Run the preferences dialog."""
+        main_model = self.application.get_main_model()
         preferences_model = self.application.get_preferences_model()
         preferences_view = self.application.get_preferences_view()
         
-        # Refresh unavailable scanners
-        unavailable_liststore = preferences_view['unavailable_tree_view'].get_model()
-        unavailable_liststore.clear()
-        
-        for unavailable_item in preferences_model.unavailable_scanners:
-            unavailable_liststore.append([unavailable_item])
-        
-        # Refresh blacklist
-        blacklist_liststore = preferences_view['blacklist_tree_view'].get_model()
-        blacklist_liststore.clear()
-        
-        for blacklist_item in preferences_model.blacklisted_scanners:
-            blacklist_liststore.append([blacklist_item])
-            
-        # Refresh keywords
-        keywords_liststore = preferences_view['keywords_tree_view'].get_model()
-        keywords_liststore.clear()
-        
-        for keyword in preferences_model.saved_keywords:
-            keywords_liststore.append([keyword])
+        # Force property updates when dialog is run: this handles the case
+        # where the PreferencesController has not been created until now
+        # so it has not been receiving property notifications.
+        self.property_unavailable_scanners_value_change(
+            preferences_model, None, preferences_model.unavailable_scanners)
+        self.property_blacklisted_scanners_value_change(
+            preferences_model, None, preferences_model.blacklisted_scanners)
+        self.property_available_scanners_value_change(
+            main_model, None, main_model.available_scanners)
+        self.property_saved_keywords_value_change(
+            preferences_model, None, preferences_model.saved_keywords)
         
         preferences_view.run()

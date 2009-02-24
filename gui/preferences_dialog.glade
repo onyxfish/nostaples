@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Sun Feb 22 20:48:25 2009 -->
+<!--Generated with glade3 3.4.5 on Mon Feb 23 20:34:14 2009 -->
 <glade-interface>
   <widget class="GtkDialog" id="preferences_dialog">
     <property name="border_width">5</property>
@@ -168,14 +168,51 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <property name="label" translatable="yes">Remove</property>
+                        <property name="label" translatable="yes">Remove from Blacklist</property>
                         <property name="response_id">0</property>
                         <signal name="clicked" handler="on_remove_from_blacklist_button_clicked"/>
                       </widget>
                       <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">False</property>
                         <property name="position">4</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkLabel" id="label9">
+                        <property name="visible">True</property>
+                        <property name="xalign">0</property>
+                        <property name="label" translatable="yes">Available devices:</property>
+                        <property name="wrap_mode">PANGO_WRAP_WORD_CHAR</property>
+                      </widget>
+                      <packing>
+                        <property name="position">5</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkScrolledWindow" id="available_scrolled_window">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="hscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
+                        <property name="vscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
+                        <property name="shadow_type">GTK_SHADOW_IN</property>
+                        <child>
+                          <placeholder/>
+                        </child>
+                      </widget>
+                      <packing>
+                        <property name="position">6</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkButton" id="add_to_blacklist_button">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <property name="label" translatable="yes">Add to Blacklist</property>
+                        <property name="response_id">0</property>
+                        <signal name="clicked" handler="on_add_to_blacklist_button_clicked"/>
+                      </widget>
+                      <packing>
+                        <property name="position">7</property>
                       </packing>
                     </child>
                   </widget>

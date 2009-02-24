@@ -129,6 +129,23 @@ class PreferencesView(View):
         self['keywords_scrolled_window'].add(self['keywords_tree_view'])
         self['keywords_scrolled_window'].show_all()
         
+        # Setup the available devices tree view
+        available_liststore = gtk.ListStore(str)
+        self['available_tree_view'] = gtk.TreeView()
+        self['available_tree_view'].set_model(available_liststore)
+        self['available_column'] = gtk.TreeViewColumn(None)
+        self['available_cell'] = gtk.CellRendererText()
+        self['available_tree_view'].append_column(self['available_column'])
+        self['available_column'].pack_start(self['available_cell'], True)        
+        self['available_column'].add_attribute(self['available_cell'], 'text', 0)
+        self['available_tree_view'].get_selection().set_mode(
+            gtk.SELECTION_SINGLE)
+        self['available_tree_view'].set_headers_visible(False)
+        self['available_tree_view'].set_property('can-focus', False)
+        
+        self['available_scrolled_window'].add(self['available_tree_view'])
+        self['available_scrolled_window'].show_all()
+        
         application.get_preferences_controller().register_view(self)
         
         self.log.debug('Created.')
