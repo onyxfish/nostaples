@@ -105,7 +105,7 @@ class SaneMe(object):
             SANE_VERSION_BUILD(version_code))
         
         if self._log:
-            self._log.debug('SANE version %s initalized.', self._version)
+            self._log.info('SANE version %s initalized.', self._version)
             
     def _sane_auth_callback(self, resource, username, password):
         """
@@ -130,7 +130,7 @@ class SaneMe(object):
         self._version = None
         
         if self._log:
-            self._log.debug('SANE deinitialized.')
+            self._log.info('SANE deinitialized.')
         
     # Public Methods
     
@@ -172,11 +172,12 @@ class SaneMe(object):
         self._devices = []
         
         while cdevices[device_count]:
-            self._devices.append(Device(cdevices[device_count].contents))
+            self._devices.append(
+                Device(cdevices[device_count].contents, self._log))
             device_count += 1
            
         if self._log:
-            self._log.debug('SANE queried, %i device(s) found.', device_count)
+            self._log.info('SANE queried, %i device(s) found.', device_count)
             
         return self._devices
         
@@ -284,7 +285,8 @@ class Device(object):
             raise AssertionError('device handle was a null pointer.')
         
         option_value = pointer(c_int())
-        status = sane_control_option(self._handle, 0, SANE_ACTION_GET_VALUE, option_value, None)
+        status = sane_control_option(
+            self._handle, 0, SANE_ACTION_GET_VALUE, option_value, None)
         
         if status == SANE_STATUS_GOOD.value:
             pass
@@ -323,7 +325,8 @@ class Device(object):
         i = 1
         while(i < option_count - 1):
             coption = sane_get_option_descriptor(self._handle, i)
-            self._options[coption.contents.name] = Option(self, i, coption.contents)
+            self._options[coption.contents.name] = Option(
+                self, i, coption.contents, self._log)
             i = i + 1
         
     # Methods for use only by Options
@@ -347,8 +350,8 @@ class Device(object):
         """
         Open a new handle to this device.
         
-        Must be called before any operations (including setting options)
-        are performed on this device.
+        Must be called before any operations (including getting or setting 
+        options) are performed on this device.
         """    
         if self._handle:
             raise AssertionError('device handle already exists.')
