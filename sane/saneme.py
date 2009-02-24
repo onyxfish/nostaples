@@ -219,23 +219,11 @@ class Device(object):
         """
         self._log = log
         
-        if type(ctypes_device.name) is not str:
-            raise AssertionError(
-                'device name was %s, expected StringType' % type(ctypes_device.name))
-        if type(ctypes_device.vendor) is not str:
-            raise AssertionError(
-                'device vendor was %s, expected StringType' % type(ctypes_device.vendor))
-        if type(ctypes_device.model) is not str:
-            raise AssertionError(
-                'device model was %s, expected StringType' % type(ctypes_device.model))
-        if type(ctypes_device.type) is not str:
-            raise AssertionError(
-                'device type was %s, expected StringType' % type(ctypes_device.type))
-        
-        self._name = ctypes_device.name
-        self._vendor = ctypes_device.vendor
-        self._model = ctypes_device.model
-        self._type = ctypes_device.type
+        # String attributes should never be None
+        self._name = ctypes_device.name if ctypes_device.name else ''
+        self._vendor = ctypes_device.vendor if ctypes_device.vendor else ''
+        self._model = ctypes_device.model if ctypes_device.model else ''
+        self._type = ctypes_device.type if ctypes_device.type else ''
         
         self._display_name = ' '.join([self._vendor, self._model])
         
@@ -625,34 +613,11 @@ class Option(object):
         self._device = device
         self._option_number = option_number
         
-        if type(ctypes_option.name) is not StringType:
-            raise AssertionError(
-                'option name was %s, expected StringType.' % type(ctypes_option.name))
-        if type(ctypes_option.title) is not StringType:
-            raise AssertionError(
-                'option title was %s, expected StringType.' % type(ctypes_option.title))
-        if type(ctypes_option.desc) is not StringType:
-            raise AssertionError(
-                'option description was %s, expected StringType.' % type(ctypes_option.desc))
-        if type(ctypes_option.type) is not IntType:
-            raise AssertionError(
-                'option type was %s, expected IntType.' % type(ctypes_option.type))
-        if type(ctypes_option.unit) is not IntType:
-            raise AssertionError(
-                'option unit was %s, expected IntType.' % type(ctypes_option.unit))
-        if type(ctypes_option.size) is not IntType:
-            raise AssertionError(
-                'option size was %s, expected IntType.' % type(ctypes_option.size))
-        if type(ctypes_option.cap) is not IntType:
-            raise AssertionError(
-                'option cap was %s, expected IntType.' % type(ctypes_option.cap))
-        if type(ctypes_option.constraint_type) is not IntType:
-            raise AssertionError(
-                'option constraint_type was %s, expected IntType.' % type(ctypes_option.constraint_type))
-        
-        self._name = ctypes_option.name
-        self._title = ctypes_option.title
-        self._description = ctypes_option.desc
+        # String attributes should never be None
+        self._name = ctypes_option.name if ctypes_option.name else ''
+        self._title = ctypes_option.title if ctypes_option.title else ''
+        self._description = ctypes_option.desc if ctypes_option.desc else ''  
+                  
         self._type = ctypes_option.type
         self._unit = ctypes_option.unit
         self._size = ctypes_option.size
@@ -661,24 +626,12 @@ class Option(object):
         
         if self._constraint_type == SANE_CONSTRAINT_NONE.value:
             pass
-        elif self._constraint_type == SANE_CONSTRAINT_RANGE.value:
-            if type(ctypes_option.constraint.range) is not POINTER(SANE_Range):
-                raise AssertionError('option\'s constraint range was not a pointer to a SANE_Range.')
-            if type(ctypes_option.constraint.range.contents.min) is not IntType:
-                raise AssertionError('option\'s constraint range min was not of IntType.')
-            if type(ctypes_option.constraint.range.contents.max) is not IntType:
-                raise AssertionError('option\'s constraint range max was not of IntType.')
-            if type(ctypes_option.constraint.range.contents.quant) is not IntType:
-                raise AssertionError('option\'s constraint range quant was not of IntType.')
-            
+        elif self._constraint_type == SANE_CONSTRAINT_RANGE.value:            
             self._constraint = (
                 ctypes_option.constraint.range.contents.min,
                 ctypes_option.constraint.range.contents.max,
                 ctypes_option.constraint.range.contents.quant)
-        elif self._constraint_type == SANE_CONSTRAINT_WORD_LIST.value:
-            if type(ctypes_option.constraint.word_list) is not POINTER(SANE_Word):
-                raise AssertionError('option\'s constraint range was not a pointer to a SANE_Word.')
-            
+        elif self._constraint_type == SANE_CONSTRAINT_WORD_LIST.value:            
             word_count = ctypes_option.constraint.word_list[0]
             self._constraint = []
             
@@ -687,9 +640,6 @@ class Option(object):
                 self._constraint.append(ctypes_option.constraint.word_list[i])
                 i = i + 1                
         elif self._constraint_type == SANE_CONSTRAINT_STRING_LIST.value:
-            if type(ctypes_option.constraint.string_list) is not POINTER(SANE_String_Const):
-                raise AssertionError('option\'s constraint range was not a pointer to a SANE_String_Const.')
-
             string_count = 0
             self._constraint = []
             
@@ -700,22 +650,28 @@ class Option(object):
     # Read only properties
 
     def __get_name(self):
-        """Get the short-form name of this option, e.g. 'mode'."""
+        """
+        Get the short-form name of this option, e.g. 'mode'.
+        May be an empty string, but never None.
+        """
         return self._name
         
     name = property(__get_name)
 
     def __get_title(self):
-        """Get the full name of this option, e.g. 'Scan mode'."""
+        """
+        Get the full name of this option, e.g. 'Scan mode'.
+        May be an empty string, but never None.
+        """
         return self._title
         
     title = property(__get_title)
 
     def __get_description(self):
-        """,
-                    device=self
+        """
         Get the full description of this option,
         e.g. 'Selects the scan mode (e.g., lineart, monochrome, or color).'
+        May be an empty string, but never None.
         """
         return self._description
         
@@ -769,10 +725,12 @@ class Option(object):
         if self._type == SANE_TYPE_BOOL.value:
             option_value = pointer(SANE_Bool())
         elif self._type == SANE_TYPE_INT.value:
-            # TODO: these may not always be a single char wide, see SANE doc 4.2.9.6
+            # TODO: these may not always be a single char wide, 
+            # see SANE doc 4.2.9.6
             option_value = pointer(SANE_Int())
         elif self._type == SANE_TYPE_FIXED.value:
-            # TODO: these may not always be a single char wide, see SANE doc 4.2.9.6
+            # TODO: these may not always be a single char wide, 
+            # see SANE doc 4.2.9.6
             option_value = pointer(SANE_Fixed())
         elif self._type == SANE_TYPE_STRING.value:
             # sane_control_option expects a mutable string buffer
@@ -784,7 +742,9 @@ class Option(object):
         else:
             raise TypeError('Option is of unknown type.')
         
-        status = sane_control_option(handle, self._option_number, SANE_ACTION_GET_VALUE, option_value, None)
+        status = sane_control_option(
+            handle, self._option_number, 
+            SANE_ACTION_GET_VALUE, option_value, None)
         
         if status == SANE_STATUS_GOOD.value:
             pass
@@ -836,27 +796,27 @@ class Option(object):
         # Type checking
         if self._type == SANE_TYPE_BOOL.value:
             if type(value) is not BooleanType:
-                raise AssertionError(
+                raise TypeError(
                     'option set with %s, expected BooleanType' % type(value))
             c_value = pointer(c_int(value))
         elif self._type == SANE_TYPE_INT.value:
             # TODO: these may not always be a single char wide, see SANE doc 4.2.9.6
             if type(value) is not IntType:
-                raise AssertionError(
+                raise TypeError(
                     'option set with %s, expected IntType' % type(value))
             c_value = pointer(c_int(value))
         elif self._type == SANE_TYPE_FIXED.value:
             # TODO: these may not always be a single char wide, see SANE doc 4.2.9.6
             if type(value) is not IntType:
-                raise AssertionError(
+                raise TypeError(
                     'option set with %s, expected IntType' % type(value))
             c_value = pointer(c_int(value))
         elif self._type == SANE_TYPE_STRING.value:
             if type(value) is not StringType:
-                raise AssertionError(
+                raise TypeError(
                     'optionset with %s, expected StringType' % type(value))
             if len(value) + 1 > self._size:
-                raise AssertionError(
+                raise ValueError(
                     'value for option is longer than max string size')
             c_value = c_char_p(value)
         elif self._type == SANE_TYPE_BUTTON.value:
@@ -871,19 +831,19 @@ class Option(object):
             pass
         elif self._constraint_type == SANE_CONSTRAINT_RANGE.value:
             if value < self._constraint[0]:
-                raise AssertionError('value for option is less than min.')
+                raise ValueError('value for option is less than min.')
             if value > self._constraint[1]:
-                raise AssertionError('value for option is greater than max.')
+                raise ValueError('value for option is greater than max.')
             if value % self._constraint[2] != 0:
-                raise AssertionError(
-                    'value for option is not divisible by quant.')
+                raise ValueError(
+                    'value for option is not divisible by step.')
         elif self._constraint_type == SANE_CONSTRAINT_WORD_LIST.value:
             if value not in self._constraint:
-                raise AssertionError(
+                raise ValueError(
                     'value for option not in list of valid values.')
         elif self._constraint_type == SANE_CONSTRAINT_STRING_LIST.value:
             if value not in self._constraint:
-                raise AssertionError(
+                raise ValueError(
                     'value for option not in list of valid strings.')
             
         info_flags = SANE_Int()
