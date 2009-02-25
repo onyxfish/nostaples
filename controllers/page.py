@@ -44,6 +44,8 @@ class PageController(Controller):
         status_controller = application.get_status_controller()
         self.status_context = \
             status_controller.get_context_id(self.__class__.__name__)
+            
+        application.get_preferences_model().register_observer(self)
 
         self.log = logging.getLogger(self.__class__.__name__)
         
@@ -164,9 +166,13 @@ class PageController(Controller):
     # PROPERTY CALLBACKS
     
     def property_pixbuf_value_change(self, model, old_value, new_value):
-        """
-        Update the preview display.
-        """
+        """Update the preview display."""
+        self._update_preview()
+        
+    # PreferencesModel PROPERTY CALLBACKS
+        
+    def property_preview_mode_value_change(self, model, old_value, new_value):
+        """Update the preview display."""
         self._update_preview()
     
     # PUBLIC METHODS
