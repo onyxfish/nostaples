@@ -42,7 +42,7 @@ class StatefulPropertySetter(object):
         Write state and notify observers of changes.
         
         For more details on how this works see
-        L{set_prop_active_scanner}.
+        L{models.main.MainModel.set_prop_active_scanner}.
         """
         old_value = getattr(cls, self.property_attr_name)
         if old_value == value:
