@@ -40,6 +40,7 @@ from nostaples.models.page import PageModel
 from nostaples.models.preferences import PreferencesModel
 from nostaples.models.save import SaveModel
 from nostaples.models.status import StatusModel
+import nostaples.sane as saneme
 import nostaples.utils.gtkexcepthook
 from nostaples.utils.state import GConfStateManager
 from nostaples.views.about import AboutView
@@ -49,8 +50,6 @@ from nostaples.views.page import PageView
 from nostaples.views.preferences import PreferencesView
 from nostaples.views.save import SaveView
 from nostaples.views.status import StatusView
-
-from saneme import SaneMe
 
 class Application(object):
     """
@@ -123,7 +122,7 @@ class Application(object):
         
     def _init_sane(self):
         """Setup SANE."""
-        self._sane = SaneMe(logging.getLogger("saneme"))
+        self._sane = saneme.SaneMe(logging.getLogger("saneme"))
         
     def _init_main_components(self):
         """
@@ -159,7 +158,7 @@ class Application(object):
     
     def get_sane(self):
         """Return the SaneMe object."""
-        assert isinstance(self._sane, SaneMe)
+        assert isinstance(self._sane, saneme.SaneMe)
         return self._sane
         
     def get_main_model(self):

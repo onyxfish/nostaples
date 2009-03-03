@@ -26,8 +26,8 @@ import sys
 from gtkmvc.model import Model
 
 from nostaples import constants
+import nostaples.sane as saneme
 import nostaples.utils.properties
-import saneme
 
 class MainModel(Model):
     """
@@ -97,7 +97,7 @@ class MainModel(Model):
             nostaples.utils.properties.PropertyStateCallback(self, 'rotate_all_pages'))
 
         # The local representation of active_scanner is a
-        # saneme.Device, but it is persisted by its name attribute only.
+        # Device, but it is persisted by its name attribute only.
         try:
             self.active_scanner = sane.get_device_by_name(
                 state_manager.init_state(
@@ -214,7 +214,7 @@ class MainModel(Model):
             if self.active_scanner:
                 try:
                     self.active_scanner.options['resolution'].value = int(value)
-                except saneme.SaneReloadOptionsError:
+                except SaneReloadOptionsError:
                     # TODO
                     pass
                 

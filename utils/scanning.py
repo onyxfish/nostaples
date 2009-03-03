@@ -31,7 +31,7 @@ import threading
 import gobject
 
 from nostaples import constants
-import saneme
+from nostaples.sane import saneme
 
 class IdleObject(gobject.GObject):
     """

@@ -31,8 +31,8 @@ import gtk
 from gtkmvc.controller import Controller
 
 from nostaples.models.page import PageModel
+import nostaples.sane as saneme
 from nostaples.utils.scanning import *
-import saneme
 
 class MainController(Controller):
     """
