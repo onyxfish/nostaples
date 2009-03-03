@@ -20,5 +20,18 @@ Executing this module runs all the NoStaples unittests.  Pass -v
 for detailed output.
 """
 
-import nose
+import sys
+
+try:
+    import nose
+except ImportError:
+    print 'You must have python-nose installed to run these tests.'
+    sys.exit()
+    
+try:
+    import mock
+except ImportError:
+    print 'You must have Michael Foord\'s Mock installed to run these tests.'
+    sys.exit()
+    
 nose.run()
