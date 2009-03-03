@@ -1,6 +1,8 @@
 import os
 import unittest
 
+from mock import Mock
+
 import Image, ImageDraw
 
 from nostaples.models.page import PageModel
@@ -10,6 +12,8 @@ class TestPageModel(unittest.TestCase):
     TEST_PAGE_HEIGHT = 266
     
     def setUp(self):    
+        self.mock_application = Mock(spec=Application)
+        
         image = Image.new('RGB', (self.TEST_PAGE_WIDTH, self.TEST_PAGE_HEIGHT))
         draw = ImageDraw.Draw(image)
         
@@ -19,7 +23,7 @@ class TestPageModel(unittest.TestCase):
         
         image.save('TestPageModel.png')
         
-        self.page_model = PageModel('TestPageModel.png')
+        self.page_model = PageModel(self.mock_application, 'TestPageModel.png')
         
     def tearDown(self):
         os.remove('TestPageModel.png')

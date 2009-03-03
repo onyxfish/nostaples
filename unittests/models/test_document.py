@@ -18,9 +18,9 @@ class TestDocumentModel(unittest.TestCase):
     def test_append(self):
         self.assertEqual(self.document_model.count, 0)
         
-        self.document_model.append(PageModel())
-        self.document_model.append(PageModel())
-        p = PageModel()
+        self.document_model.append(PageModel(self.mock_application))
+        self.document_model.append(PageModel(self.mock_application))
+        p = PageModel(self.mock_application)
         self.document_model.append(p)
         
         self.assertEqual(self.document_model.count, 3)
@@ -29,9 +29,9 @@ class TestDocumentModel(unittest.TestCase):
     def test_prepend(self):
         self.assertEqual(self.document_model.count, 0)
         
-        self.document_model.prepend(PageModel())
-        self.document_model.prepend(PageModel())
-        p = PageModel()
+        self.document_model.prepend(PageModel(self.mock_application))
+        self.document_model.prepend(PageModel(self.mock_application))
+        p = PageModel(self.mock_application)
         self.document_model.prepend(p)
         
         self.assertEqual(self.document_model.count, 3)
@@ -40,9 +40,9 @@ class TestDocumentModel(unittest.TestCase):
     def test_insert(self):
         self.assertEqual(self.document_model.count, 0)
         
-        p0 = PageModel()
-        p1 = PageModel()
-        p2 = PageModel()
+        p0 = PageModel(self.mock_application)
+        p1 = PageModel(self.mock_application)
+        p2 = PageModel(self.mock_application)
         
         self.document_model.insert(0, p2)
         self.document_model.insert(0, p0)
@@ -56,9 +56,9 @@ class TestDocumentModel(unittest.TestCase):
     def test_insert_before(self):
         self.assertEqual(self.document_model.count, 0)
         
-        p0 = PageModel()
-        p1 = PageModel()
-        p2 = PageModel()
+        p0 = PageModel(self.mock_application)
+        p1 = PageModel(self.mock_application)
+        p2 = PageModel(self.mock_application)
                 
         iter = self.document_model.get_iter_root()
         self.document_model.insert_before(iter, p2)
@@ -75,9 +75,9 @@ class TestDocumentModel(unittest.TestCase):
     def test_insert_after(self):
         self.assertEqual(self.document_model.count, 0)
         
-        p0 = PageModel()
-        p1 = PageModel()
-        p2 = PageModel()
+        p0 = PageModel(self.mock_application)
+        p1 = PageModel(self.mock_application)
+        p2 = PageModel(self.mock_application)
                 
         iter = self.document_model.get_iter_root()
         self.document_model.insert_after(iter, p0)
@@ -94,9 +94,9 @@ class TestDocumentModel(unittest.TestCase):
     def test_remove(self):
         self.assertEqual(self.document_model.count, 0)
         
-        p0 = PageModel()
-        p1 = PageModel()
-        p2 = PageModel()
+        p0 = PageModel(self.mock_application)
+        p1 = PageModel(self.mock_application)
+        p2 = PageModel(self.mock_application)
                 
         self.document_model.append(p0)
         self.document_model.append(p1)
@@ -112,9 +112,9 @@ class TestDocumentModel(unittest.TestCase):
     def test_clear(self):
         self.assertEqual(self.document_model.count, 0)
         
-        p0 = PageModel()
-        p1 = PageModel()
-        p2 = PageModel()
+        p0 = PageModel(self.mock_application)
+        p1 = PageModel(self.mock_application)
+        p2 = PageModel(self.mock_application)
                 
         self.document_model.append(p0)
         self.document_model.append(p1)
