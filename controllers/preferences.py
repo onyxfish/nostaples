@@ -66,6 +66,7 @@ class PreferencesController(Controller):
     # USER INTERFACE CALLBACKS
     
     def on_preview_mode_combobox_changed(self, combobox):
+        """Update the preview mode in the PreferencesModel."""
         preferences_model = self.application.get_preferences_model()
         preferences_view = self.application.get_preferences_view()
         
@@ -73,6 +74,7 @@ class PreferencesController(Controller):
             read_combobox(preferences_view['preview_mode_combobox'])
     
     def on_thumbnail_size_combobox_changed(self, combobox):
+        """Update the thumbnail size in the PreferencesModel."""
         preferences_model = self.application.get_preferences_model()
         preferences_view = self.application.get_preferences_view()
         

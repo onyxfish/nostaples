@@ -151,7 +151,7 @@ class SaveController(Controller):
         main_view['scan_window'].window.set_cursor(None)
             
         save_model.save_path = save_view['save_dialog'].get_current_folder()
-        
+    
     # PROPERTY CALLBACKS
     
     def property_saved_keywords_value_change(self, model, old_value, new_value):

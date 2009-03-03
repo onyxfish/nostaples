@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Mon Feb 23 20:34:14 2009 -->
+<!--Generated with glade3 3.4.5 on Fri Feb 27 20:10:04 2009 -->
 <glade-interface>
   <widget class="GtkDialog" id="preferences_dialog">
     <property name="border_width">5</property>
@@ -118,7 +118,7 @@
                       <widget class="GtkLabel" id="label8">
                         <property name="visible">True</property>
                         <property name="xalign">0</property>
-                        <property name="label" translatable="yes">Unavailable devices:</property>
+                        <property name="label" translatable="yes">Unsupported or unavailable devices:</property>
                         <property name="wrap_mode">PANGO_WRAP_WORD_CHAR</property>
                       </widget>
                     </child>
