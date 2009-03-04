@@ -16,11 +16,83 @@
 #~ along with NoStaples.  If not, see <http://www.gnu.org/licenses/>.
 
 '''
-This module holds the main loop which instantiates the NoStaples
+This module parses command line options and bootstraps the NoStaples
 application.
 '''
 
-from nostaples.application import Application
+import optparse
+import sys
+
+# Functions to pretty-print debugging info
+def print_device_debug(i, device):
+    """Pretty-print device information."""
+    print 'Device %i' % i
+    print ''
+    print 'Name:\t%s' % device.name
+    print 'Vendor:\t%s' % device.vendor
+    print 'Model:\t%s' % device.model
+    print 'Type:\t%s' % device.type
+    print ''
     
+    try:
+        device.open()
+        
+        j = 1
+        for option in device.options.values():
+            print_option_debug(j, option)
+            
+            print ''
+            j = j + 1
+            
+        device.close()
+    except  Exception:
+        print '\t**Failed to open device.**'
+    
+def print_option_debug(j, option):
+    """Pretty-print device option information."""
+    print '\tOption %i' % j
+    print ''
+    print '\tName:\t%s' % option._name
+    print '\tTitle:\t%s' % option._title
+    print '\tDesc:\t%s' % option._description
+    print '\tType:\t%s' % option._type
+    print '\tUnit:\t%s' % option._unit
+    print '\tSize:\t%s' % option._size
+    print '\tCap:\t%s' % option._capabilities
+    print '\tConstraint Type:\t%s' % option._constraint_type
+    print '\tConstraint:\t', option._constraint
+    
+    try:
+        print '\tValue:\t%s' % str(option.value)
+    except Exception:
+        print '\t**Failed to get current value for option.**'
+
+# Parse command line options
+parser = optparse.OptionParser()
+parser.add_option("--debugdevices", action="store_true", dest="debug_devices",
+    help="print debugging information for all connected devices")
+
+(options, args) = parser.parse_args()
+    
+if options.debug_devices:
+    import nostaples.sane as saneme
+    
+    sane_manager = saneme.SaneMe()
+    devices = sane_manager.get_device_list()
+    
+    if len(devices) == 0:
+        print 'No devices found.'
+    
+    i = 1
+    for device in devices:
+        print_device_debug(i, device)
+        
+        print ''
+        i = i + 1
+    
+    sys.exit()
+    
+# Bootstrap application
+from nostaples.application import Application
 nostaples = Application()
 nostaples.run()

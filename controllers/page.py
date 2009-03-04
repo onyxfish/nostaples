@@ -396,6 +396,7 @@ class PageController(Controller):
         
         # Determine correct zoom to fit region
         if width > height:
+            # TODO: ZeroDivisionError has occurred here...
             self.preview_zoom = self.preview_width / width
         else:
             self.preview_zoom = self.preview_height / height
