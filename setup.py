@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name='nostaples',
-      version='0.3.0',
+      version='0.4.0',
       description='GNOME Document Scanning Application',
       author='Christopher Groskopf',
       author_email='staringmonkey@gmail.com',
