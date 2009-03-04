@@ -36,10 +36,17 @@ class AboutView(View):
     def __init__(self, application):
         """Constructs the AboutView."""
         self.application = application
+        about_controller = self.application.get_about_controller()
         about_dialog_glade = os.path.join(
             constants.GUI_DIRECTORY, 'about_dialog.glade')
+        
+        # This must be set before the window is created or
+        # the url will not be clickable.
+        gtk.about_dialog_set_url_hook(
+            about_controller.on_about_dialog_url_clicked)
+        
         View.__init__(
-            self, self.application.get_about_controller(), 
+            self, about_controller, 
             about_dialog_glade, 'about_dialog', 
             None, False)
             
@@ -49,7 +56,7 @@ class AboutView(View):
         # top-level widgets
         self['about_dialog'].set_transient_for(
             self.application.get_main_view()['scan_window'])
-        
+                
         self.application.get_about_controller().register_view(self)
         
         self.log.debug('Created.')

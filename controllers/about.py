@@ -21,6 +21,7 @@ between the user and the L{AboutView}.
 """
 
 import logging
+import webbrowser
 
 from gtkmvc.controller import Controller
 from gtkmvc.model import Model
@@ -75,6 +76,10 @@ class AboutController(Controller):
         """Hide the about dialog."""
         dialog.hide()
         return True
+    
+    def on_about_dialog_url_clicked(self, dialog, link):
+        """Open the webpage in the users default browser."""
+        webbrowser.open(link)
     
     # PUBLIC METHODS
     
