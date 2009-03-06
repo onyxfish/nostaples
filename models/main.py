@@ -153,9 +153,6 @@ class MainModel(Model):
         if value is not None:
             assert isinstance(value, saneme.Device)
         
-        # Update the internal property variable
-        self._prop_active_scanner = value
-        
         # Only persist the state if the new value is not None
         # and it can be opened without error.
         # This prevents problems with trying to store a Null
@@ -164,15 +161,16 @@ class MainModel(Model):
         if value is not None:
             try:
                 value.open()
-                self.valid_modes = value.options['mode'].constraint
-                self.valid_resolutions = \
-                    [str(i) for i in value.options['resolution'].constraint]
+                self._reload_scanner_options()
             except saneme.SaneError:
                 exc_info = sys.exc_info()
                 main_controller.run_device_exception_dialog(exc_info)
             
             self.application.get_state_manager()['active_scanner'] = value.name
-            
+        
+        # Update the internal property variable
+        self._prop_active_scanner = value
+        
         # Emit the property change notification to all observers.
         self.notify_property_value_change(
             'active_scanner', old_value, value)
@@ -182,9 +180,7 @@ class MainModel(Model):
         Update the scanner options and write state to the StateManager.
         
         See L{set_prop_active_scanner} for detailed comments.
-        """
-        self._prop_active_mode = value    
-            
+        """           
         if value is not None:
             # This catches the case where the value is being loaded from state
             # but a scanner has not yet been activated.
@@ -192,11 +188,16 @@ class MainModel(Model):
                 try:
                     self.active_scanner.options['mode'].value = value
                 except saneme.SaneReloadOptionsError:
-                    # TODO
-                    pass
+                    try:
+                        self._reload_scanner_options()
+                    except:
+                        exc_info = sys.exc_info()
+                        main_controller.run_device_exception_dialog(exc_info)
             
             self.application.get_state_manager()['scan_mode'] = value   
-                     
+     
+        self._prop_active_mode = value
+        
         self.notify_property_value_change(
             'active_mode', None, value)    
         
@@ -205,9 +206,7 @@ class MainModel(Model):
         Update the scanner options and write state to the StateManager.
         
         See L{set_prop_active_scanner} for detailed comments.
-        """
-        self._prop_active_resolution = value
-        
+        """        
         if value is not None:
             # This catches the case where the value is being loaded from state
             # but a scanner has not yet been activated.
@@ -215,11 +214,16 @@ class MainModel(Model):
                 try:
                     self.active_scanner.options['resolution'].value = int(value)
                 except SaneReloadOptionsError:
-                    # TODO
-                    pass
-                
+                    try:
+                        self._reload_scanner_options()
+                    except:
+                        exc_info = sys.exc_info()
+                        main_controller.run_device_exception_dialog(exc_info)
+              
             self.application.get_state_manager()['scan_resolution'] = value
-            
+        
+        self._prop_active_resolution = value
+        
         self.notify_property_value_change(
             'active_resolution', None, value)
         
@@ -319,3 +323,17 @@ class MainModel(Model):
             self.active_resolution = state_manager['scan_resolution']
         else:
             state_manager['scan_resolution'] = self.active_resolution
+
+    # INTERNAL METHODS
+    
+    def _reload_scanner_options(self):
+        """
+        Get current scanner options from the SaneDevice.
+        
+        Exceptions should be handled by calling method.
+        """
+        # TODO: ensure these are the expected constraints
+        # (resolution may be a range)
+        self.valid_modes = self.active_scanner.options['mode'].constraint
+        self.valid_resolutions = \
+            [str(i) for i in self.active_scanner.options['resolution'].constraint]

@@ -716,7 +716,7 @@ class Option(object):
     constraint = property(__get_constraint)
         
     def __get_value(self):
-        """
+        """value
         Get the current value of this option.
         """
         handle = self._device._get_handle()
@@ -878,6 +878,15 @@ class Option(object):
         
         if self._log:
             self._log.debug('Option %s set to value %s.', self._name, value)
+        
+        # Constraint checking ensures this should never happen
+        if info_flags.value & SANE_INFO_INEXACT:
+            raise AssertionError(
+                 'sane_control_option reported that set value was inexact.')
+        
+        # TODO?
+        if info_flags.value & SANE_INFO_RELOAD_PARAMS:
+            pass
         
         # See SANE API 4.3.7
         if info_flags.value & SANE_INFO_RELOAD_OPTIONS:
