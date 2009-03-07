@@ -395,6 +395,10 @@ class MainModel(Model):
                 saneme.OPTION_CONSTRAINT_RANGE:
                 min, max, step = sane_device.options['resolution'].constraint
                 
+                # Fix for ticket #34.
+                if step is None or step == 0:
+                    step = 1
+                
                 resolutions = []
                 
                 # If there are not an excessive number, include every possible
