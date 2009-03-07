@@ -25,8 +25,6 @@ import logging.config
 import os
 import sys
 
-import pygtk
-pygtk.require('2.0')
 import gtk
 
 from nostaples import constants
@@ -52,7 +50,7 @@ from nostaples.views.main import MainView
 from nostaples.views.page import PageView
 from nostaples.views.preferences import PreferencesView
 from nostaples.views.save import SaveView
-from nostaples.views.status import StatusView
+from nostaples.views.status import StatusView   
 
 class Application(object):
     """
@@ -103,80 +101,12 @@ class Application(object):
         (which will in turn construct all sub components).
         Per
         """
-        self._check_import_versions()
         self._init_config()
         self._init_logging()
         self._init_state()
         self._init_sane()
         self._init_main_components()
         self._init_settings()
-        
-    def _check_import_versions(self):
-        """
-        Attempt to import all dependencies and check that supported versions
-        are available.
-        """
-        # Python
-        if sys.version_info < (2, 5) or sys.version_info >= (3, 0):
-            self._display_import_error(
-                'NoStaples requires Python version 2.5 or later (but not version 3.0 or later).')
-            
-        # GTK
-        if gtk.gtk_version < (2, 6, 0):
-            self._display_import_error(
-                'NoStaples requires GTK+ version 2.6 or later.')
-            
-        if gtk.pygtk_version < (2, 8, 0):
-            self._display_import_error(
-                'NoStaples requires PyGTK version 2.8 or later.')
-        
-        # PIL
-        try:
-            import Image
-        except ImportError:
-            self._display_import_error(
-                'NoStaples requires the Python Imaging Library (PIL) 1.1.6 or later.')
-            
-        pil_version = tuple([int(i) for i in Image.VERSION.split('.')])
-            
-        if pil_version < (1, 1, 6):
-            self._display_import_error(
-                'NoStaples requires the Python Imaging Library (PIL) version 1.1.6 or later.')
-        
-        # ReportLab
-        try:
-            import reportlab
-        except ImportError:
-            self._display_import_error(
-                'NoStaples requires ReportLab version 2.1 or later.')
-            
-        reportlab_version = tuple([int(i) for i in reportlab.Version.split('.')])
-        
-        if reportlab_version < (2, 1):
-            self._display_import_error(
-                'NoStaples requires ReportLab version 2.1 or later.')
-            
-    def _display_import_error(self, message):      
-        """
-        Displays a GTK message dialog containing the import error and then
-        exits the application.
-        """
-        dialog = gtk.MessageDialog(
-            parent=None, flags=0, type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_NONE)
-        dialog.set_title('')
-    
-        primary = "<big><b>A required package is not installed.</b></big>"
-        secondary = '%s' % message
-    
-        dialog.set_markup(primary)
-        dialog.format_secondary_markup(secondary)
-    
-        dialog.add_button(gtk.STOCK_CLOSE, gtk.RESPONSE_CLOSE)
-    
-        response = dialog.run()        
-        dialog.destroy()
-        
-        sys.exit()    
 
     def _init_config(self):
         """Setup the config directory."""
