@@ -564,13 +564,21 @@ class MainController(Controller):
         # Remove scanners that do not support necessary options or fail to
         # open entirely
         preferences_model.unavailable_scanners = []
-        
+                
+        def is_supported_option(option):
+            """Verify an option supports necessary capabilities to be useful."""
+            return option.is_active() and \
+                option.is_soft_gettable() and \
+                option.is_soft_settable()
+                        
         for scanner in scanner_list:
             try:
                 scanner.open()
-                    
+                
                 if not scanner.has_option('mode') or \
-                    not scanner.has_option('resolution'):
+                    not is_supported_option(scanner.options['mode']) or \
+                    not scanner.has_option('resolution') or \
+                    not is_supported_option(scanner.options['resolution']):
                     preferences_model.unavailable_scanners.append(scanner.display_name)
                     scanner_list.remove(scanner)
                     

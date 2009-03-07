@@ -679,22 +679,25 @@ class Option(object):
     description = property(__get_description)
 
     def __get_type(self):
+        """
+        Get the type of this option, e.g. OPTION_TYPE_STRING.
+        """
         return self._type
         
     type = property(__get_type)
 
     def __get_unit(self):
+        """
+        Get the unit of this option, e.g.OPTION_UNIT_DPI.
+        """
         return self._unit
         
     unit = property(__get_unit)
 
-    def __get_capability(self):
-        # TODO: break out into individual capabilities, rather than a bitset
-        return self._capability
-        
-    capability = property(__get_capability)
-
     def __get_constraint_type(self):
+        """
+        Get the type of constraint on this option, e.g. OPTION_CONSTRAINT_RANGE.
+        """
         return self._constraint_type
         
     constraint_type = property(__get_constraint_type)
@@ -895,6 +898,45 @@ class Option(object):
             raise SaneReloadOptionsError()
         
     value = property(__get_value, __set_value)
+    
+    # PUBLIC METHODS
+    
+    def is_soft_settable(self):
+        """
+        Returns True if the option can be set by software.
+        """
+        return self._capability & SANE_CAP_SOFT_SELECT
+    
+    def is_hard_settable(self):
+        """
+        Returns True if the option can be set by hardware.
+        """
+        return self._capability & SANE_CAP_HARD_SELECT
+    
+    def is_soft_gettable(self):
+        """
+        Returns True if the option can be read by software.
+        """
+        return self._capability & SANE_CAP_SOFT_DETECT
+    
+    def is_emulated(self):
+        """
+        Returns True if the option is emulated by the backend driver.
+        """
+        return self._capability & SANE_CAP_EMULATED
+    
+#    def is_automatic(self):
+#        return self._capability & SANE_CAP_AUTOMATIC
+
+    def is_active(self):
+        """
+        Returns False if this device is unavailable because of the value
+        of some other option.
+        """
+        return not self._capability & SANE_CAP_INACTIVE
+    
+#    def is_advanced(self):
+#        return self._capability & SANE_CAP_ADVANCED
     
 class ScanInfo(object):
     """
