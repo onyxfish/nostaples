@@ -159,10 +159,6 @@ class MainView(View):
         dialog = gtk.MessageDialog(
             parent=None, flags=0, type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_NONE)
         dialog.set_title('')
-        
-        # TODO: is this needed?
-        if gtk.check_version (2, 4, 0) is not None:
-            dialog.set_has_separator (False)
     
         primary = "<big><b>A hardware exception has been logged.</b></big>"
         secondary = '<b>Device:</b> %s\n<b>Exception:</b> %s\n\n%s' % (

@@ -76,7 +76,7 @@ GCONF_TUPLE_SEPARATOR = '|'
 GCONF_LIST_SEPARATOR = '^'
 
 # TODO: rename to CONFIG_DIRECTORY
-TEMP_IMAGES_DIRECTORY = os.path.expanduser('~/.nostaples')
+APP_DIRECTORY = os.path.expanduser('~/.nostaples')
 LOGGING_CONFIG = os.path.join(os.path.dirname(__file__), 'logging.config')
 GUI_DIRECTORY = os.path.join(os.path.dirname(__file__), 'gui')
 
