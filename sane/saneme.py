@@ -596,7 +596,7 @@ class Option(object):
     _type = 0
     _unit = 0
     _size = 0
-    _capabilities = 0
+    _capability = 0
     _constraint_type = 0
     
     _constraint = None

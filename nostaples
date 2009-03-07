@@ -64,14 +64,17 @@ def print_option_debug(j, option):
     print '\tType:\t%s' % option._type
     print '\tUnit:\t%s' % option._unit
     print '\tSize:\t%s' % option._size
-    print '\tCap:\t%s' % option._capabilities
+    print '\tCap:\t%s' % option._capability
     print '\tConstraint Type:\t%s' % option._constraint_type
     print '\tConstraint:\t', option._constraint
     
-    try:
-        print '\tValue:\t%s' % str(option.value)
-    except Exception:
-        print '\t**Failed to get current value for option.**'
+    if option.is_soft_gettable():
+        try:
+            print '\tValue:\t%s' % str(option.value)
+        except Exception:
+            print '\t**Failed to get current value for option.**'
+    else:
+        print '\tValue:\tNot soft-gettable.'
 
 # Parse command line options
 parser = optparse.OptionParser()
