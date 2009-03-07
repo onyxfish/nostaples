@@ -625,12 +625,12 @@ class Option(object):
         
         if self._constraint_type == SANE_CONSTRAINT_NONE.value:
             pass
-        elif self._constraint_type == SANE_CONSTRAINT_RANGE.value:            
+        elif self._constraint_type == SANE_CONSTRAINT_RANGE.value:
             self._constraint = (
                 ctypes_option.constraint.range.contents.min,
                 ctypes_option.constraint.range.contents.max,
                 ctypes_option.constraint.range.contents.quant)
-        elif self._constraint_type == SANE_CONSTRAINT_WORD_LIST.value:            
+        elif self._constraint_type == SANE_CONSTRAINT_WORD_LIST.value:
             word_count = ctypes_option.constraint.word_list[0]
             self._constraint = []
             
@@ -645,6 +645,8 @@ class Option(object):
             while ctypes_option.constraint.string_list[string_count]:
                 self._constraint.append(ctypes_option.constraint.string_list[string_count])
                 string_count += 1
+        else:
+            self._constraint = None
         
     # Read only properties
 

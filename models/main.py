@@ -152,26 +152,22 @@ class MainModel(Model):
                 old_value.close()
         
         # Only persist the state if the new value is not None
-        # and it can be opened without error.
-        # This prevents problems with trying to store a Null
-        # value in the state backend and also allows for smooth
-        # transitions if a scanner is disconnected and reconnected.
+        # and it's option constraints can be queried without error.
         if value is not None:
-            try:
-                # Verify that the proper type is being set
-                assert isinstance(value, saneme.Device)
-                
+            # Verify that the proper type is being set
+            assert isinstance(value, saneme.Device)
+            
+            # Open the new scanner
+            try:            
                 value.open()
-                
-                # TODO: ensure these are the expected constraints
-                # (resolution may be a range)
-                self.valid_modes = value.options['mode'].constraint
-                self.valid_resolutions = \
-                    [str(i) for i in value.options['resolution'].constraint]
             except saneme.SaneError:
                 exc_info = sys.exc_info()
                 main_controller.run_device_exception_dialog(exc_info)
+                
+            # Load the option constraints (valid_modes, etc.) for the new device
+            self._load_scanner_option_constraints(value)
             
+            # Persist the scanner name
             self.application.get_state_manager()['active_scanner'] = value.name
         
         # Update the internal property variable
@@ -360,10 +356,62 @@ class MainModel(Model):
             state_manager['scan_resolution'] = self.active_resolution
 
     # INTERNAL METHODS
+            
+    def _load_scanner_option_constraints(self, sane_device):
+        """
+        Load the option constraints from a specified scanner.
+        """
+        main_controller = self.application.get_main_controller()
+        
+        try:
+            assert sane_device.options['mode'].constraint_type == \
+                saneme.OPTION_CONSTRAINT_STRING_LIST
+                
+            self.valid_modes = sane_device.options['mode'].constraint
+            
+            if sane_device.options['resolution'].constraint_type == \
+                saneme.OPTION_CONSTRAINT_RANGE:
+                min, max, step = sane_device.options['resolution'].constraint
+                
+                resolutions = []
+                
+                # If there are not an excessive number, include every possible
+                # resolution
+                if (max - min) / step <= constants.MAX_VALID_OPTION_VALUES:                
+                    i = min
+                    while i <= max:
+                        resolutions.append(str(i))
+                        i = i + step
+                # Otherwise, take a crack at building a sensible set of options
+                # that mean that constraint criteria
+                else:
+                    i = 1
+                    increment = (max - min) / (constants.MAX_VALID_OPTION_VALUES - 1)
+                    while (i <= constants.MAX_VALID_OPTION_VALUES - 2):
+                        unrounded = min + (i * increment)
+                        rounded = int(round(unrounded / step) * step)
+                        resolutions.append(str(rounded))
+                        i = i + 1
+                    resolutions.insert(0, str(min))
+                    resolutions.append(str(max))
+                    
+                self.valid_resolutions = resolutions
+            elif sane_device.options['resolution'].constraint_type == \
+                saneme.OPTION_CONSTRAINT_INTEGER_LIST:
+                self.valid_resolutions = \
+                    [str(i) for i in sane_device.options['resolution'].constraint]
+            elif sane_device.options['resolution'].constraint_type == \
+                saneme.OPTION_CONSTRAINT_STRING_LIST:
+                    sane_device.options['resolution'].constraint
+            else:
+                raise AssertionError('Unsupported constraint type.')              
+        except saneme.SaneError:
+            exc_info = sys.exc_info()
+            main_controller.run_device_exception_dialog(exc_info)
     
     def _load_scanner_option_values(self):
         """
-        Get current scanner options from the SaneDevice.
+        Get current scanner options from the active_scanner.
         
         Useful for reloading any option that may have changed in response to
         a SaneReloadOptionsError.
