@@ -151,6 +151,9 @@ class MainModel(Model):
             if old_value.is_open():
                 old_value.close()
         
+        # Update the internal property variable
+        self._prop_active_scanner = value
+        
         # Only persist the state if the new value is not None
         # and it's option constraints can be queried without error.
         if value is not None:
@@ -167,13 +170,47 @@ class MainModel(Model):
             # Load the option constraints (valid_modes, etc.) for the new device
             self._load_scanner_option_constraints(value)
             
+            # Manually constrain option values
+            if self._prop_active_mode not in self._prop_valid_modes:
+                self._prop_active_mode = self._prop_valid_modes[0]
+                
+            if self._prop_active_resolution not in self._prop_valid_resolutions:
+                self._prop_active_resolution = self._prop_valid_resolutions[0]
+            
+            # Manually push option values to new device
+            try:
+                try:
+                    value.options['mode'].value = self._prop_active_mode
+                except saneme.SaneReloadOptionsError:
+                    pass                
+                
+                try:
+                    value.options['resolution'].value = \
+                        int(self._prop_active_resolution)
+                except saneme.SaneReloadOptionsError:
+                    pass
+            except saneme.SaneError:
+                exc_info = sys.exc_info()
+                main_controller.run_device_exception_dialog(exc_info)
+              
+            # Emit change notifications for manually updated properties
+            
+            self.notify_property_value_change(
+                'valid_modes', None, self.valid_modes)
+            
+            self.notify_property_value_change(
+                'valid_resolutions', None, self.valid_resolutions)
+            
+            self.notify_property_value_change(
+                'active_mode', None, self.active_mode)
+            
+            self.notify_property_value_change(
+                'active_resolution', None, self.active_resolution)
+            
             # Persist the scanner name
             self.application.get_state_manager()['active_scanner'] = value.name
         
-        # Update the internal property variable
-        self._prop_active_scanner = value
-        
-        # Emit the property change notification
+        # Emit the property change notifications     
         self.notify_property_value_change(
             'active_scanner', None, value)
         
@@ -184,6 +221,9 @@ class MainModel(Model):
         See L{set_prop_active_scanner} for detailed comments.
         """
         main_controller = self.application.get_main_controller()
+            
+        # Set new property value
+        self._prop_active_mode = value
         
         # Check if a valid scanner has been loaded (not None)
         if isinstance(self.active_scanner, saneme.Device):
@@ -208,10 +248,7 @@ class MainModel(Model):
                     
         # Never persist None to state
         if value is not None:            
-            self.application.get_state_manager()['scan_mode'] = value    
-            
-        # Set new property value
-        self._prop_active_mode = value
+            self.application.get_state_manager()['scan_mode'] = value
         
         # Emit change notification
         self.notify_property_value_change(
@@ -224,6 +261,9 @@ class MainModel(Model):
         See L{set_prop_active_scanner} for detailed comments.
         """        
         main_controller = self.application.get_main_controller()
+        
+        # Set new property value
+        self._prop_active_resolution = value
         
         # Check if a valid scanner has been loaded (not None)
         if isinstance(self.active_scanner, saneme.Device):
@@ -248,10 +288,7 @@ class MainModel(Model):
                     
         # Never persist None to state
         if value is not None:            
-            self.application.get_state_manager()['scan_resolution'] = value    
-            
-        # Set new property value
-        self._prop_active_resolution = value
+            self.application.get_state_manager()['scan_resolution'] = value
         
         # Emit change notification
         self.notify_property_value_change(
@@ -267,20 +304,13 @@ class MainModel(Model):
         
         self._prop_available_scanners = value
         
-        # Force notification
         self.notify_property_value_change(
             'available_scanners', None, value)
         
         if len(value) == 0:
             self.active_scanner = None
-        else:           
-            # Select the first available scanner if the previously 
-            # selected scanner is not in the new list
-            if self._prop_active_scanner not in value:
-                self.active_scanner = value[0]
-            # Otherwise maintain current selection
-            else:
-                self.active_scanner = self.active_scanner
+        elif self._prop_active_scanner not in value:
+            self.active_scanner = value[0]
         
     def set_prop_valid_modes(self, value):
         """
@@ -294,14 +324,10 @@ class MainModel(Model):
         self.notify_property_value_change(
             'valid_modes', None, value)
         
-        # Update the active mode
         if len(value) == 0:
             self.active_mode = None
-        else:
-            if self.active_mode not in value:
-                self.active_mode = value[0]
-            else:
-                self.active_mode = self.active_mode   
+        elif self.active_mode not in value:
+            self.active_mode = value[0]
         
     def set_prop_valid_resolutions(self, value):
         """
@@ -314,15 +340,11 @@ class MainModel(Model):
         
         self.notify_property_value_change(
             'valid_resolutions', None, value)
-            
-        # Update the active resolution
+        
         if len(value) == 0:
             self.active_resolution = None
-        else:
-            if self.active_resolution not in value:
-                self.active_resolution = value[0]
-            else:
-                self.active_resolution = self.active_resolution
+        elif self.active_resolution not in value:
+            self.active_resolution = value[0]
         
     # STATE CALLBACKS
         
@@ -367,7 +389,7 @@ class MainModel(Model):
             assert sane_device.options['mode'].constraint_type == \
                 saneme.OPTION_CONSTRAINT_STRING_LIST
                 
-            self.valid_modes = sane_device.options['mode'].constraint
+            self._prop_valid_modes = sane_device.options['mode'].constraint
             
             if sane_device.options['resolution'].constraint_type == \
                 saneme.OPTION_CONSTRAINT_RANGE:
@@ -395,10 +417,10 @@ class MainModel(Model):
                     resolutions.insert(0, str(min))
                     resolutions.append(str(max))
                     
-                self.valid_resolutions = resolutions
+                self._prop_valid_resolutions = resolutions
             elif sane_device.options['resolution'].constraint_type == \
                 saneme.OPTION_CONSTRAINT_INTEGER_LIST:
-                self.valid_resolutions = \
+                self._prop_valid_resolutions = \
                     [str(i) for i in sane_device.options['resolution'].constraint]
             elif sane_device.options['resolution'].constraint_type == \
                 saneme.OPTION_CONSTRAINT_STRING_LIST:
@@ -416,7 +438,10 @@ class MainModel(Model):
         Useful for reloading any option that may have changed in response to
         a SaneReloadOptionsError.
         """
+        main_controller = self.application.get_main_controller()
+        
         try:
+            # TODO: ReloadOptions should reload constraints as well as values!
             self.active_mode = self.active_scanner.options['mode'].value
             self.active_resolution = \
                 str(self.active_scanner.options['resolution'].value)
