@@ -145,7 +145,9 @@ class MainModel(Model):
         old_value = self._prop_active_scanner
         
         # Close the old scanner (if not None)
-        if isinstance(old_value, saneme.Device):
+        if old_value is not None:
+            assert isinstance(old_value, saneme.Device)
+                
             if old_value.is_open():
                 old_value.close()
         
@@ -175,9 +177,9 @@ class MainModel(Model):
         # Update the internal property variable
         self._prop_active_scanner = value
         
-        # Emit the property change notification to all observers.
+        # Emit the property change notification
         self.notify_property_value_change(
-            'active_scanner', old_value, value)
+            'active_scanner', None, value)
         
     def set_prop_active_mode(self, value):
         """
@@ -187,37 +189,35 @@ class MainModel(Model):
         """
         main_controller = self.application.get_main_controller()
         
-        old_value = self._prop_active_mode
-        
-        try:
-            scanner_value = self.active_scanner.options['mode'].value
-        except saneme.SaneError:
-            exc_info = sys.exc_info()
-            main_controller.run_device_exception_dialog(exc_info)
+        # Check if a valid scanner has been loaded (not None)
+        if isinstance(self.active_scanner, saneme.Device):
+            # The device should always be open if a value is being set
+            assert self.active_scanner.is_open()
             
-        if old_value == value and \
-            scanner_value == value:
-            return
-        
-        if value is not None:
-            # This catches the case where the value is being loaded from state
-            # but a scanner has not yet been activated.
-            if self.active_scanner:                
+            # Store the current scanner value for comparison
+            try:
+                scanner_value = self.active_scanner.options['mode'].value
+            except saneme.SaneError:
+                exc_info = sys.exc_info()
+                main_controller.run_device_exception_dialog(exc_info)
+            
+            # Never re-set a value or set None to a device option
+            if value is not None and scanner_value != value:
                 try:
-                    # Only set if different (prevent ReloadOptions from firing)
-                    if self.active_scanner.options['mode'].value != value:
-                        self.active_scanner.options['mode'].value = value
+                    # Set the new option value
+                    self.active_scanner.options['mode'].value = value
                 except saneme.SaneReloadOptionsError:
-                    try:
-                        self._load_scanner_option_values()
-                    except saneme.SaneError:
-                        exc_info = sys.exc_info()
-                        main_controller.run_device_exception_dialog(exc_info)
+                    # Reload any options that may have changed
+                    self._load_scanner_option_values()
+                    
+        # Never persist None to state
+        if value is not None:            
+            self.application.get_state_manager()['scan_mode'] = value    
             
-            self.application.get_state_manager()['scan_mode'] = value   
-     
+        # Set new property value
         self._prop_active_mode = value
         
+        # Emit change notification
         self.notify_property_value_change(
             'active_mode', None, value)    
         
@@ -229,24 +229,37 @@ class MainModel(Model):
         """        
         main_controller = self.application.get_main_controller()
         
-        if value is not None:
-            if self.active_scanner:
+        # Check if a valid scanner has been loaded (not None)
+        if isinstance(self.active_scanner, saneme.Device):
+            # The device should always be open if a value is being set
+            assert self.active_scanner.is_open()
+            
+            # Store the current scanner value for comparison
+            try:
+                scanner_value = self.active_scanner.options['resolution'].value
+            except saneme.SaneError:
+                exc_info = sys.exc_info()
+                main_controller.run_device_exception_dialog(exc_info)
+            
+            # Never re-set a value or set None to a device option
+            if value is not None and scanner_value != int(value):
                 try:
-                    if self.active_scanner.options['resolution'].value != int(value):
-                        self.active_scanner.options['resolution'].value = int(value)
+                    # Set the new option value
+                    self.active_scanner.options['resolution'].value = int(value)
                 except saneme.SaneReloadOptionsError:
-                    try:
-                        self._load_scanner_option_values()
-                    except saneme.SaneError:
-                        exc_info = sys.exc_info()
-                        main_controller.run_device_exception_dialog(exc_info)
-              
-            self.application.get_state_manager()['scan_resolution'] = str(value)
-        
+                    # Reload any options that may have changed
+                    self._load_scanner_option_values()
+                    
+        # Never persist None to state
+        if value is not None:            
+            self.application.get_state_manager()['scan_resolution'] = value    
+            
+        # Set new property value
         self._prop_active_resolution = value
         
+        # Emit change notification
         self.notify_property_value_change(
-            'active_resolution', None, value)
+            'active_resolution', None, value)    
         
     def set_prop_available_scanners(self, value):
         """
@@ -323,7 +336,8 @@ class MainModel(Model):
         sane = self.application.get_sane()
         
         if state_manager['active_scanner'] in self.available_scanners:
-            self.active_scanner = sane.get_device_by_name(state_manager['active_scanner'])
+            self.active_scanner = sane.get_device_by_name(
+                state_manager['active_scanner'])
         else:
             state_manager['active_scanner'] = self.active_scanner.name
         
@@ -351,7 +365,13 @@ class MainModel(Model):
         """
         Get current scanner options from the SaneDevice.
         
-        Exceptions should be handled by calling method.
+        Useful for reloading any option that may have changed in response to
+        a SaneReloadOptionsError.
         """
-        self.active_mode = self.active_scanner.options['mode'].value
-        self.active_resolution = self.active_scanner.options['resolution'].value
+        try:
+            self.active_mode = self.active_scanner.options['mode'].value
+            self.active_resolution = \
+                str(self.active_scanner.options['resolution'].value)
+        except saneme.SaneError:
+            exc_info = sys.exc_info()
+            main_controller.run_device_exception_dialog(exc_info)
