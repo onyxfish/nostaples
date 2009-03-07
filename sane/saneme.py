@@ -834,13 +834,15 @@ class Option(object):
         if self._constraint_type == SANE_CONSTRAINT_NONE.value:
             pass
         elif self._constraint_type == SANE_CONSTRAINT_RANGE.value:
-            if value < self._constraint[0]:
+            min, max, step = self._constraint
+            if value < min:
                 raise ValueError('value for option is less than min.')
-            if value > self._constraint[1]:
+            if value > max:
                 raise ValueError('value for option is greater than max.')
-            if value % self._constraint[2] != 0:
-                raise ValueError(
-                    'value for option is not divisible by step.')
+            if step is not None and step > 0:
+                if value % step != 0:
+                    raise ValueError(
+                        'value for option is not evenly divisible by step.')
         elif self._constraint_type == SANE_CONSTRAINT_WORD_LIST.value:
             if value not in self._constraint:
                 raise ValueError(
