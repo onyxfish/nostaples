@@ -242,6 +242,9 @@ class MainModel(Model):
                 try:
                     # Set the new option value
                     self.active_scanner.options['mode'].value = value
+                except saneme.SaneInexactValueError:
+                    # TODO - what if "exact" value isn't in the list?
+                    pass
                 except saneme.SaneReloadOptionsError:
                     # Reload any options that may have changed
                     self._load_scanner_option_values()
@@ -282,6 +285,9 @@ class MainModel(Model):
                 try:
                     # Set the new option value
                     self.active_scanner.options['resolution'].value = int(value)
+                except saneme.SaneInexactValueError:
+                    # TODO - what if "exact" value isn't in the list?
+                    pass
                 except saneme.SaneReloadOptionsError:
                     # Reload any options that may have changed
                     self._load_scanner_option_values()

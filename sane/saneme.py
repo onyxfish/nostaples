@@ -886,18 +886,19 @@ class Option(object):
         if self._log:
             self._log.debug('Option %s set to value %s.', self._name, value)
         
-        # Constraint checking ensures this should never happen
+        # See SANE API 4.3.7
+        if info_flags.value & SANE_INFO_RELOAD_OPTIONS:
+            raise SaneReloadOptionsError()
+        
+        # Catching this can not be avoided by constraint checking, as some
+        # devices restrict option values without setting a constraint range
+        # step.
         if info_flags.value & SANE_INFO_INEXACT:
-            raise AssertionError(
-                 'sane_control_option reported that set value was inexact.')
+            raise SaneInexactValueError()
         
         # TODO?
         if info_flags.value & SANE_INFO_RELOAD_PARAMS:
             pass
-        
-        # See SANE API 4.3.7
-        if info_flags.value & SANE_INFO_RELOAD_OPTIONS:
-            raise SaneReloadOptionsError()
         
     value = property(__get_value, __set_value)
     

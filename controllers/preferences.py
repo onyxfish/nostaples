@@ -81,6 +81,14 @@ class PreferencesController(Controller):
         preferences_model.thumbnail_size = \
             int(read_combobox(preferences_view['thumbnail_size_combobox']))
             
+    def on_toolbar_style_combobox_changed(self, combobox):
+        """Update the toolbar style in the PreferencesModel."""
+        preferences_model = self.application.get_preferences_model()
+        preferences_view = self.application.get_preferences_view()
+        
+        preferences_model.toolbar_style = \
+            read_combobox(preferences_view['toolbar_style_combobox'])
+            
     def on_remove_from_blacklist_button_clicked(self, button):
         """
         Remove the currently selected blacklist device from the list.
@@ -155,6 +163,18 @@ class PreferencesController(Controller):
         
     # PROPERTY CALLBACKS
     
+    def property_preview_mode_value_change(self, model, old_value, new_value):
+        # TODO - set the combobox (in case the change came form state)
+        pass
+    
+    def property_thumbnail_size_value_change(self, model, old_value, new_value):
+        # TODO - set the combobox (in case the change came form state)
+        pass
+    
+    def property_toolbar_style_value_change(self, model, old_value, new_value):
+        # TODO - set the combobox (in case the change came form state)
+        pass
+    
     def property_unavailable_scanners_value_change(self, model, old_value, new_value):
         """Update unavailable scanners liststore."""
         preferences_view = self.application.get_preferences_view()
@@ -174,6 +194,8 @@ class PreferencesController(Controller):
         
         for blacklist_item in new_value:
             blacklist_liststore.append([blacklist_item])
+            
+        self._toggle_device_controls()  
     
     def property_available_scanners_value_change(self, model, old_value, new_value):
         """Update available scanners liststore."""
@@ -184,6 +206,14 @@ class PreferencesController(Controller):
         
         for available_item in new_value:
             available_liststore.append([available_item.display_name])
+            
+        self._toggle_device_controls()  
+            
+    def property_updating_available_scanners_value_change(self, model, old_value, new_value):
+        """
+        Disable device management controls while devices are being updated.
+        """
+        self._toggle_device_controls()            
             
     def property_saved_keywords_value_change(self, model, old_value, new_value):
         """Update keywords liststore."""
@@ -216,3 +246,29 @@ class PreferencesController(Controller):
             preferences_model, None, preferences_model.saved_keywords)
         
         preferences_view.run()
+        
+    # PRIVATE METHODS
+    
+    def _toggle_device_controls(self):
+        """
+        Toggle the availability of the scanner management controls based on
+        the state of the application.
+        """
+        main_model = self.application.get_main_model()
+        preferences_model = self.application.get_preferences_model()
+        preferences_view = self.application.get_preferences_view()        
+        
+        if main_model.updating_available_scanners:
+            preferences_view['remove_from_blacklist_button'].set_sensitive(False)
+            preferences_view['add_to_blacklist_button'].set_sensitive(False)
+        else:
+            if len(preferences_model.blacklisted_scanners) > 0:
+                preferences_view['remove_from_blacklist_button'].set_sensitive(True)
+            else:
+                preferences_view['remove_from_blacklist_button'].set_sensitive(False)
+                
+            if len(main_model.available_scanners) > 0:
+                preferences_view['add_to_blacklist_button'].set_sensitive(True)
+            else:
+                preferences_view['add_to_blacklist_button'].set_sensitive(False)
+                

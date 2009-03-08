@@ -60,6 +60,7 @@ DEFAULT_PREVIEW_MODE = 'Bilinear (Default)'
 DEFAULT_THUMBNAIL_SIZE = 128
 DEFAULT_SHOW_DOCUMENT_METADATA = True
 DEFAULT_BLACKLISTED_SCANNERS = []
+DEFAULT_TOOLBAR_STYLE = 'System Default'
 
 THUMBNAILS_SCALING_MODE = Image.ANTIALIAS
 
@@ -102,4 +103,22 @@ THUMBNAIL_SIZE_LIST = \
     64,
     128,
     256
+]
+
+TOOLBAR_STYLES = \
+{
+    'System Default': None,
+    'Icons Only': gtk.TOOLBAR_ICONS,
+    'Text Only': gtk.TOOLBAR_TEXT,
+    'Icons and Text (Stacked)': gtk.TOOLBAR_BOTH,
+    'Icons and Text (Side by side)': gtk.TOOLBAR_BOTH_HORIZ
+}
+
+TOOLBAR_STYLES_LIST = \
+[
+    'System Default',
+    'Icons Only',
+    'Text Only',
+    'Icons and Text (Stacked)',
+    'Icons and Text (Side by side)'
 ]

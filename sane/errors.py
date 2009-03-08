@@ -144,3 +144,10 @@ class SaneReloadOptionsError(SaneError):
     be read again to get the most up to date values.
     """
     pass
+
+class SaneInexactValueError(SaneError):
+    """
+    Exception denoting that a change to a SANE option has caused the backend
+    to round its value.  The frontend should read its new value for display.
+    """
+    pass

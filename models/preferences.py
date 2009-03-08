@@ -34,6 +34,7 @@ class PreferencesModel(Model):
     {
         'preview_mode' : constants.DEFAULT_PREVIEW_MODE,
         'thumbnail_size' : constants.DEFAULT_THUMBNAIL_SIZE,
+        'toolbar_style' : constants.DEFAULT_TOOLBAR_STYLE,
         
         'unavailable_scanners' : [],    # Not persisted
         'blacklisted_scanners' : [],    # List of scanner display names
@@ -66,6 +67,10 @@ class PreferencesModel(Model):
             'thumbnail_size', constants.DEFAULT_THUMBNAIL_SIZE, 
             nostaples.utils.properties.PropertyStateCallback(self, 'thumbnail_size'))
         
+        self.toolbar_style = state_manager.init_state(
+            'toolbar_style', constants.DEFAULT_TOOLBAR_STYLE, 
+            nostaples.utils.properties.PropertyStateCallback(self, 'toolbar_style'))
+        
         self.blacklisted_scanners = state_manager.init_state(
             'blacklisted_scanners', constants.DEFAULT_BLACKLISTED_SCANNERS, 
             nostaples.utils.properties.PropertyStateCallback(self, 'blacklisted_scanners'))
@@ -80,6 +85,8 @@ class PreferencesModel(Model):
         'preview_mode')
     set_prop_thumbnail_size = nostaples.utils.properties.StatefulPropertySetter(
         'thumbnail_size')
+    set_prop_toolbar_style = nostaples.utils.properties.StatefulPropertySetter(
+        'toolbar_style')
     set_prop_blacklisted_scanners = nostaples.utils.properties.StatefulPropertySetter(
         'blacklisted_scanners')
     set_prop_saved_keywords = nostaples.utils.properties.StatefulPropertySetter(

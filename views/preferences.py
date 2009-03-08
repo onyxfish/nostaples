@@ -77,6 +77,15 @@ class PreferencesView(View):
             'changed', 
             preferences_controller.on_thumbnail_size_combobox_changed)
         
+        setup_combobox(
+            self['toolbar_style_combobox'],
+            constants.TOOLBAR_STYLES_LIST, 
+            application.get_preferences_model().toolbar_style)
+        
+        self['toolbar_style_combobox'].connect(
+            'changed', 
+            preferences_controller.on_toolbar_style_combobox_changed)
+        
         # Setup the unavailable scanners tree view
         unavailable_liststore = gtk.ListStore(str)
         self['unavailable_tree_view'] = gtk.TreeView()

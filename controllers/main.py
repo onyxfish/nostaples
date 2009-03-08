@@ -50,6 +50,7 @@ class MainController(Controller):
         Controller.__init__(self, application.get_main_model())
         
         application.get_document_model().register_observer(self)
+        application.get_preferences_model().register_observer(self)
         
         status_controller = application.get_status_controller()
         self.status_context = \
@@ -470,6 +471,18 @@ class MainController(Controller):
     def property_count_value_change(self, model, old_value, new_value):
         """Toggle available controls."""
         self._toggle_document_controls()
+        
+    # PreferencesModel PROPERTY CALLBACKS
+    
+    def property_toolbar_style_value_change(self, model, old_value, new_value):
+        """Toggle available controls."""
+        main_view = self.application.get_main_view()
+        
+        if new_value == 'System Default':
+            # TODO - reset style to system default
+            pass
+        else:
+            main_view['main_toolbar'].set_style(constants.TOOLBAR_STYLES[new_value])
     
     # THREAD CALLBACKS
     
