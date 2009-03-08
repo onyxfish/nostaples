@@ -28,7 +28,7 @@ def convert_pil_image_to_pixbuf(image):
     Utility function to quickly convert a PIL Image to a GTK Pixbuf.
     Adapted from Comix by Pontus Ekberg. (http://comix.sourceforge.net/)
     """    
-    if image.mode == 'L':
+    if image.mode != 'RGB':
         image = image.convert('RGB')
     
     image_string = image.tostring()            

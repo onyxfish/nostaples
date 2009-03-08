@@ -563,12 +563,23 @@ class Device(object):
         if scan_info.total_bytes != len(data_array):
             raise AssertionError(
                 'length of scanned data did not match expected length.')
-        
+
         if sane_parameters.format == SANE_FRAME_GRAY.value:
-            pil_image = Image.frombuffer(
-                'L', (scan_info.width, scan_info.height), 
-                data_array, 'raw', 'L', 0, 1)
+            # Lineart
+            if sane_parameters.depth == 1:
+                pil_image = Image.frombuffer(
+                    '1', (scan_info.width, scan_info.height), 
+                    data_array, 'raw', '1', 0, 1)
+            # Grayscale
+            elif sane_parameters.depth == 8:
+                pil_image = Image.frombuffer(
+                    'L', (scan_info.width, scan_info.height), 
+                    data_array, 'raw', 'L', 0, 1)
+            else:
+                raise AssertionError(
+                    'Unexpected bit depth for monochrome scan format: %i' % sane_parameters.depth)
         elif sane_parameters.format == SANE_FRAME_RGB.value:
+            # Color
             pil_image = Image.frombuffer(
                 'RGB', (scan_info.width, scan_info.height), 
                 data_array, 'raw', 'RGB', 0, 1)
@@ -984,41 +995,3 @@ class ScanInfo(object):
         return self._total_bytes
         
     total_bytes = property(__get_total_bytes)
-        
-if __name__ == '__main__':
-    def progress_callback(sane_info, bytes_read):
-        #print float(bytes_read) / sane_info.total_bytes
-        pass
-    
-    import logging
-    log_format = FORMAT = "%(message)s"
-    logging.basicConfig(level=logging.DEBUG, format=log_format)
-    
-    sane = SaneMe(logging.getLogger())
-    devices = sane.get_device_list()
-    
-    for dev in devices:
-        print dev.name
-        
-    devices[0].open()
-    
-    print devices[0].options.keys()
-    
-    try:
-        devices[0].options['mode'].value = 'Gray'
-    except SaneReloadOptionsError:
-        pass
-    
-    try:
-        devices[0].options['resolution'].value = 75
-    except SaneReloadOptionsError:
-        pass
-    
-    try:
-        devices[0].options['preview'].value = False
-    except SaneReloadOptionsError:
-        pass
-    
-    devices[0].scan(progress_callback).save('out.bmp')
-    
-    devices[0].close()

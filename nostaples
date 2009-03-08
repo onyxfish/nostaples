@@ -68,13 +68,15 @@ def print_option_debug(j, option):
     print '\tConstraint Type:\t%s' % option._constraint_type
     print '\tConstraint:\t', option._constraint
     
-    if option.is_soft_gettable():
+    if not option.is_active():
+        print '\tValue:\tNot active.'
+    elif not option.is_soft_gettable():
+        print '\tValue:\tNot soft-gettable.'
+    else:
         try:
             print '\tValue:\t%s' % str(option.value)
         except Exception:
             print '\t**Failed to get current value for option.**'
-    else:
-        print '\tValue:\tNot soft-gettable.'
 
 # Parse command line options
 parser = optparse.OptionParser()
