@@ -154,6 +154,14 @@ class PreferencesController(Controller):
         temp_keywords = list(preferences_model.saved_keywords)
         temp_keywords.remove(selection_text)
         preferences_model.saved_keywords = temp_keywords
+        
+    def on_blacklist_tree_view_selection_changed(self, selection):
+        """Update the available device controls."""
+        self._toggle_device_controls()  
+        
+    def on_available_tree_view_selection_changed(self, selection):
+        """Update the available device controls."""
+        self._toggle_device_controls()  
 
     def on_preferences_dialog_response(self, dialog, response):
         """Close the preferences dialog."""
@@ -262,12 +270,14 @@ class PreferencesController(Controller):
             preferences_view['remove_from_blacklist_button'].set_sensitive(False)
             preferences_view['add_to_blacklist_button'].set_sensitive(False)
         else:
-            if len(preferences_model.blacklisted_scanners) > 0:
+            if preferences_view['blacklist_tree_view'].get_selection().count_selected_rows() > 0:
+            #if len(preferences_model.blacklisted_scanners) > 0:
                 preferences_view['remove_from_blacklist_button'].set_sensitive(True)
             else:
                 preferences_view['remove_from_blacklist_button'].set_sensitive(False)
                 
-            if len(main_model.available_scanners) > 0:
+            if preferences_view['available_tree_view'].get_selection().count_selected_rows() > 0:
+            #if len(main_model.available_scanners) > 0:
                 preferences_view['add_to_blacklist_button'].set_sensitive(True)
             else:
                 preferences_view['add_to_blacklist_button'].set_sensitive(False)

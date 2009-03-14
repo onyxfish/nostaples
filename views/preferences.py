@@ -121,22 +121,9 @@ class PreferencesView(View):
         self['blacklist_scrolled_window'].add(self['blacklist_tree_view'])
         self['blacklist_scrolled_window'].show_all()
         
-        # Setup the keywords tree view
-        keywords_liststore = gtk.ListStore(str)
-        self['keywords_tree_view'] = gtk.TreeView()
-        self['keywords_tree_view'].set_model(keywords_liststore)
-        self['keywords_column'] = gtk.TreeViewColumn(None)
-        self['keywords_cell'] = gtk.CellRendererText()
-        self['keywords_tree_view'].append_column(self['keywords_column'])
-        self['keywords_column'].pack_start(self['keywords_cell'], True)        
-        self['keywords_column'].add_attribute(self['keywords_cell'], 'text', 0)
-        self['keywords_tree_view'].get_selection().set_mode(
-            gtk.SELECTION_SINGLE)
-        self['keywords_tree_view'].set_headers_visible(False)
-        self['keywords_tree_view'].set_property('can-focus', False)
-        
-        self['keywords_scrolled_window'].add(self['keywords_tree_view'])
-        self['keywords_scrolled_window'].show_all()
+        self['blacklist_tree_view'].get_selection().connect(
+            'changed',
+            preferences_controller.on_blacklist_tree_view_selection_changed)
         
         # Setup the available devices tree view
         available_liststore = gtk.ListStore(str)
@@ -154,6 +141,27 @@ class PreferencesView(View):
         
         self['available_scrolled_window'].add(self['available_tree_view'])
         self['available_scrolled_window'].show_all()
+        
+        self['available_tree_view'].get_selection().connect(
+            'changed',
+            preferences_controller.on_available_tree_view_selection_changed)
+        
+        # Setup the keywords tree view
+        keywords_liststore = gtk.ListStore(str)
+        self['keywords_tree_view'] = gtk.TreeView()
+        self['keywords_tree_view'].set_model(keywords_liststore)
+        self['keywords_column'] = gtk.TreeViewColumn(None)
+        self['keywords_cell'] = gtk.CellRendererText()
+        self['keywords_tree_view'].append_column(self['keywords_column'])
+        self['keywords_column'].pack_start(self['keywords_cell'], True)        
+        self['keywords_column'].add_attribute(self['keywords_cell'], 'text', 0)
+        self['keywords_tree_view'].get_selection().set_mode(
+            gtk.SELECTION_SINGLE)
+        self['keywords_tree_view'].set_headers_visible(False)
+        self['keywords_tree_view'].set_property('can-focus', False)
+        
+        self['keywords_scrolled_window'].add(self['keywords_tree_view'])
+        self['keywords_scrolled_window'].show_all()
         
         application.get_preferences_controller().register_view(self)
         
