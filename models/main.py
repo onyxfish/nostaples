@@ -455,7 +455,7 @@ class MainModel(Model):
                 if sane_device.options['resolution'].type == saneme.OPTION_TYPE_FIXED:
                     temp_value_resolutions = [int(i) for i in sane_device.options['resolution'].constraint]
                     temp_value_resolutions = [saneme.SANE_UNFIX(i) for i in temp_value_resolutions]
-                    temp_value_resolutions = [str(i) for i in sane_device.options['resolution'].constraint]
+                    temp_value_resolutions = [str(i) for i in temp_value_resolutions]
                 else:
                     temp_value_resolutions = sane_device.options['resolution'].constraint
                     
