@@ -583,15 +583,48 @@ class MainController(Controller):
             return option.is_active() and \
                 option.is_soft_gettable() and \
                 option.is_soft_settable()
+                
+        def is_supported_mode(option):
+            """Verify that the mode conforms to type expectations."""
+            if not is_supported_option(option):
+                return False
+            
+            if not option.constraint_type == \
+                saneme.OPTION_CONSTRAINT_STRING_LIST:
+                return False
+            
+            return True
+                
+        def is_supported_resolution(option):
+            """
+            Verify that the resolution conforms to type expectations.
+            
+            Where noted these stem from the SANE API standards.  Others are
+            simply limitations on what has currently been implemented in
+            NoStaples.
+            """
+            if not is_supported_option(option):
+                return False
+            
+            # See SANE API 4.5.2
+            if option.type != saneme.OPTION_TYPE_INT and \
+                option.type != saneme.OPTION_TYPE_FIXED:
+                return False
+            
+            # See SANE API 4.5.2
+            if not option.unit == saneme.OPTION_UNIT_DPI:
+                return False
+            
+            return True
                         
         for scanner in scanner_list:
             try:
                 scanner.open()
                 
                 if not scanner.has_option('mode') or \
-                    not is_supported_option(scanner.options['mode']) or \
+                    not is_supported_mode(scanner.options['mode']) or \
                     not scanner.has_option('resolution') or \
-                    not is_supported_option(scanner.options['resolution']):
+                    not is_supported_resolution(scanner.options['resolution']):
                     preferences_model.unavailable_scanners.append(scanner.display_name)
                     scanner_list.remove(scanner)
                     
