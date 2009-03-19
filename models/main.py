@@ -50,7 +50,7 @@ class MainModel(Model):
         'active_resolution' : None,
         
         'available_scanners' : [],    # [] of saneme.Device
-        'unavailable_scanners' : [],  # [] of saneme.Device.display_name's
+        'unavailable_scanners' : [],  # [] of (saneme.Device.display_name, reason) tuples
         'valid_modes' : [],
         'valid_resolutions' : [],
         
@@ -333,55 +333,68 @@ class MainModel(Model):
                 
                 # Enforce mode option requirements
                 if not scanner.has_option('mode'):
+                    reason = 'No \'mode\' option.'
                     self.log.info(unsupported_scanner_error % 
-                        (scanner.display_name, 'No \'mode\' option.'))
-                    unsupported = True
+                        (scanner.display_name, reason))
+                    new_unavailable_scanners.append((scanner.display_name, reason))
+                    value.remove(scanner)
                     
                 mode = scanner.options['mode']
                 
                 if not self.is_settable_option(mode):
+                    reason = 'Unsettable \'mode\' option.'
                     self.log.info(unsupported_scanner_error % 
-                        (scanner.display_name, 'Unsettable \'mode\' option.'))
-                    unsupported = True
+                        (scanner.display_name, reason))
+                    new_unavailable_scanners.append((scanner.display_name, reason))
+                    value.remove(scanner)
                 
                 if not mode.constraint_type == saneme.OPTION_CONSTRAINT_STRING_LIST:
+                    reason = '\'Mode\' option does not include a STRING_LIST constraint.'
                     self.log.info(unsupported_scanner_error % 
-                        (scanner.display_name, '\'Mode\' option does not include a STRING_LIST constraint.'))
-                    unsupported = True
+                        (scanner.display_name, reason))
+                    new_unavailable_scanners.append((scanner.display_name, reason))
+                    value.remove(scanner)
                 
                 # Enforce resolution option requirements
                 if not scanner.has_option('resolution'):
+                    reason = 'No \'resolution\' option.'
                     self.log.info(unsupported_scanner_error % 
-                        (scanner.display_name, 'No \'resolution\' option.'))
-                    unsupported = True
+                        (scanner.display_name, reason))
+                    new_unavailable_scanners.append((scanner.display_name, reason))
+                    value.remove(scanner)
                     
                 resolution = scanner.options['resolution']
                     
                 if not self.is_settable_option(resolution):
+                    reason = 'Unsettable \'resolution\' option.'
                     self.log.info(unsupported_scanner_error % 
-                        (scanner.display_name, 'Unsettable \'resolution\' option.'))
-                    unsupported = True
+                        (scanner.display_name, reason))
+                    new_unavailable_scanners.append((scanner.display_name, reason))
+                    value.remove(scanner)
         
                 # See SANE API 4.5.2
                 if resolution.type != saneme.OPTION_TYPE_INT and \
                     resolution.type != saneme.OPTION_TYPE_FLOAT:
+                    reason = '\'Resolution\' option is not of type INT or FLOAT.'
                     self.log.info(unsupported_scanner_error % 
-                        (scanner.display_name, '\'Resolution\' option is not of type INT or FLOAT.'))
-                    unsupported = True
+                        (scanner.display_name, reason))
+                    new_unavailable_scanners.append((scanner.display_name, reason))
+                    value.remove(scanner)
                 
                 # See SANE API 4.5.2
                 if not resolution.unit == saneme.OPTION_UNIT_DPI:
+                    reason = '\'Resolution\' option is not measured in DPI units.'
                     self.log.info(unsupported_scanner_error % 
-                        (scanner.display_name, '\'Resolution\' option is not measured in DPI units.'))
-                    unsupported = True
-                    
-                if unsupported:
-                    new_unavailable_scanners.append(scanner.display_name)
+                        (scanner.display_name, reason))
+                    new_unavailable_scanners.append((scanner.display_name, reason))
                     value.remove(scanner)
                     
                 scanner.close()   
             except saneme.SaneError:
-                new_unavailable_scanners.append(scanner.display_name)
+                reason = 'Exception raised while querying device options.'
+                self.log.info(unsupported_scanner_error % 
+                    (scanner.display_name, reason))
+                new_unavailable_scanners.append((scanner.display_name, reason))
                 value.remove(scanner)
         
         self._prop_unavailable_scanners = new_unavailable_scanners
