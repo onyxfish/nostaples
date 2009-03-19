@@ -284,10 +284,7 @@ class MainModel(Model):
             if value is not None and scanner_value != int(value):
                 try:
                     # Set the new option value
-                    if self.active_scanner.options['resolution'].type == saneme.OPTION_TYPE_FIXED:
-                        self.active_scanner.options['resolution'].value = saneme.SANE_FIX(int(value))
-                    else:
-                        self.active_scanner.options['resolution'].value = int(value)
+                    self.active_scanner.options['resolution'].value = int(value)
                 except saneme.SaneInexactValueError:
                     # TODO - what if "exact" value isn't in the list?
                     pass
@@ -404,12 +401,6 @@ class MainModel(Model):
                 saneme.OPTION_CONSTRAINT_RANGE:
                 min, max, step = sane_device.options['resolution'].constraint
                 
-                # Convert fixed point values
-                if sane_device.options['resolution'].type == saneme.OPTION_TYPE_FIXED:
-                    min = saneme.SANE_UNFIX(min)
-                    max = saneme.SANE_UNFIX(max)
-                    step = saneme.SANE_UNFIX(step)
-                
                 # Fix for ticket #34.
                 if step is None or step == 0:
                     step = 1
@@ -438,28 +429,14 @@ class MainModel(Model):
                     
                 self._prop_valid_resolutions = resolutions
             elif sane_device.options['resolution'].constraint_type == \
-                saneme.OPTION_CONSTRAINT_INTEGER_LIST:
-                # Convert fixed point values to floats
-                if sane_device.options['resolution'].type == saneme.OPTION_TYPE_FIXED:
-                    temp_value_resolutions = [saneme.SANE_UNFIX(i) for i in sane_device.options['resolution'].constraint]
-                else:
-                    temp_value_resolutions = sane_device.options['resolution'].constraint
-                
+                saneme.OPTION_CONSTRAINT_VALUE_LIST:                
                 # Convert values to strings for display
                 self._prop_valid_resolutions = \
-                    [str(i) for i in temp_value_resolutions]
+                    [str(i) for i in sane_device.options['resolution'].constraint]
             elif sane_device.options['resolution'].constraint_type == \
                 saneme.OPTION_CONSTRAINT_STRING_LIST:
-                # Convert fixed point values to floats
-                # (keeping in mind these are strings representing fixed points)
-                if sane_device.options['resolution'].type == saneme.OPTION_TYPE_FIXED:
-                    temp_value_resolutions = [int(i) for i in sane_device.options['resolution'].constraint]
-                    temp_value_resolutions = [saneme.SANE_UNFIX(i) for i in temp_value_resolutions]
-                    temp_value_resolutions = [str(i) for i in temp_value_resolutions]
-                else:
-                    temp_value_resolutions = sane_device.options['resolution'].constraint
-                    
-                self._prop_valid_resolutions = temp_value_resolutions
+                self._prop_valid_resolutions = \
+                    sane_device.options['resolution'].constraint
             else:
                 raise AssertionError('Unsupported constraint type.')              
         except saneme.SaneError:
@@ -478,11 +455,7 @@ class MainModel(Model):
         try:
             # TODO: ReloadOptions should reload constraints as well as values!
             self.active_mode = self.active_scanner.options['mode'].value
-            
-            if self.active_scanner.options['resolution'].type == saneme.OPTION_TYPE_FIXED:
-                str(saneme.SANE_UNFIX(self.active_scanner.options['resolution'].value))
-            else:
-                str(self.active_scanner.options['resolution'].value)
+            self.active_resolution = str(self.active_scanner.options['resolution'].value)
         except saneme.SaneError:
             exc_info = sys.exc_info()
             main_controller.run_device_exception_dialog(exc_info)

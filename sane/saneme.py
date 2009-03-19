@@ -39,7 +39,8 @@ from saneh import *
 # Redeclare saneh enumerations which are visible to the application
 (OPTION_TYPE_BOOL,
     OPTION_TYPE_INT,
-    OPTION_TYPE_FIXED,
+    # Automatically converted from SANE_TYPE_FIXED
+    OPTION_TYPE_FLOAT,
     OPTION_TYPE_STRING,
     OPTION_TYPE_BUTTON,
     OPTION_TYPE_GROUP) = xrange(6)
@@ -54,7 +55,7 @@ from saneh import *
     
 (OPTION_CONSTRAINT_NONE,
     OPTION_CONSTRAINT_RANGE,
-    OPTION_CONSTRAINT_INTEGER_LIST,
+    OPTION_CONSTRAINT_VALUE_LIST,
     OPTION_CONSTRAINT_STRING_LIST) = xrange(4)
 
 class SaneMe(object):
@@ -637,10 +638,16 @@ class Option(object):
         if self._constraint_type == SANE_CONSTRAINT_NONE.value:
             pass
         elif self._constraint_type == SANE_CONSTRAINT_RANGE.value:
-            self._constraint = (
-                ctypes_option.constraint.range.contents.min,
-                ctypes_option.constraint.range.contents.max,
-                ctypes_option.constraint.range.contents.quant)
+            if self._type == SANE_TYPE_FIXED.value:
+                self._constraint = (
+                    SANE_UNFIX(ctypes_option.constraint.range.contents.min),
+                    SANE_UNFIX(ctypes_option.constraint.range.contents.max),
+                    SANE_UNFIX(ctypes_option.constraint.range.contents.quant))
+            else:
+                self._constraint = (
+                    ctypes_option.constraint.range.contents.min,
+                    ctypes_option.constraint.range.contents.max,
+                    ctypes_option.constraint.range.contents.quant)
         elif self._constraint_type == SANE_CONSTRAINT_WORD_LIST.value:
             word_count = ctypes_option.constraint.word_list[0]
             self._constraint = []
@@ -648,7 +655,10 @@ class Option(object):
             i = 1
             while(i < word_count):
                 self._constraint.append(ctypes_option.constraint.word_list[i])
-                i = i + 1                
+                i = i + 1
+                
+            if self._type == SANE_TYPE_FIXED.value:
+                self._constraint = [SANE_UNFIX(i) for i in self._constraint] 
         elif self._constraint_type == SANE_CONSTRAINT_STRING_LIST.value:
             string_count = 0
             self._constraint = []
@@ -656,6 +666,9 @@ class Option(object):
             while ctypes_option.constraint.string_list[string_count]:
                 self._constraint.append(ctypes_option.constraint.string_list[string_count])
                 string_count += 1
+                
+            if self._type == SANE_TYPE_FIXED.value:
+                self._constraint = [str(SANE_UNFIX(int(i))) for i in self._constraint] 
         else:
             self._constraint = None
         
@@ -721,8 +734,8 @@ class Option(object):
         this is a tuple containing the (minimum, maximum, step)
         for valid values.
         
-        If constraint_type is OPTION_CONSTRAINT_INTEGER_LIST then
-        this is a list of integers which are valid values.
+        If constraint_type is OPTION_CONSTRAINT_VALUE_LIST then
+        this is a list of ints/floats which are valid values.
         
         If constraint_type is OPTION_CONSTRAINT_STRING_LIST then
         this is a list of strings which are valid values.
@@ -789,6 +802,8 @@ class Option(object):
         
         if self._type == SANE_TYPE_STRING.value:
             option_value = option_value.value
+        elif self._type == SANE_TYPE_FIXED.value:
+            option_value = SANE_UNFIX(option_value.value)
         else:
             option_value = option_value.contents.value
             
@@ -813,19 +828,19 @@ class Option(object):
             if type(value) is not BooleanType:
                 raise TypeError(
                     'option set with %s, expected BooleanType' % type(value))
-            c_value = pointer(c_int(value))
+            c_value = pointer(SANE_Bool(value))
         elif self._type == SANE_TYPE_INT.value:
             # TODO: these may not always be a single char wide, see SANE doc 4.2.9.6
             if type(value) is not IntType:
                 raise TypeError(
                     'option set with %s, expected IntType' % type(value))
-            c_value = pointer(c_int(value))
+            c_value = pointer(SANE_Int(value))
         elif self._type == SANE_TYPE_FIXED.value:
             # TODO: these may not always be a single char wide, see SANE doc 4.2.9.6
-            if type(value) is not IntType:
+            if type(value) is not IntType and type(value) is not FloatType:
                 raise TypeError(
-                    'option set with %s, expected IntType' % type(value))
-            c_value = pointer(c_int(value))
+                    'option set with %s, expected IntType or FloatType' % type(value))
+            c_value = pointer(SANE_Fixed(SANE_FIX(value)))
         elif self._type == SANE_TYPE_STRING.value:
             if type(value) is not StringType:
                 raise TypeError(
@@ -833,7 +848,7 @@ class Option(object):
             if len(value) + 1 > self._size:
                 raise ValueError(
                     'value for option is longer than max string size')
-            c_value = c_char_p(value)
+            c_value = SANE_String(value)
         elif self._type == SANE_TYPE_BUTTON.value:
             raise TypeError('SANE_TYPE_BUTTON has no value.')
         elif self._type == SANE_TYPE_GROUP.value:
