@@ -50,6 +50,7 @@ class MainModel(Model):
         'active_resolution' : None,
         
         'available_scanners' : [],    # [] of saneme.Device
+        'unavailable_scanners' : [],  # [] of saneme.Device.display_name's
         'valid_modes' : [],
         'valid_resolutions' : [],
         
@@ -302,14 +303,45 @@ class MainModel(Model):
         
     def set_prop_available_scanners(self, value):
         """
-        Set the list of available scanners and update the active_scanner.
+        Takes a new list of scanners, removes any which are blacklisted or
+        unsupported, sets the new list, updates the active_scanner, and emits
+        appropriate property callbacks.
         
         See L{set_prop_active_scanner} for detailed comments.
         """
         main_controller = self.application.get_main_controller()
+        preferences_model = self.application.get_preferences_model()
         
+        # Remove blacklisted scanners
+        value = \
+            [scanner for scanner in value if not \
+             scanner.display_name in preferences_model.blacklisted_scanners]
+        
+        # Remove scanners that do not support necessary options or fail to
+        # open entirely
+        new_unavailable_scanners = []
+                        
+        for scanner in value:
+            try:
+                scanner.open()
+                
+                if not scanner.has_option('mode') or \
+                    not self.is_supported_mode_option(scanner.options['mode']) or \
+                    not scanner.has_option('resolution') or \
+                    not self.is_supported_resolution_option(scanner.options['resolution']):
+                    new_unavailable_scanners.append(scanner.display_name)
+                    value.remove(scanner)
+                    
+                scanner.close()   
+            except saneme.SaneError:
+                new_unavailable_scanners.append(scanner.display_name)
+                value.remove(scanner)
+        
+        self._prop_unavailable_scanners = new_unavailable_scanners
         self._prop_available_scanners = value
         
+        self.notify_property_value_change(
+            'unavailable_scanners', None, new_unavailable_scanners)
         self.notify_property_value_change(
             'available_scanners', None, value)
         
@@ -384,6 +416,52 @@ class MainModel(Model):
             state_manager['scan_resolution'] = self.active_resolution
 
     # INTERNAL METHODS
+    
+    def is_supported_option(self, option):
+        """
+        Verify an option supports minimum capabilities needed to be used by
+        NoStaples.
+        """
+        return option.is_active() and \
+            option.is_soft_gettable() and \
+            option.is_soft_settable()
+            
+    def is_supported_mode_option(self, option):
+        """
+        Verify that the mode option supports minimum capabilities needed to be 
+        used by NoStaples.
+        """
+        if not self.is_supported_option(option):
+            return False
+        
+        if not option.constraint_type == \
+            saneme.OPTION_CONSTRAINT_STRING_LIST:
+            return False
+        
+        return True
+            
+    def is_supported_resolution_option(self, option):
+        """
+        Verify that the resolution option supports minimum capabilities needed 
+        to be used by NoStaples.
+        
+        Where noted these stem from the SANE API standards.  Others are
+        simply limitations on what has currently been implemented in
+        NoStaples.
+        """
+        if not self.is_supported_option(option):
+            return False
+        
+        # See SANE API 4.5.2
+        if option.type != saneme.OPTION_TYPE_INT and \
+            option.type != saneme.OPTION_TYPE_FLOAT:
+            return False
+        
+        # See SANE API 4.5.2
+        if not option.unit == saneme.OPTION_UNIT_DPI:
+            return False
+        
+        return True 
             
     def _load_scanner_option_constraints(self, sane_device):
         """

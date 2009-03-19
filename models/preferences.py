@@ -36,7 +36,6 @@ class PreferencesModel(Model):
         'thumbnail_size' : constants.DEFAULT_THUMBNAIL_SIZE,
         'toolbar_style' : constants.DEFAULT_TOOLBAR_STYLE,
         
-        'unavailable_scanners' : [],    # Not persisted
         'blacklisted_scanners' : [],    # List of scanner display names
         
         'saved_keywords' : '',

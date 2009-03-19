@@ -183,16 +183,6 @@ class PreferencesController(Controller):
         # TODO - set the combobox (in case the change came form state)
         pass
     
-    def property_unavailable_scanners_value_change(self, model, old_value, new_value):
-        """Update unavailable scanners liststore."""
-        preferences_view = self.application.get_preferences_view()
-        
-        unavailable_liststore = preferences_view['unavailable_tree_view'].get_model()
-        unavailable_liststore.clear()
-        
-        for unavailable_item in new_value:
-            unavailable_liststore.append([unavailable_item])
-    
     def property_blacklisted_scanners_value_change(self, model, old_value, new_value):
         """Update blacklisted scanners liststore."""
         preferences_view = self.application.get_preferences_view()
@@ -203,7 +193,19 @@ class PreferencesController(Controller):
         for blacklist_item in new_value:
             blacklist_liststore.append([blacklist_item])
             
-        self._toggle_device_controls()  
+        self._toggle_device_controls()
+            
+    def property_saved_keywords_value_change(self, model, old_value, new_value):
+        """Update keywords liststore."""
+        preferences_view = self.application.get_preferences_view()
+        
+        keywords_liststore = preferences_view['keywords_tree_view'].get_model()
+        keywords_liststore.clear()
+        
+        for keyword in new_value:
+            keywords_liststore.append([keyword])
+        
+    # MainModel PROPERTY CALLBACKS
     
     def property_available_scanners_value_change(self, model, old_value, new_value):
         """Update available scanners liststore."""
@@ -216,22 +218,22 @@ class PreferencesController(Controller):
             available_liststore.append([available_item.display_name])
             
         self._toggle_device_controls()  
+    
+    def property_unavailable_scanners_value_change(self, model, old_value, new_value):
+        """Update unavailable scanners liststore."""
+        preferences_view = self.application.get_preferences_view()
+        
+        unavailable_liststore = preferences_view['unavailable_tree_view'].get_model()
+        unavailable_liststore.clear()
+        
+        for unavailable_item in new_value:
+            unavailable_liststore.append([unavailable_item])
             
     def property_updating_available_scanners_value_change(self, model, old_value, new_value):
         """
         Disable device management controls while devices are being updated.
         """
-        self._toggle_device_controls()            
-            
-    def property_saved_keywords_value_change(self, model, old_value, new_value):
-        """Update keywords liststore."""
-        preferences_view = self.application.get_preferences_view()
-        
-        keywords_liststore = preferences_view['keywords_tree_view'].get_model()
-        keywords_liststore.clear()
-        
-        for keyword in new_value:
-            keywords_liststore.append([keyword])
+        self._toggle_device_controls()
     
     # PUBLIC METHODS
     
@@ -244,14 +246,14 @@ class PreferencesController(Controller):
         # Force property updates when dialog is run: this handles the case
         # where the PreferencesController has not been created until now
         # so it has not been receiving property notifications.
-        self.property_unavailable_scanners_value_change(
-            preferences_model, None, preferences_model.unavailable_scanners)
         self.property_blacklisted_scanners_value_change(
             preferences_model, None, preferences_model.blacklisted_scanners)
-        self.property_available_scanners_value_change(
-            main_model, None, main_model.available_scanners)
         self.property_saved_keywords_value_change(
             preferences_model, None, preferences_model.saved_keywords)
+        self.property_available_scanners_value_change(
+            main_model, None, main_model.available_scanners)
+        self.property_unavailable_scanners_value_change(
+            preferences_model, None, main_model.unavailable_scanners)
         
         preferences_view.run()
         
