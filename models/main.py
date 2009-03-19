@@ -323,7 +323,7 @@ class MainModel(Model):
         
         # TODO - move somewhere more appropriate?
         unsupported_scanner_error = \
-            'Scanner %s is unsupported for the following reason: %s.'
+            'Scanner %s is unsupported for the following reason: %s'
                         
         for scanner in value:
             try:
@@ -391,7 +391,7 @@ class MainModel(Model):
                     
                 scanner.close()   
             except saneme.SaneError:
-                reason = 'Exception raised while querying device options.'
+                reason = 'Exception raised while attempting to query device options.'
                 self.log.info(unsupported_scanner_error % 
                     (scanner.display_name, reason))
                 new_unavailable_scanners.append((scanner.display_name, reason))

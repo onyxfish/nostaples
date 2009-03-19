@@ -87,7 +87,7 @@ class PreferencesView(View):
             preferences_controller.on_toolbar_style_combobox_changed)
         
         # Setup the unavailable scanners tree view
-        unavailable_liststore = gtk.ListStore(str)
+        unavailable_liststore = gtk.ListStore(str, str)
         self['unavailable_tree_view'] = gtk.TreeView()
         self['unavailable_tree_view'].set_model(unavailable_liststore)
         self['unavailable_column'] = gtk.TreeViewColumn(None)
@@ -100,6 +100,7 @@ class PreferencesView(View):
             gtk.SELECTION_NONE)
         self['unavailable_tree_view'].set_headers_visible(False)
         self['unavailable_tree_view'].set_property('can-focus', False)
+        self['unavailable_tree_view'].set_tooltip_column(1)
         
         self['unavailable_scrolled_window'].add(self['unavailable_tree_view'])
         self['unavailable_scrolled_window'].show_all()
