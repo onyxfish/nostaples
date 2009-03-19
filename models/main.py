@@ -320,15 +320,62 @@ class MainModel(Model):
         # Remove scanners that do not support necessary options or fail to
         # open entirely
         new_unavailable_scanners = []
+        
+        # TODO - move somewhere more appropriate?
+        unsupported_scanner_error = \
+            'Scanner %s is unsupported for the following reason: %s.'
                         
         for scanner in value:
             try:
                 scanner.open()
                 
-                if not scanner.has_option('mode') or \
-                    not self.is_supported_mode_option(scanner.options['mode']) or \
-                    not scanner.has_option('resolution') or \
-                    not self.is_supported_resolution_option(scanner.options['resolution']):
+                unsupported = False
+                
+                # Enforce mode option requirements
+                if not scanner.has_option('mode'):
+                    self.log.info(unsupported_scanner_error % 
+                        (scanner.display_name, 'No \'mode\' option.'))
+                    unsupported = True
+                    
+                mode = scanner.options['mode']
+                
+                if not self.is_settable_option(mode):
+                    self.log.info(unsupported_scanner_error % 
+                        (scanner.display_name, 'Unsettable \'mode\' option.'))
+                    unsupported = True
+                
+                if not mode.constraint_type == saneme.OPTION_CONSTRAINT_STRING_LIST:
+                    self.log.info(unsupported_scanner_error % 
+                        (scanner.display_name, '\'Mode\' option does not include a STRING_LIST constraint.'))
+                    unsupported = True
+                
+                # Enforce resolution option requirements
+                if not scanner.has_option('resolution'):
+                    self.log.info(unsupported_scanner_error % 
+                        (scanner.display_name, 'No \'resolution\' option.'))
+                    unsupported = True
+                    
+                resolution = scanner.options['resolution']
+                    
+                if not self.is_settable_option(resolution):
+                    self.log.info(unsupported_scanner_error % 
+                        (scanner.display_name, 'Unsettable \'resolution\' option.'))
+                    unsupported = True
+        
+                # See SANE API 4.5.2
+                if resolution.type != saneme.OPTION_TYPE_INT and \
+                    resolution.type != saneme.OPTION_TYPE_FLOAT:
+                    self.log.info(unsupported_scanner_error % 
+                        (scanner.display_name, '\'Resolution\' option is not of type INT or FLOAT.'))
+                    unsupported = True
+                
+                # See SANE API 4.5.2
+                if not resolution.unit == saneme.OPTION_UNIT_DPI:
+                    self.log.info(unsupported_scanner_error % 
+                        (scanner.display_name, '\'Resolution\' option is not measured in DPI units.'))
+                    unsupported = True
+                    
+                if unsupported:
                     new_unavailable_scanners.append(scanner.display_name)
                     value.remove(scanner)
                     
@@ -417,7 +464,7 @@ class MainModel(Model):
 
     # INTERNAL METHODS
     
-    def is_supported_option(self, option):
+    def is_settable_option(self, option):
         """
         Verify an option supports minimum capabilities needed to be used by
         NoStaples.
@@ -425,43 +472,6 @@ class MainModel(Model):
         return option.is_active() and \
             option.is_soft_gettable() and \
             option.is_soft_settable()
-            
-    def is_supported_mode_option(self, option):
-        """
-        Verify that the mode option supports minimum capabilities needed to be 
-        used by NoStaples.
-        """
-        if not self.is_supported_option(option):
-            return False
-        
-        if not option.constraint_type == \
-            saneme.OPTION_CONSTRAINT_STRING_LIST:
-            return False
-        
-        return True
-            
-    def is_supported_resolution_option(self, option):
-        """
-        Verify that the resolution option supports minimum capabilities needed 
-        to be used by NoStaples.
-        
-        Where noted these stem from the SANE API standards.  Others are
-        simply limitations on what has currently been implemented in
-        NoStaples.
-        """
-        if not self.is_supported_option(option):
-            return False
-        
-        # See SANE API 4.5.2
-        if option.type != saneme.OPTION_TYPE_INT and \
-            option.type != saneme.OPTION_TYPE_FLOAT:
-            return False
-        
-        # See SANE API 4.5.2
-        if not option.unit == saneme.OPTION_UNIT_DPI:
-            return False
-        
-        return True 
             
     def _load_scanner_option_constraints(self, sane_device):
         """
