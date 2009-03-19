@@ -227,7 +227,7 @@ class PreferencesController(Controller):
         unavailable_liststore.clear()
         
         for unavailable_item in new_value:
-            unavailable_liststore.append([unavailable_item[0], unavailable_item[1]])
+            unavailable_liststore.append(list(unavailable_item))
             
     def property_updating_available_scanners_value_change(self, model, old_value, new_value):
         """
