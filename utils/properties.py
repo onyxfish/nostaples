@@ -75,3 +75,33 @@ class PropertyStateCallback(object):
             self.model, 
             self.property_name, 
             self.model.application.get_state_manager()[self.property_name])
+        
+class GuardedPropertyStateCallback(object):
+    """
+    This callable object performs the same function as PropertyStateCallback,
+    but it also validates that the value coming from GConf is valid (by
+    comparing it to a list of valid values).  If the value is invalid than the
+    original value is reset in GConf.
+    """
+    def __init__(self, model, property_name, value_list):
+        """
+        Store property a name as well as the model
+        that owns this property.
+        """
+        self.model = model
+        self.property_name = property_name
+        self.value_list = value_list
+        
+    def __call__(self):
+        """
+        Set the property attribute on the model, initiating
+        observer callbacks, etc.
+        """
+        state_manager = self.model.application.get_state_manager()
+        
+        if state_manager[self.property_name] in self.value_list:
+            setattr(self.model, 
+                self.property_name, state_manager[self.property_name])
+        else:
+            state_manager[self.property_name] = getattr(
+                self.model, self.property_name)

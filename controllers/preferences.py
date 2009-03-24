@@ -26,7 +26,7 @@ import gtk
 from gtkmvc.controller import Controller
 
 from nostaples import constants
-from nostaples.utils.gui import read_combobox
+from nostaples.utils.gui import read_combobox, write_combobox
 
 class PreferencesController(Controller):
     """
@@ -158,7 +158,7 @@ class PreferencesController(Controller):
     def on_blacklist_tree_view_selection_changed(self, selection):
         """Update the available device controls."""
         self._toggle_device_controls()  
-        
+
     def on_available_tree_view_selection_changed(self, selection):
         """Update the available device controls."""
         self._toggle_device_controls()  
@@ -172,16 +172,22 @@ class PreferencesController(Controller):
     # PROPERTY CALLBACKS
     
     def property_preview_mode_value_change(self, model, old_value, new_value):
-        # TODO - set the combobox (in case the change came form state)
-        pass
+        """Select the active preview mode in the combobox."""
+        preferences_view = self.application.get_preferences_view()
+        
+        write_combobox(preferences_view['preview_mode_combobox'], new_value)
     
     def property_thumbnail_size_value_change(self, model, old_value, new_value):
-        # TODO - set the combobox (in case the change came form state)
-        pass
+        """Select the active thumbnail size in the combobox."""
+        preferences_view = self.application.get_preferences_view()
+        
+        write_combobox(preferences_view['thumbnail_size_combobox'], new_value)
     
     def property_toolbar_style_value_change(self, model, old_value, new_value):
-        # TODO - set the combobox (in case the change came form state)
-        pass
+        """Select the active toolbar style in the combobox."""
+        preferences_view = self.application.get_preferences_view()
+        
+        write_combobox(preferences_view['toolbar_style_combobox'], new_value)
     
     def property_blacklisted_scanners_value_change(self, model, old_value, new_value):
         """Update blacklisted scanners liststore."""
@@ -273,13 +279,11 @@ class PreferencesController(Controller):
             preferences_view['add_to_blacklist_button'].set_sensitive(False)
         else:
             if preferences_view['blacklist_tree_view'].get_selection().count_selected_rows() > 0:
-            #if len(preferences_model.blacklisted_scanners) > 0:
                 preferences_view['remove_from_blacklist_button'].set_sensitive(True)
             else:
                 preferences_view['remove_from_blacklist_button'].set_sensitive(False)
                 
             if preferences_view['available_tree_view'].get_selection().count_selected_rows() > 0:
-            #if len(main_model.available_scanners) > 0:
                 preferences_view['add_to_blacklist_button'].set_sensitive(True)
             else:
                 preferences_view['add_to_blacklist_button'].set_sensitive(False)

@@ -100,8 +100,10 @@ class KeywordsCompletionEntry(gtk.Entry):
         """
         Move to next keyword.
         """
+            #if len(main_model.available_scanners) > 0:
         self.set_text("%s " % self.get_text())
         self.set_position(-1)
+        print 'NOT FOUND'
         
     def get_liststore(self):
         """
@@ -128,6 +130,7 @@ def setup_combobox(combobox, item_list, selection):
     """
     Sets up a simple combobox.
     
+        print 'NOT FOUND'
     @type combobox: gtk.ComboBox
     @param combobox: The combobox to be setup.
     
@@ -137,7 +140,7 @@ def setup_combobox(combobox, item_list, selection):
     @type selection: string
     @param selection: The item to be selected by default.
     """
-    liststore = gtk.ListStore(gobject.TYPE_STRING)
+    liststore = gtk.ListStore(type(item_list[0]))
     combobox.clear()
     combobox.set_model(liststore)
     cell = gtk.CellRendererText()
@@ -169,3 +172,24 @@ def read_combobox(combobox):
         return None
         
     return liststore[active][0]
+
+def write_combobox(combobox, value):
+    """
+    Selects a value in a simple combobox.
+    
+    @type combobox: gtk.ComboBox
+    @param combobox: The combobox to set.
+    """
+    liststore = combobox.get_model()
+    
+    row_iter = liststore.get_iter_first()
+    
+    while row_iter:            
+        if liststore.get_value(row_iter, 0) == value:
+            combobox.set_active_iter(row_iter)
+            break
+        
+        row_iter = liststore.iter_next(row_iter)
+        
+    if row_iter == None:
+        raise ValueError

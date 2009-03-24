@@ -27,7 +27,7 @@ from gtkmvc.model import Model
 
 from nostaples import constants
 import nostaples.sane as saneme
-import nostaples.utils.properties
+from nostaples.utils import properties
 
 class MainModel(Model):
     """
@@ -79,23 +79,23 @@ class MainModel(Model):
         
         self.show_toolbar = state_manager.init_state(
             'show_toolbar', constants.DEFAULT_SHOW_TOOLBAR, 
-            nostaples.utils.properties.PropertyStateCallback(self, 'show_toolbar'))
+            properties.PropertyStateCallback(self, 'show_toolbar'))
         
         self.show_statusbar = state_manager.init_state(
             'show_statusbar', constants.DEFAULT_SHOW_STATUSBAR, 
-            nostaples.utils.properties.PropertyStateCallback(self, 'show_statusbar'))
+            properties.PropertyStateCallback(self, 'show_statusbar'))
         
         self.show_thumbnails = state_manager.init_state(
             'show_thumbnails', constants.DEFAULT_SHOW_THUMBNAILS, 
-            nostaples.utils.properties.PropertyStateCallback(self, 'show_thumbnails'))
+            properties.PropertyStateCallback(self, 'show_thumbnails'))
         
         self.show_adjustments = state_manager.init_state(
             'show_adjustments', constants.DEFAULT_SHOW_ADJUSTMENTS, 
-            nostaples.utils.properties.PropertyStateCallback(self, 'show_adjustments'))
+            properties.PropertyStateCallback(self, 'show_adjustments'))
         
         self.rotate_all_pages = state_manager.init_state(
             'rotate_all_pages', constants.DEFAULT_ROTATE_ALL_PAGES, 
-            nostaples.utils.properties.PropertyStateCallback(self, 'rotate_all_pages'))
+            properties.PropertyStateCallback(self, 'rotate_all_pages'))
 
         # The local representation of active_scanner is a
         # Device, but it is persisted by its name attribute only.
@@ -117,15 +117,15 @@ class MainModel(Model):
         
     # PROPERTY SETTERS
     
-    set_prop_show_toolbar = nostaples.utils.properties.StatefulPropertySetter(
+    set_prop_show_toolbar = properties.StatefulPropertySetter(
         'show_toolbar')
-    set_prop_show_statusbar = nostaples.utils.properties.StatefulPropertySetter(
+    set_prop_show_statusbar = properties.StatefulPropertySetter(
         'show_statusbar')
-    set_prop_show_thumbnails = nostaples.utils.properties.StatefulPropertySetter(
+    set_prop_show_thumbnails = properties.StatefulPropertySetter(
         'show_thumbnails')
-    set_prop_show_adjustments = nostaples.utils.properties.StatefulPropertySetter(
+    set_prop_show_adjustments = properties.StatefulPropertySetter(
         'show_adjustments')
-    set_prop_rotate_all_pages = nostaples.utils.properties.StatefulPropertySetter(
+    set_prop_rotate_all_pages = properties.StatefulPropertySetter(
         'rotate_all_pages')
         
     def set_prop_active_scanner(self, value):

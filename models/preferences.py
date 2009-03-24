@@ -24,7 +24,7 @@ import logging
 from gtkmvc.model import Model
 
 from nostaples import constants
-import nostaples.utils.properties
+from nostaples.utils import properties
 
 class PreferencesModel(Model):
     """
@@ -60,33 +60,36 @@ class PreferencesModel(Model):
         
         self.preview_mode = state_manager.init_state(
             'preview_mode', constants.DEFAULT_PREVIEW_MODE, 
-            nostaples.utils.properties.PropertyStateCallback(self, 'preview_mode'))
+            properties.GuardedPropertyStateCallback(
+                self, 'preview_mode', constants.PREVIEW_MODES_LIST))
         
         self.thumbnail_size = state_manager.init_state(
             'thumbnail_size', constants.DEFAULT_THUMBNAIL_SIZE, 
-            nostaples.utils.properties.PropertyStateCallback(self, 'thumbnail_size'))
+            properties.GuardedPropertyStateCallback(
+                self, 'thumbnail_size', constants.THUMBNAIL_SIZE_LIST))
         
         self.toolbar_style = state_manager.init_state(
             'toolbar_style', constants.DEFAULT_TOOLBAR_STYLE, 
-            nostaples.utils.properties.PropertyStateCallback(self, 'toolbar_style'))
+            properties.GuardedPropertyStateCallback(
+                self, 'toolbar_style', constants.TOOLBAR_STYLES_LIST))
         
         self.blacklisted_scanners = state_manager.init_state(
             'blacklisted_scanners', constants.DEFAULT_BLACKLISTED_SCANNERS, 
-            nostaples.utils.properties.PropertyStateCallback(self, 'blacklisted_scanners'))
+            properties.PropertyStateCallback(self, 'blacklisted_scanners'))
         
         self.saved_keywords = state_manager.init_state(
             'saved_keywords', constants.DEFAULT_SAVED_KEYWORDS, 
-            nostaples.utils.properties.PropertyStateCallback(self, 'saved_keywords'))
+            properties.PropertyStateCallback(self, 'saved_keywords'))
         
     # PROPERTY SETTERS
         
-    set_prop_preview_mode = nostaples.utils.properties.StatefulPropertySetter(
+    set_prop_preview_mode = properties.StatefulPropertySetter(
         'preview_mode')
-    set_prop_thumbnail_size = nostaples.utils.properties.StatefulPropertySetter(
+    set_prop_thumbnail_size = properties.StatefulPropertySetter(
         'thumbnail_size')
-    set_prop_toolbar_style = nostaples.utils.properties.StatefulPropertySetter(
+    set_prop_toolbar_style = properties.StatefulPropertySetter(
         'toolbar_style')
-    set_prop_blacklisted_scanners = nostaples.utils.properties.StatefulPropertySetter(
+    set_prop_blacklisted_scanners = properties.StatefulPropertySetter(
         'blacklisted_scanners')
-    set_prop_saved_keywords = nostaples.utils.properties.StatefulPropertySetter(
+    set_prop_saved_keywords = properties.StatefulPropertySetter(
         'saved_keywords')
