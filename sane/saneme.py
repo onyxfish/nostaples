@@ -271,79 +271,6 @@ class Device(object):
         return self._options
         
     options = property(__get_options)
-    
-    # Internal methods
-        
-    def _update_options(self):
-        """
-        Update the list of available options for this device.  As these
-        are immutable, this should only need to be called when the Device
-        is first instantiated.
-        """
-        if not self._handle:
-            raise AssertionError('device handle was None.')
-        if self._handle == c_void_p(None):
-            raise AssertionError('device handle was a null pointer.')
-        
-        option_value = pointer(c_int())
-        status = sane_control_option(
-            self._handle, 0, SANE_ACTION_GET_VALUE, option_value, None)
-        
-        if status == SANE_STATUS_GOOD.value:
-            pass
-        elif status == SANE_STATUS_UNSUPPORTED.value:
-            raise SaneUnsupportedOperationError(
-                'sane_control_option reported that a value was outside the option\'s constraint.',
-                device=self)
-        elif status == SANE_STATUS_INVAL.value:
-            raise SaneInvalidParameterError(
-                'sane_open reported that the device name was invalid.',
-                device=self)
-        elif status == SANE_STATUS_IO_ERROR.value:
-            raise SaneIOError(
-                'sane_open reported a communications error.',
-                device=self)
-        elif status == SANE_STATUS_NO_MEM.value:
-            raise SaneOutOfMemoryError(
-                'sane_open ran out of memory.',
-                device=self)
-        elif status == SANE_STATUS_ACCESS_DENIED.value:
-            raise SaneAccessDeniedError(
-                'sane_open requires greater access to open the device.',
-                device=self)
-        else:
-            raise SaneUnknownError(
-                'sane_open returned an invalid status: %i.' % status,
-                device=self)
-        
-        option_count = option_value.contents.value
-        
-        if self._log:
-            self._log.debug('Device queried, %i option(s) found.', option_count)
-        
-        self._options.clear()
-        
-        i = 1
-        while(i < option_count - 1):
-            coption = sane_get_option_descriptor(self._handle, i)
-            self._options[coption.contents.name] = Option(
-                self, i, coption.contents, self._log)
-            i = i + 1
-        
-    # Methods for use only by Options
-    
-    def _get_handle(self):
-        """
-        Verify that the device is open and get the current open handle.
-        
-        To be called by Options of this device so that they may set themselves.
-        """
-        if not self._handle:
-            raise AssertionError('device handle was None.')
-        if self._handle == c_void_p(None):
-            raise AssertionError('device handle was a null pointer.')
-        
-        return self._handle
         
     # Public methods
         
@@ -398,7 +325,7 @@ class Device(object):
         if self._log:
             self._log.debug('Device %s open.', self._name)
             
-        self._update_options()
+        self._load_options()
         
     def is_open(self):
         """
@@ -540,7 +467,7 @@ class Device(object):
                     device=self)
             elif status == SANE_STATUS_ACCESS_DENIED.value:
                 raise SaneAccessDeniedError(
-                    'sane_read requires greater access to open the device.',
+                    'sane_read requires greater_update_options access to open the device.',
                     device=self)
             else:
                 raise SaneUnknownError(
@@ -590,6 +517,79 @@ class Device(object):
                'Individual color frame scanned, but not yet supported.')
             
         return pil_image
+        
+    # Methods for use only by Options
+    
+    def _get_handle(self):
+        """
+        Verify that the device is open and get the current open handle.
+        
+        To be called by Options of this device so that they may set themselves.
+        """
+        if not self._handle:
+            raise AssertionError('device handle was None.')
+        if self._handle == c_void_p(None):
+            raise AssertionError('device handle was a null pointer.')
+        
+        return self._handle
+    
+    # Internal methods
+        
+    def _load_options(self):
+        """
+        Update the list of available options for this device.  This is called
+        when the Device is first instantiated and in response to any
+        SANE_INFO_RELOAD_OPTIONS flags when setting option values.
+        """
+        if not self._handle:
+            raise AssertionError('device handle was None.')
+        if self._handle == c_void_p(None):
+            raise AssertionError('device handle was a null pointer.')
+        
+        option_value = pointer(c_int())
+        status = sane_control_option(
+            self._handle, 0, SANE_ACTION_GET_VALUE, option_value, None)
+        
+        if status == SANE_STATUS_GOOD.value:
+            pass
+        elif status == SANE_STATUS_UNSUPPORTED.value:
+            raise SaneUnsupportedOperationError(
+                'sane_control_option reported that a value was outside the option\'s constraint.',
+                device=self)
+        elif status == SANE_STATUS_INVAL.value:
+            raise SaneInvalidParameterError(
+                'sane_open reported that the device name was invalid.',
+                device=self)
+        elif status == SANE_STATUS_IO_ERROR.value:
+            raise SaneIOError(
+                'sane_open reported a communications error.',
+                device=self)
+        elif status == SANE_STATUS_NO_MEM.value:
+            raise SaneOutOfMemoryError(
+                'sane_open ran out of memory.',
+                device=self)
+        elif status == SANE_STATUS_ACCESS_DENIED.value:
+            raise SaneAccessDeniedError(
+                'sane_open requires greater access to open the device.',
+                device=self)
+        else:
+            raise SaneUnknownError(
+                'sane_open returned an invalid status: %i.' % status,
+                device=self)
+        
+        option_count = option_value.contents.value
+        
+        if self._log:
+            self._log.debug('Device queried, %i option(s) found.', option_count)
+        
+        self._options.clear()
+        
+        i = 1
+        while(i < option_count - 1):
+            coption = sane_get_option_descriptor(self._handle, i)
+            self._options[coption.contents.name] = Option(
+                self, i, coption.contents, self._log)
+            i = i + 1
     
 class Option(object):
     """
@@ -914,6 +914,7 @@ class Option(object):
         
         # See SANE API 4.3.7
         if info_flags.value & SANE_INFO_RELOAD_OPTIONS:
+            self._device._load_options()
             raise SaneReloadOptionsError()
         
         # Catching this can not be avoided by constraint checking, as some
