@@ -54,6 +54,8 @@ class MainModel(Model):
         'valid_modes' : [],
         'valid_resolutions' : [],
         
+        'valid_page_sizes' : [],
+        
         'scan_in_progress' : False,
         'updating_available_scanners' : False,
         'updating_scan_options' : False,
@@ -61,6 +63,8 @@ class MainModel(Model):
 
     def __init__(self, application):
         """
+            
+            print self.scan_area
         Constructs the MainModel, as well as necessary sub-models.
         """
         self.application = application
@@ -169,7 +173,7 @@ class MainModel(Model):
                 main_controller.run_device_exception_dialog(exc_info)
                 
             # Load the option constraints (valid_modes, etc.) for the new device
-            self._load_scanner_option_constraints(value)
+            self._load_scanner_option_constraints()
             
             # Manually constrain option values
             if self._prop_active_mode not in self._prop_valid_modes:
@@ -220,7 +224,7 @@ class MainModel(Model):
         Update the scanner options and write state to the StateManager.
         
         See L{set_prop_active_scanner} for detailed comments.
-        """
+        """        
         main_controller = self.application.get_main_controller()
             
         # Set new property value
@@ -247,8 +251,11 @@ class MainModel(Model):
                     # TODO - what if "exact" value isn't in the list?
                     pass
                 except saneme.SaneReloadOptionsError:
-                    # Reload any options that may have changed
-                    self._load_scanner_option_values()
+                    # Reload any options that may have changed, this will
+                    # also force this value to be set again, so its safe to 
+                    # return immediately
+                    self._reload_scanner_options()
+                    return
                     
         # Never persist None to state
         if value is not None:            
@@ -256,7 +263,7 @@ class MainModel(Model):
         
         # Emit change notification
         self.notify_property_value_change(
-            'active_mode', None, value)    
+            'active_mode', None, value)
         
     def set_prop_active_resolution(self, value):
         """
@@ -290,8 +297,11 @@ class MainModel(Model):
                     # TODO - what if "exact" value isn't in the list?
                     pass
                 except saneme.SaneReloadOptionsError:
-                    # Reload any options that may have changed
-                    self._load_scanner_option_values()
+                    # Reload any options that may have changed, this will
+                    # also force this value to be set again, so its safe to 
+                    # return immediately
+                    self._reload_scanner_options()
+                    return
                     
         # Never persist None to state
         if value is not None:            
@@ -338,6 +348,7 @@ class MainModel(Model):
                         (scanner.display_name, reason))
                     new_unavailable_scanners.append((scanner.display_name, reason))
                     value.remove(scanner)
+                    continue
                     
                 mode = scanner.options['mode']
                 
@@ -347,6 +358,7 @@ class MainModel(Model):
                         (scanner.display_name, reason))
                     new_unavailable_scanners.append((scanner.display_name, reason))
                     value.remove(scanner)
+                    continue
                 
                 if not mode.constraint_type == saneme.OPTION_CONSTRAINT_STRING_LIST:
                     reason = '\'Mode\' option does not include a STRING_LIST constraint.'
@@ -354,6 +366,7 @@ class MainModel(Model):
                         (scanner.display_name, reason))
                     new_unavailable_scanners.append((scanner.display_name, reason))
                     value.remove(scanner)
+                    continue
                 
                 # Enforce resolution option requirements
                 if not scanner.has_option('resolution'):
@@ -362,6 +375,7 @@ class MainModel(Model):
                         (scanner.display_name, reason))
                     new_unavailable_scanners.append((scanner.display_name, reason))
                     value.remove(scanner)
+                    continue
                     
                 resolution = scanner.options['resolution']
                     
@@ -371,6 +385,7 @@ class MainModel(Model):
                         (scanner.display_name, reason))
                     new_unavailable_scanners.append((scanner.display_name, reason))
                     value.remove(scanner)
+                    continue
         
                 # See SANE API 4.5.2
                 if resolution.type != saneme.OPTION_TYPE_INT and \
@@ -380,6 +395,7 @@ class MainModel(Model):
                         (scanner.display_name, reason))
                     new_unavailable_scanners.append((scanner.display_name, reason))
                     value.remove(scanner)
+                    continue
                 
                 # See SANE API 4.5.2
                 if not resolution.unit == saneme.OPTION_UNIT_DPI:
@@ -388,6 +404,66 @@ class MainModel(Model):
                         (scanner.display_name, reason))
                     new_unavailable_scanners.append((scanner.display_name, reason))
                     value.remove(scanner)
+                    continue
+                    
+                # Enforce scan area option requirements
+                scan_area_option_names = ['tl-x', 'tl-y', 'br-x', 'br-y']
+                
+                supported = True
+                for option_name in scan_area_option_names:
+                    if not scanner.has_option(option_name):
+                        supported = False
+                        
+                if not supported:
+                    reason = 'No \'scan area\' options.'
+                    self.log.info(unsupported_scanner_error % 
+                        (scanner.display_name, reason))
+                    new_unavailable_scanners.append((scanner.display_name, reason))
+                    value.remove(scanner)
+                    continue
+                
+                scan_area_options = \
+                    [scanner.options[o] for o in scan_area_option_names]
+                
+                supported = True
+                for option in scan_area_options:
+                    if option.type != saneme.OPTION_TYPE_INT:
+                        supported = False
+                        
+                if not supported:
+                    reason = '\'Scan area\' options are not of type INT.'
+                    self.log.info(unsupported_scanner_error % 
+                        (scanner.display_name, reason))
+                    new_unavailable_scanners.append((scanner.display_name, reason))
+                    value.remove(scanner)
+                    continue   
+                
+                supported = True
+                for option in scan_area_options:
+                    if option.unit != saneme.OPTION_UNIT_PIXEL and \
+                        option.unit != saneme.OPTION_UNIT_MM:
+                        supported = False
+                        
+                if not supported:
+                    reason = '\'Scan area\' options are not measured in unit PIXEL or MM.'
+                    self.log.info(unsupported_scanner_error % 
+                        (scanner.display_name, reason))
+                    new_unavailable_scanners.append((scanner.display_name, reason))
+                    value.remove(scanner)
+                    continue
+                                
+                supported = True
+                for option in scan_area_options:
+                    if option.constraint_type != saneme.OPTION_CONSTRAINT_RANGE:
+                        supported = False
+                        
+                if not supported:
+                    reason = '\'Scan area\' options do not specify a RANGE constraint.'
+                    self.log.info(unsupported_scanner_error % 
+                        (scanner.display_name, reason))
+                    new_unavailable_scanners.append((scanner.display_name, reason))
+                    value.remove(scanner)
+                    continue
                     
                 scanner.close()   
             except saneme.SaneError:
@@ -396,6 +472,7 @@ class MainModel(Model):
                     (scanner.display_name, reason))
                 new_unavailable_scanners.append((scanner.display_name, reason))
                 value.remove(scanner)
+                continue
         
         self._prop_unavailable_scanners = new_unavailable_scanners
         self._prop_available_scanners = value
@@ -443,6 +520,21 @@ class MainModel(Model):
             self.active_resolution = None
         elif self.active_resolution not in value:
             self.active_resolution = value[0]
+            
+    def set_prop_scan_area(self, value):
+        """
+        Set the valid scan area for the current scanner.  Derive and set
+        valid pages sizes.
+        
+        See L{set_prop_available_scanners} for detailed comments.
+        """
+        self._prop_scan_area = value
+        
+        self.notify_property_value_change(
+            'scan_area', None, value)
+    
+    def set_prop_valid_page_sizes(self, value):
+        pass
         
     # STATE CALLBACKS
         
@@ -486,21 +578,20 @@ class MainModel(Model):
             option.is_soft_gettable() and \
             option.is_soft_settable()
             
-    def _load_scanner_option_constraints(self, sane_device):
+    def _load_scanner_option_constraints(self):
         """
         Load the option constraints from a specified scanner.
         """
         main_controller = self.application.get_main_controller()
         
         try:
-            assert sane_device.options['mode'].constraint_type == \
-                saneme.OPTION_CONSTRAINT_STRING_LIST
-                
-            self._prop_valid_modes = sane_device.options['mode'].constraint
+            # Mode
+            self._prop_valid_modes = self.active_scanner.options['mode'].constraint
             
-            if sane_device.options['resolution'].constraint_type == \
+            # Resolution
+            if self.active_scanner.options['resolution'].constraint_type == \
                 saneme.OPTION_CONSTRAINT_RANGE:
-                min, max, step = sane_device.options['resolution'].constraint
+                min, max, step = self.active_scanner.options['resolution'].constraint
                 
                 # Fix for ticket #34.
                 if step is None or step == 0:
@@ -529,22 +620,46 @@ class MainModel(Model):
                     resolutions.append(str(max))
                     
                 self._prop_valid_resolutions = resolutions
-            elif sane_device.options['resolution'].constraint_type == \
+            elif self.active_scanner.options['resolution'].constraint_type == \
                 saneme.OPTION_CONSTRAINT_VALUE_LIST:                
                 # Convert values to strings for display
                 self._prop_valid_resolutions = \
-                    [str(i) for i in sane_device.options['resolution'].constraint]
-            elif sane_device.options['resolution'].constraint_type == \
+                    [str(i) for i in self.active_scanner.options['resolution'].constraint]
+            elif self.active_scanner.options['resolution'].constraint_type == \
                 saneme.OPTION_CONSTRAINT_STRING_LIST:
                 self._prop_valid_resolutions = \
-                    sane_device.options['resolution'].constraint
+                    self.active_scanner.options['resolution'].constraint
             else:
-                raise AssertionError('Unsupported constraint type.')              
+                raise AssertionError('Unsupported constraint type.')
+            
+            # Page size
+            tl_x = self.active_scanner.options['tl-x']
+            tl_y = self.active_scanner.options['tl-y']
+            br_x = self.active_scanner.options['br-x']
+            br_y = self.active_scanner.options['br-y']
+            
+            sizes = []
+            
+            # TODO
+#            for pagesize in constants.PAGESIZES.values():
+#                if tl_x.unit == saneme.OPTION_UNIT_PIXEL:
+#                    print self.active_scanner.options['resolution'].value
+#                    print br_x.constraint
+#                    try:
+#                        self.active_scanner.options['resolution'].value = 150
+#                    except:
+#                        pass
+#                    print self.active_scanner.options['resolution'].value
+#                    print br_x.constraint                    
+#                elif tl_x.unit == saneme.OPTION_UNIT_MM:
+#                    pass
+#                else:
+#                    raise AssertionError()
         except saneme.SaneError:
             exc_info = sys.exc_info()
             main_controller.run_device_exception_dialog(exc_info)
     
-    def _load_scanner_option_values(self):
+    def _reload_scanner_options(self):
         """
         Get current scanner options from the active_scanner.
         
@@ -553,10 +668,24 @@ class MainModel(Model):
         """
         main_controller = self.application.get_main_controller()
         
+        self.log.debug('Reloading scanner options.')
+        
         try:
-            # TODO: ReloadOptions should reload constraints as well as values!
+            # Load the option constraints
+            self._load_scanner_option_constraints()
+            
+            # Push notifications of changes            
+            self.notify_property_value_change(
+                'valid_modes', None, self.valid_modes)
+            
+            self.notify_property_value_change(
+                'valid_resolutions', None, self.valid_resolutions)
+            
+            # Read updated values from the device
             self.active_mode = self.active_scanner.options['mode'].value
             self.active_resolution = str(self.active_scanner.options['resolution'].value)
         except saneme.SaneError:
             exc_info = sys.exc_info()
             main_controller.run_device_exception_dialog(exc_info)
+        
+        self.log.debug('Scanner options reloaded.')

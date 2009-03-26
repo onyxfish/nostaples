@@ -31,6 +31,7 @@ import Image, ImageEnhance
 from reportlab.pdfgen.canvas import Canvas as PdfCanvas
 from reportlab.lib.pagesizes import landscape, portrait
 from reportlab.lib.units import inch as points_per_inch
+from reportlab.lib.units import mm as points_per_mm
 
 from nostaples import constants
 import nostaples.utils.gui

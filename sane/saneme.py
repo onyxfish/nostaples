@@ -807,11 +807,11 @@ class Option(object):
         else:
             option_value = option_value.contents.value
             
-        if self._log:
-            self._log.debug(
-                'Option %s queried, its current value is %s.', 
-                self._name, 
-                option_value)
+#        if self._log:
+#            self._log.debug(
+#                'Option %s queried, its current value is %s.', 
+#                self._name, 
+#                option_value)
             
         return option_value
     
@@ -909,8 +909,8 @@ class Option(object):
                 'sane_control_option returned an invalid status: %i .' % status,
                 device=self._device)
         
-        if self._log:
-            self._log.debug('Option %s set to value %s.', self._name, value)
+#        if self._log:
+#            self._log.debug('Option %s set to value %s.', self._name, value)
         
         # See SANE API 4.3.7
         if info_flags.value & SANE_INFO_RELOAD_OPTIONS:
