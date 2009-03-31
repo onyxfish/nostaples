@@ -119,9 +119,9 @@ class MainModel(Model):
             'scan_resolution', constants.DEFAULT_SCAN_RESOLUTION, 
             self.state_scan_resolution_change)
         
-#        self.active_page_size = state_manager.init_state(
-#            'page_size', constants.DEFAULT_PAGE_SIZE, 
-#            self.state_page_size_change)
+        self.active_page_size = state_manager.init_state(
+            'page_size', constants.DEFAULT_PAGE_SIZE, 
+            self.state_page_size_change)
         
     # PROPERTY SETTERS
     
@@ -281,6 +281,11 @@ class MainModel(Model):
                     # return immediately
                     self._reload_scanner_options()
                     return
+        
+            # Update available page sizes if resolution is relevant
+            if self.active_scanner.options['tl-x'].constraint_type == \
+                saneme.OPTION_UNIT_PIXEL:
+                self._update_valid_page_sizes()
                     
         # Never persist None to state
         if value is not None:            
@@ -288,11 +293,92 @@ class MainModel(Model):
         
         # Emit change notification
         self.notify_property_value_change(
-            'active_resolution', None, value)    
+            'active_resolution', None, value)
         
     def set_prop_active_page_size(self, value):
-        # TODO
-        pass
+        """
+        Update the scanner options and write state to the StateManager.
+        
+        See L{set_prop_active_scanner} for detailed comments.
+        """        
+        main_controller = self.application.get_main_controller()
+        
+        # Set new property value
+        self._prop_active_page_size = value
+        
+        # Check if a valid scanner has been loaded (not None)
+        if isinstance(self.active_scanner, saneme.Device):
+            # The device should always be open if a value is being set
+            assert self.active_scanner.is_open()
+            
+            # Store the current scanner value for comparison
+            try:
+                tl_x = self.active_scanner.options['tl-x'].value
+                tl_y = self.active_scanner.options['tl-y'].value
+                br_x = self.active_scanner.options['br-x'].value
+                br_y = self.active_scanner.options['br-y'].value
+            except saneme.SaneError:
+                exc_info = sys.exc_info()
+                main_controller.run_device_exception_dialog(exc_info)
+            
+            # Never re-set a value or set None to a device option
+            if value is not None:
+                if self.active_scanner.options['tl-x'].unit == saneme.OPTION_UNIT_PIXEL:
+                    # TODO
+                    if self.valid_resolutions == None:
+                        raise AssertionError()
+                    
+                    resolution = max([int(i) for i in self.valid_resolutions])
+                    page_width = int(resolution * constants.PAGESIZES[value][0] / points_per_inch)
+                    page_height = int(resolution * constants.PAGESIZES[value][1] / points_per_inch)
+                else:
+                    page_width = constants.PAGESIZES[value][0]
+                    page_height = constants.PAGESIZES[value][1]
+                    
+                needs_reload = False
+                    
+                if br_x - tl_x != page_width and br_y - tl_y != page_height:           
+                    try:
+                        # Set the new option value
+                        self.log.debug(
+                            'Setting active page size to %s.' % value)  
+                        
+                        self.active_scanner.options['br-x'].value = tl_x + page_width
+                    except saneme.SaneInexactValueError:
+                        # TODO - what if "exact" value isn't in the list?
+                        pass
+                    except saneme.SaneReloadOptionsError:
+                        # Reload any options that may have changed, this will
+                        # also force this value to be set again, so its safe to 
+                        # return immediately
+                        needs_reload == True
+                               
+                    try:
+                        # Set the new option value
+                        self.log.debug(
+                            'Setting active page size to %s.' % value)  
+                        
+                        self.active_scanner.options['br-y'].value = tl_y + page_height
+                    except saneme.SaneInexactValueError:
+                        # TODO - what if "exact" value isn't in the list?
+                        pass
+                    except saneme.SaneReloadOptionsError:
+                        # Reload any options that may have changed, this will
+                        # also force this value to be set again, so its safe to 
+                        # return immediately
+                        needs_reload == True
+                        
+                    if needs_reload:
+                        self._reload_scanner_options()
+                        return
+                    
+        # Never persist None to state
+        if value is not None:            
+            self.application.get_state_manager()['page_size'] = value
+        
+        # Emit change notification
+        self.notify_property_value_change(
+            'active_page_size', None, value)
         
     def set_prop_available_scanners(self, value):
         """
@@ -513,8 +599,21 @@ class MainModel(Model):
             self.active_resolution = value[0]
     
     def set_prop_valid_page_sizes(self, value):
-        # TODO
-        pass
+        """
+        Set the list of valid scan page sizes, update the active page size
+        and write state to the StateManager.
+        
+        See L{set_prop_available_scanners} for detailed comments.
+        """
+        self._prop_valid_page_sizes = value
+        
+        self.notify_property_value_change(
+            'valid_page_sizes', None, value)
+        
+        if len(value) == 0:
+            self.active_page_size = None
+        elif self.active_page_size not in value:
+            self.active_page_size = value[0]
         
     # STATE CALLBACKS
         
@@ -547,14 +646,14 @@ class MainModel(Model):
         else:
             state_manager['scan_resolution'] = self.active_resolution
         
-#    def state_scan_page_size_change(self):
-#        """Read state, validating the input."""
-#        state_manager = self.application.get_state_manager()
-#        
-#        if state_manager['scan_page_size'] in self.valid_page_sizes:
-#            self.active_page_size = state_manager['scan_page_size']
-#        else:
-#            state_manager['scan_page_size'] = self.active_page_size
+    def state_page_size_change(self):
+        """Read state, validating the input."""
+        state_manager = self.application.get_state_manager()
+        
+        if state_manager['scan_page_size'] in self.valid_page_sizes:
+            self.active_page_size = state_manager['scan_page_size']
+        else:
+            state_manager['scan_page_size'] = self.active_page_size
 
     # INTERNAL METHODS
     
@@ -653,33 +752,50 @@ class MainModel(Model):
         br_y = self.active_scanner.options['br-y']
         
         sizes = []
-        resolution = int(self.active_resolution)
         
-        # TODO - THIS SHOULD WORK, BE RESOLUTION NEEDS TO HAVE BEEN
-        # PUSHED/UPDATED (FROM CONSTRAINT) BEFORE THIS IS VALID
         for name, size in constants.PAGESIZES.iteritems():
             if tl_x.unit == saneme.OPTION_UNIT_PIXEL:
+                # TODO?
+                if self.valid_resolutions == None:
+                    break
+                
+                resolution = max([int(i) for i in self.valid_resolutions])
+        
                 page_width = int(resolution * size[0] / points_per_inch)
                 page_height = int(resolution * size[1] / points_per_inch)
                 
-                #print name, page_width, page_height
+                max_x = br_x.constraint[1] - tl_x.constraint[0]
+                max_y = br_y.constraint[1] - tl_y.constraint[0]
                 
-                if page_width < br_x.constraint[2] - tl_x.constraint[2] and \
-                    page_height < br_y.constraint[2] - tl_y.cosntraint[2]:
+                if page_width <= max_x and page_height <= max_y:
                     sizes.append(name)
             elif tl_x.unit == saneme.OPTION_UNIT_MM:
                 page_width = int(size[0] / (points_per_cm / 10))
                 page_height = int(size[1] / (points_per_cm / 10))
                 
-                #print name, page_width, page_height
+                max_x = br_x.constraint[1] - tl_x.constraint[0]
+                max_y = br_y.constraint[1] - tl_y.constraint[0]
                 
-                if page_width < br_x.constraint[2] - tl_x.constraint[2] and \
-                    page_height < br_y.constraint[2] - tl_y.cosntraint[2]:
+                if page_width <= max_x and page_height <= max_y:
                     sizes.append(name)                    
             else:
                 raise AssertionError()
-            
-        print sizes
+        
+        def page_size_sort(x, y):
+            """
+            Sort paper sizes according to their order in a constant list.
+            """
+            sort_x = constants.PAGESIZE_SORT_ORDER.index(x)
+            sort_y = constants.PAGESIZE_SORT_ORDER.index(y)
+            if sort_x > sort_y:
+                return 1
+            elif sort_x == sort_y:
+                return 0
+            else:
+                return -1
+        
+        sizes.sort(page_size_sort)
+        self.valid_page_sizes = sizes
     
     def _reload_scanner_options(self):
         """
@@ -706,7 +822,7 @@ class MainModel(Model):
             # Reset new values (in case they were overwritten)
             self.active_mode = new_mode
             self.active_resolution = new_resolution
-            #self.active_page_size = new_resolution
+            #self.active_page_size = new_page_size
         except saneme.SaneError:
             exc_info = sys.exc_info()
             main_controller.run_device_exception_dialog(exc_info)

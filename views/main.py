@@ -94,6 +94,7 @@ class MainView(View):
         self['scanner_menu_item'].set_sensitive(sensitive)
         self['scan_mode_menu_item'].set_sensitive(sensitive)
         self['scan_resolution_menu_item'].set_sensitive(sensitive)
+        self['scan_page_size_menu_item'].set_sensitive(sensitive)
         
     def set_refresh_scanner_controls_sensitive(self, sensitive):
         """

@@ -161,6 +161,12 @@ class MainController(Controller):
         if menu_item.get_active():
             self.application.get_main_model().active_resolution = \
                 menu_item.get_children()[0].get_text() 
+
+    def on_valid_page_size_menu_item_toggled(self, menu_item):
+        """Sets the active scan resolution."""
+        if menu_item.get_active():
+            self.application.get_main_model().active_page_size = \
+                menu_item.get_children()[0].get_text() 
                 
     def on_go_first_menu_item_activate(self, menu_item):
         """Selects the first scanned page."""
@@ -369,6 +375,18 @@ class MainController(Controller):
             if menu_item.get_children()[0].get_text() == new_value:
                 menu_item.set_active(True)
                 break
+    
+    def property_active_page_size_value_change(self, model, old_value, new_value):
+        """Select the active resolution from in the menu."""
+        main_view = self.application.get_main_view()
+        
+        if new_value == None:
+            return
+        
+        for menu_item in main_view['scan_page_size_sub_menu'].get_children():
+            if menu_item.get_children()[0].get_text() == new_value:
+                menu_item.set_active(True)
+                break
             
     def property_available_scanners_value_change(self, model, old_value, new_value):
         """
@@ -453,6 +471,34 @@ class MainController(Controller):
                 main_view['scan_resolution_sub_menu'].append(menu_item)
             
         main_view['scan_resolution_sub_menu'].show_all()
+        
+    
+    def property_valid_page_sizes_value_change(self, model, old_value, new_value):
+        """
+        Updates the list of valid scan page sizes for the current scanner.
+        """
+        main_view = self.application.get_main_view()
+        
+        self._clear_scan_page_sizes_sub_menu()
+        
+        if len(new_value) == 0:
+            menu_item = gtk.MenuItem("No Page Sizes")
+            menu_item.set_sensitive(False)
+            main_view['scan_page_size_sub_menu'].append(menu_item)
+        else:        
+            for i in range(len(new_value)):
+                if i == 0:
+                    menu_item = gtk.RadioMenuItem(
+                        None, new_value[i])
+                    first_item = menu_item
+                else:
+                    menu_item = gtk.RadioMenuItem(
+                        first_item, new_value[i])
+                
+                menu_item.connect('toggled', self.on_valid_page_size_menu_item_toggled)
+                main_view['scan_page_size_sub_menu'].append(menu_item)
+            
+        main_view['scan_page_size_sub_menu'].show_all()
         
     def property_scan_in_progress_value_change(self, model, old_value, new_value):
         """Disable or re-enable scan controls."""
@@ -632,6 +678,13 @@ class MainController(Controller):
         
         for child in main_view['scan_resolution_sub_menu'].get_children():
             main_view['scan_resolution_sub_menu'].remove(child)
+    
+    def _clear_scan_page_sizes_sub_menu(self):
+        """Clear the menu of valid scan page sizes."""
+        main_view = self.application.get_main_view()
+        
+        for child in main_view['scan_page_size_sub_menu'].get_children():
+            main_view['scan_page_size_sub_menu'].remove(child)
             
     def _toggle_scan_controls(self):
         """Toggle whether or not the scan controls or accessible."""

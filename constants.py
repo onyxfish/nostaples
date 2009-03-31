@@ -41,9 +41,27 @@ PAGESIZES = {'A0' : A0,
                 'B4' : B4, 
                 'B5' : B5, 
                 'B6' : B6,
-                'LETTER' : LETTER, 
-                'LEGAL' : LEGAL, 
-                'ELEVENSEVENTEEN' : ELEVENSEVENTEEN}
+                'Letter' : LETTER, 
+                'Legal' : LEGAL, 
+                'Ledger' : ELEVENSEVENTEEN}
+
+PAGESIZE_SORT_ORDER = ['A0', 
+                        'A1', 
+                        'A2',
+                        'A3',
+                        'A4', 
+                        'A5', 
+                        'A6',
+                        'B0', 
+                        'B1', 
+                        'B2', 
+                        'B3', 
+                        'B4', 
+                        'B5', 
+                        'B6',
+                        'Letter', 
+                        'Legal', 
+                        'Ledger']
 
 DEFAULT_SHOW_TOOLBAR = True
 DEFAULT_SHOW_STATUSBAR = True
@@ -53,6 +71,7 @@ DEFAULT_ROTATE_ALL_PAGES = False
 DEFAULT_ACTIVE_SCANNER = ''
 DEFAULT_SCAN_MODE = 'Color'
 DEFAULT_SCAN_RESOLUTION = '75'
+DEFAULT_PAGE_SIZE = 'A4'
 DEFAULT_SAVE_PATH = ''
 DEFAULT_AUTHOR = os.getenv('LOGNAME')
 DEFAULT_SAVED_KEYWORDS = []
