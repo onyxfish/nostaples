@@ -497,7 +497,7 @@ class Device(object):
             if sane_parameters.depth == 1:
                 pil_image = Image.frombuffer(
                     '1', (scan_info.width, scan_info.height), 
-                    data_array, 'raw', '1', 0, 1)
+                    data_array, 'raw', '1;I', 0, 1)
             # Grayscale
             elif sane_parameters.depth == 8:
                 pil_image = Image.frombuffer(
