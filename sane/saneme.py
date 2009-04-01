@@ -866,10 +866,13 @@ class Option(object):
             if value > max:
                 raise ValueError('value for option is greater than max.')
             if step is not None and step > 0:
-                #if value % step != 0:
-                #    raise ValueError(
-                #        'value for option is not evenly divisible by step.')
-                print step, value
+                # In theory this should be enforced, but in practice it is
+                # useful to sometimes let the backend adjust the values
+                # (such as with page size, where their may not be a perfect
+                # fit).  If the value does not match the step, it will cause
+                # a SaneInexactValueError to be thrown, which the frontened
+                # can handle in different ways depending on the option being
+                # set.
                 pass
         elif self._constraint_type == SANE_CONSTRAINT_WORD_LIST.value:
             if value not in self._constraint:

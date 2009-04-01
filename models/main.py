@@ -24,8 +24,6 @@ import logging
 import sys
 
 from gtkmvc.model import Model
-from reportlab.lib.pagesizes import inch as points_per_inch
-from reportlab.lib.pagesizes import cm as points_per_cm
 
 from nostaples import constants
 import nostaples.sane as saneme
@@ -225,8 +223,7 @@ class MainModel(Model):
                         'Setting active mode to %s.' % value)
                     self.active_scanner.options['mode'].value = value
                 except saneme.SaneInexactValueError:
-                    # TODO - what if "exact" value isn't in the list?
-                    pass
+                    raise
                 except saneme.SaneReloadOptionsError:
                     # Reload any options that may have changed, this will
                     # also force this value to be set again, so its safe to 
@@ -273,8 +270,7 @@ class MainModel(Model):
                         'Setting active resolution to %s.' % value)  
                     self.active_scanner.options['resolution'].value = int(value)
                 except saneme.SaneInexactValueError:
-                    # TODO - what if "exact" value isn't in the list?
-                    pass
+                    raise
                 except saneme.SaneReloadOptionsError:
                     # Reload any options that may have changed, this will
                     # also force this value to be set again, so its safe to 
@@ -329,11 +325,11 @@ class MainModel(Model):
                         raise AssertionError()
                     
                     resolution = max([int(i) for i in self.valid_resolutions])
-                    page_width = int(resolution * constants.PAGESIZES[value][0] / points_per_inch)
-                    page_height = int(resolution * constants.PAGESIZES[value][1] / points_per_inch)
+                    page_width = int(resolution * constants.PAGESIZES_INCHES[value][0])
+                    page_height = int(resolution * constants.PAGESIZES_INCHES[value][1])
                 else:
-                    page_width = constants.PAGESIZES[value][0]
-                    page_height = constants.PAGESIZES[value][1]
+                    page_width = constants.PAGESIZES_MM[value][0]
+                    page_height = constants.PAGESIZES_MM[value][1]
                     
                 needs_reload = False
                     
@@ -345,12 +341,13 @@ class MainModel(Model):
                         
                         self.active_scanner.options['br-x'].value = tl_x + page_width
                     except saneme.SaneInexactValueError:
-                        # TODO - what if "exact" value isn't in the list?
+                        # Coordinate may often be inexact due to backend
+                        # rounding/quantization.  Nothing needs to be done
+                        # about this since the exact coordinates that have
+                        # been set are stored locally.
                         pass
                     except saneme.SaneReloadOptionsError:
-                        # Reload any options that may have changed, this will
-                        # also force this value to be set again, so its safe to 
-                        # return immediately
+                        # Reload after other coordinates have been set.
                         needs_reload == True
                                
                     try:
@@ -360,15 +357,16 @@ class MainModel(Model):
                         
                         self.active_scanner.options['br-y'].value = tl_y + page_height
                     except saneme.SaneInexactValueError:
-                        # TODO - what if "exact" value isn't in the list?
+                        # See above
                         pass
                     except saneme.SaneReloadOptionsError:
-                        # Reload any options that may have changed, this will
-                        # also force this value to be set again, so its safe to 
-                        # return immediately
+                        # See above
                         needs_reload == True
                         
                     if needs_reload:
+                        # Reload any options that may have changed, this will
+                        # also force this value to be set again, so its safe to 
+                        # return immediately
                         self._reload_scanner_options()
                         return
                     
@@ -696,17 +694,8 @@ class MainModel(Model):
             # Otherwise, take a crack at building a sensible set of options
             # that meet that constraint criteria
             else:
-                # THE OLD METHOD: DID NOT WORK
-#                    i = 1
-#                    increment = (max - min) / (constants.MAX_VALID_OPTION_VALUES - 1)
-#                    while (i <= constants.MAX_VALID_OPTION_VALUES - 2):
-#                        unrounded = min + (i * increment)
-#                        rounded = int(round(unrounded / step) * step)
-#                        resolutions.append(str(rounded))
-#                        i = i + 1
-#                    resolutions.insert(0, str(min))
-#                    resolutions.append(str(max))
-
+                # TODO: This is a naive implementation that is likely to
+                # generate an unusuably large number of valid resolutions.
                 i = min
                 tested_resolutions = []
                 while i <= max:
@@ -751,9 +740,9 @@ class MainModel(Model):
         br_x = self.active_scanner.options['br-x']
         br_y = self.active_scanner.options['br-y']
         
-        sizes = []
+        new_sizes = []
         
-        for name, size in constants.PAGESIZES.iteritems():
+        for size in constants.PAGESIZES_INCHES.iterkeys():
             if tl_x.unit == saneme.OPTION_UNIT_PIXEL:
                 # TODO?
                 if self.valid_resolutions == None:
@@ -761,23 +750,23 @@ class MainModel(Model):
                 
                 resolution = max([int(i) for i in self.valid_resolutions])
         
-                page_width = int(resolution * size[0] / points_per_inch)
-                page_height = int(resolution * size[1] / points_per_inch)
+                page_width = int(resolution * constants.PAGESIZES_INCHES[size][0])
+                page_height = int(resolution * constants.PAGESIZES_INCHES[size][1])
                 
                 max_x = br_x.constraint[1] - tl_x.constraint[0]
                 max_y = br_y.constraint[1] - tl_y.constraint[0]
                 
                 if page_width <= max_x and page_height <= max_y:
-                    sizes.append(name)
+                    new_sizes.append(size)
             elif tl_x.unit == saneme.OPTION_UNIT_MM:
-                page_width = int(size[0] / (points_per_cm / 10))
-                page_height = int(size[1] / (points_per_cm / 10))
+                page_width = int(constants.PAGESIZES_MM[size][0])
+                page_height = int(constants.PAGESIZES_MM[size][1])
                 
                 max_x = br_x.constraint[1] - tl_x.constraint[0]
                 max_y = br_y.constraint[1] - tl_y.constraint[0]
                 
                 if page_width <= max_x and page_height <= max_y:
-                    sizes.append(name)                    
+                    new_sizes.append(size)                    
             else:
                 raise AssertionError()
         
@@ -794,8 +783,8 @@ class MainModel(Model):
             else:
                 return -1
         
-        sizes.sort(page_size_sort)
-        self.valid_page_sizes = sizes
+        new_sizes.sort(page_size_sort)
+        self.valid_page_sizes = new_sizes
     
     def _reload_scanner_options(self):
         """
