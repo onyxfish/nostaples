@@ -562,7 +562,11 @@ class MainController(Controller):
         
         gtk.gdk.flush()
         
-        new_page = PageModel(self.application, pil_image, int(main_model.active_resolution))
+        new_page = PageModel(
+            self.application, 
+            pil_image, 
+            int(main_model.active_resolution), 
+            main_model.active_page_size)
         self.application.get_document_model().append(new_page)
         
         main_view['progress_secondary_label'].set_markup(
@@ -781,6 +785,8 @@ class MainController(Controller):
         main_view['progress_mode_label'].set_markup(mode)
         dpi = '%s DPI' % main_model.active_resolution if main_model.active_resolution else 'Not set'
         main_view['progress_resolution_label'].set_markup(dpi)
+        page_size = '%s' % main_model.active_page_size if main_model.active_page_size else 'Not set'
+        main_view['progress_page_size_label'].set_markup(page_size)
         main_view['scan_again_button'].set_sensitive(False)
         main_view['quick_save_button'].set_sensitive(False)
         main_view['scan_cancel_button'].set_label(gtk.STOCK_CANCEL)

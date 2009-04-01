@@ -40,7 +40,8 @@ class PageModel(Model):
         'brightness' : 1.0,
         'contrast' : 1.0,
         'sharpness' : 1.0,
-        'resolution' : 75,
+        'resolution' : constants.DEFAULT_SCAN_RESOLUTION,
+        'page_size' : constants.DEFAULT_PAGE_SIZE,
         
         'pil_image' : None,
         'pixbuf' : None,
@@ -49,15 +50,17 @@ class PageModel(Model):
 
     # SETUP METHODS
     
-    def __init__(self, application, pil_image=None, resolution=75):
+    def __init__(self, application, pil_image=None, resolution=constants.DEFAULT_SCAN_RESOLUTION, page_size=constants.DEFAULT_PAGE_SIZE):
         """
         Constructs the PageModel.
         
         @type pil_image: a PIL image
         @param pil_image: The image data for this page.
+        @type page_size: str
+        @param page_size: The name of the page size this image should be saved
+                            in.
         @type resolution: int
-        @param resolution: The dpi that the page was
-                           scanned at.
+        @param resolution: The dpi that the page was scanned at.
         """
         self.application = application
         Model.__init__(self)
@@ -65,6 +68,7 @@ class PageModel(Model):
         self.log = logging.getLogger(self.__class__.__name__)
         
         self.resolution = resolution
+        self.page_size = page_size
         
         if pil_image:
             self._raw_pil_image = pil_image

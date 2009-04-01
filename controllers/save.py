@@ -197,18 +197,13 @@ class SaveController(Controller):
             assert os.path.exists(temp_file_path), \
                 'Temporary bitmap file was not created by PIL.'
             
-            width_in_inches = \
-                int(current_page.width / current_page.resolution)
-            height_in_inches = \
-                int(current_page.height / current_page.resolution)
+            size = constants.PAGESIZES_INCHES[current_page.page_size]
+            pdf_width = size[0] * points_per_inch 
+            pdf_height = size[1] * points_per_inch
             
-            # NB: Because not all SANE backends support specifying the size
-            # of the scan area, the best we can do is scan at the default
-            # setting and then convert that to an appropriate PDF.  For the
-            # vast majority of scanners we hope that this would be either
-            # letter or A4.
-            pdf_width, pdf_height = self._determine_best_fitting_pagesize(
-                width_in_inches, height_in_inches)
+            # Swizzle width and height if the page has been rotated on its side
+            if abs(current_page.rotation) % 180 == 90:
+                pdf_width, pdf_height = pdf_height, pdf_width
                 
             pdf.setPageSize((pdf_width, pdf_height))
             pdf.drawImage(
@@ -228,48 +223,6 @@ class SaveController(Controller):
             'Final PDF file was not created by ReportLab.'
             
         document_model.clear()
-    
-    def _determine_best_fitting_pagesize(self, width_in_inches, height_in_inches):
-        """
-        Searches through the possible page sizes and finds the smallest one that
-        will contain the image without cropping.
-        """        
-        image_width_in_points = width_in_inches * points_per_inch
-        image_height_in_points = height_in_inches * points_per_inch
-        
-        nearest_size = None
-        nearest_distance = sys.maxint
-        
-        for size in constants.PAGESIZES.values():
-            # Orient the size to match the page
-            if image_width_in_points > image_height_in_points:
-                size = landscape(size)
-            else:
-                size = portrait(size)
-            
-            # Only compare the size if its large enough to contain the entire 
-            # image
-            if size[0] < image_width_in_points or \
-               size[1] < image_height_in_points:
-                continue
-            
-            # Compute distance for comparison
-            distance = \
-                size[0] - image_width_in_points + \
-                size[1] - image_height_in_points
-            
-            # Save if closer than prior nearest distance
-            if distance < nearest_distance:
-                nearest_distance = distance
-                nearest_size = size
-                
-                # Stop searching if a perfect match is found
-                if nearest_distance == 0:
-                    break
-                
-            assert nearest_size != None, 'No nearest size found.'
-                
-        return nearest_size
         
     def _update_saved_keywords(self):
         """
