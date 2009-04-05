@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Mon Feb 16 08:23:41 2009 -->
+<!--Generated with glade3 3.4.5 on Sun Apr  5 14:43:21 2009 -->
 <glade-interface>
   <widget class="GtkWindow" id="dummy_document_view_window">
     <child>
@@ -17,6 +17,7 @@
           </widget>
           <packing>
             <property name="expand">False</property>
+            <property name="position">1</property>
           </packing>
         </child>
         <child>
@@ -29,7 +30,7 @@
             </child>
           </widget>
           <packing>
-            <property name="position">1</property>
+            <property name="position">2</property>
           </packing>
         </child>
         <child>

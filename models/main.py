@@ -410,7 +410,6 @@ class MainModel(Model):
         # open entirely
         new_unavailable_scanners = []
         
-        # TODO - move somewhere more appropriate?
         unsupported_scanner_error = \
             'Scanner %s is unsupported for the following reason: %s'
                         

@@ -26,6 +26,8 @@ import gtk
 import Image
 from reportlab.lib.pagesizes import A0, A1, A2, A3, A4, A5, A6, \
     B0, B1, B2, B3, B4, B5, B6, LETTER, LEGAL, ELEVENSEVENTEEN
+    
+VERSION = (0, 4, 0)
 
 PAGESIZES_INCHES = {'A0' : (33.1, 46.8), 
                     'A1' : (23.4, 33.1), 
@@ -145,6 +147,10 @@ DEFAULT_BLACKLISTED_SCANNERS = []
 DEFAULT_TOOLBAR_STYLE = 'System Default'
 
 THUMBNAILS_SCALING_MODE = Image.ANTIALIAS
+
+PREVIEW_ZOOM_MAX = 5.0
+PREVIEW_ZOOM_MIN = 1.0
+PREVIEW_ZOOM_STEP = 0.5
 
 MAX_VALID_OPTION_VALUES = 11
 

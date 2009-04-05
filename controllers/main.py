@@ -139,8 +139,6 @@ class MainController(Controller):
     def on_available_scanner_menu_item_toggled(self, menu_item):
         """
         Set the active scanner.
-        
-        TODO: Need a second scanner to properly test this...
         """
         main_model = self.application.get_main_model()
         
@@ -185,7 +183,9 @@ class MainController(Controller):
         self.application.get_document_controller().goto_last_page()
         
     def on_contents_menu_item_clicked(self, menu_item):
-        """TODO"""
+        """
+        TICKET #8
+        """
         pass
     
     def on_about_menu_item_activate(self, menu_item):
@@ -525,7 +525,7 @@ class MainController(Controller):
         main_view = self.application.get_main_view()
         
         if new_value == 'System Default':
-            # TODO - reset style to system default
+            # TICKET #35
             pass
         else:
             main_view['main_toolbar'].set_style(constants.TOOLBAR_STYLES[new_value])
@@ -542,14 +542,14 @@ class MainController(Controller):
             float(bytes_scanned) / scan_info.total_bytes)
         main_view['scan_progressbar'].set_text(
             'Received %ik of %ik bytes' % (short_bytes_scanned, short_total_bytes))
-        # TODO: multi page scans
+
         main_view['progress_secondary_label'].set_markup(
             '<i>Scanning page.</i>')     
     
     def on_scan_succeeded(self, scanning_thread, pil_image):
         """
-        Append the new page to the current document.
-        TODO: update docstring
+        Update the progress window and append the new page to the current 
+        document.
         """
         main_model = self.application.get_main_model()
         main_view = self.application.get_main_view()
@@ -580,8 +580,7 @@ class MainController(Controller):
     
     def on_scan_failed(self, scanning_thread, reason):
         """
-        Set that scan is complete.
-        TODO: update docstring
+        Update the progress window.
         """
         main_model = self.application.get_main_model()
         main_view = self.application.get_main_view()

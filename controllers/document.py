@@ -136,8 +136,7 @@ class DocumentController(Controller):
         else:
             document_view['thumbnails_tree_view'].get_selection().select_path(path)
             
-            # TODO: when a new row is added, if adjust_all is checked
-            # the current scale values should be applied to it.
+            # TICKET #49
             # This code causes the application to hang:
 #            if document_model.adjust_all_pages:
 #                page_model = document_model.get_value(iter, 0)

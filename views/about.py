@@ -56,6 +56,8 @@ class AboutView(View):
         # top-level widgets
         self['about_dialog'].set_transient_for(
             self.application.get_main_view()['scan_window'])
+        
+        self['about_dialog'].set_version('%i.%i.%i' % constants.VERSION)
                 
         self.application.get_about_controller().register_view(self)
         

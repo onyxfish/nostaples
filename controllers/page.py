@@ -59,7 +59,6 @@ class PageController(Controller):
         self.preview_zoom = 1.0
         self.preview_is_best_fit = False
         
-        # TODO: should be a gconf preference
         self.preview_zoom_rect_color = \
             gtk.gdk.colormap_get_system().alloc_color(
                 gtk.gdk.Color(65535, 0, 0), False, True)
@@ -138,7 +137,7 @@ class PageController(Controller):
     
     def on_page_view_image_layout_scroll_event(self, widget, event):
         """
-        TODO: Mouse scroll event.  Go to next/prev page?  Or scroll image?
+        TICKET #48
         """
         pass
     
@@ -151,8 +150,7 @@ class PageController(Controller):
         Resizes the image preview size to match that which is allocated to
         the preview layout widget.
         
-        TODO: Resize of image does not occur until after the window has
-        finished resizing (which looks awful).
+        TICKET #3
         """        
         if allocation.width == self.preview_width and \
            allocation.height == self.preview_height:
@@ -199,15 +197,13 @@ class PageController(Controller):
         """
         Zooms the preview image in.
         """ 
-        # TODO: max zoom should be a gconf preference
-        if self.preview_zoom == 5:
+        if self.preview_zoom >= constants.PREVIEW_ZOOM_MAX:
             return
         
-        # TODO: zoom amount should be a gconf preference
-        self.preview_zoom +=  0.5
+        self.preview_zoom +=  constants.PREVIEW_ZOOM_STEP
         
-        if self.preview_zoom > 5:
-            self.preview_zoom = 5
+        if self.preview_zoom > constants.PREVIEW_ZOOM_MAX:
+            self.preview_zoom = constants.PREVIEW_ZOOM_MAX
             
         self.preview_is_best_fit = False
             
@@ -217,14 +213,13 @@ class PageController(Controller):
         """
         Zooms the preview image out.
         """
-        # TODO: min zoom should be a gconf preference
-        if self.preview_zoom == 1.0:
+        if self.preview_zoom <= constants.PREVIEW_ZOOM_MIN:
             return
             
-        self.preview_zoom -=  0.5
+        self.preview_zoom -=  constants.PREVIEW_ZOOM_STEP
         
-        if self.preview_zoom < 0.5:
-            self.preview_zoom = 0.5
+        if self.preview_zoom < constants.PREVIEW_ZOOM_MIN:
+            self.preview_zoom = constants.PREVIEW_ZOOM_MIN
             
         self.preview_is_best_fit = False
             
@@ -396,14 +391,14 @@ class PageController(Controller):
         
         # Determine correct zoom to fit region
         if width > height:
-            # TODO: ZeroDivisionError has occurred here...
+            # TODO: ZeroDivisionError has occurred here... once
             self.preview_zoom = self.preview_width / width
         else:
             self.preview_zoom = self.preview_height / height
             
-        # Cap zoom at 500%
-        if self.preview_zoom > 5.0:
-            self.preview_zoom = 5.0
+        # Cap zoom
+        if self.preview_zoom > constants.PREVIEW_ZOOM_MAX:
+            self.preview_zoom = constants.PREVIEW_ZOOM_MAX
             
         # Transform center-point to relative coords            
         transform_x = int(center_x * self.preview_zoom)

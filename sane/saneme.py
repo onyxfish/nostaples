@@ -23,9 +23,6 @@ user's view.  This enumerations and definiations which are absolutely
 necessary to the end user have been redeclared.
 """
 
-# TODO: document what exceptions can be thrown by each method,
-# including those that could bubble up
-
 from array import *
 import atexit
 import ctypes
@@ -110,7 +107,7 @@ class SaneMe(object):
             
     def _sane_auth_callback(self, resource, username, password):
         """
-        TODO
+        TICKET #44
         """
         raise NotImplementedError(
             'sane_auth_callback requested, but not yet implemented.')
@@ -357,8 +354,6 @@ class Device(object):
         """
         Scan a document using this device.
         
-        TODO: handle ADF scans
-        
         @param progress_callback: An optional callback that
             will be called each time data is read from
             the device.  Has the format:
@@ -512,7 +507,7 @@ class Device(object):
                 'RGB', (scan_info.width, scan_info.height), 
                 data_array, 'raw', 'RGB', 0, 1)
         else:
-            # TODO
+            # TICKET #45
             raise NotImplementedError(
                'Individual color frame scanned, but not yet supported.')
             
