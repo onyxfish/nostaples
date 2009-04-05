@@ -166,6 +166,19 @@ reportlab_version = tuple([int(i) for i in reportlab.Version.split('.')])
 if reportlab_version < (2, 1):
     display_import_error(
         'NoStaples requires ReportLab version 2.1 or later.')
+
+# Python-gtkmvc
+try:
+    import gtkmvc
+except ImportError:
+    display_import_error(
+        'NoStaples requires python-gtkmvc version 1.2.2 (exactly).')
+    
+pygtkmvc_version = gtkmvc.get_version()
+
+if pygtkmvc_version != (1, 2, 2):
+    display_import_error(
+        'NoStaples requires python-gtkmvc version 1.2.2 (exactly).')
     
 # BOOTSTRAP
 
