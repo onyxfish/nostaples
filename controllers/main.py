@@ -525,10 +525,10 @@ class MainController(Controller):
         main_view = self.application.get_main_view()
         
         if new_value == 'System Default':
-            # TICKET #35
             pass
         else:
-            main_view['main_toolbar'].set_style(constants.TOOLBAR_STYLES[new_value])
+            main_view['main_toolbar'].set_style(
+                constants.TOOLBAR_STYLES[new_value])
     
     # THREAD CALLBACKS
     

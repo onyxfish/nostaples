@@ -22,6 +22,7 @@ between the L{PreferencesModel} and L{PreferencesView}.
 
 import logging
 
+import gconf
 import gtk
 from gtkmvc.controller import Controller
 
@@ -44,6 +45,14 @@ class PreferencesController(Controller):
         Controller.__init__(self, application.get_preferences_model())
         
         application.get_main_model().register_observer(self)
+        
+        # Setup GConf observer for system-wide toolbar settings
+        self.gconf_client = gconf.client_get_default()
+        self.gconf_client.add_dir(
+            '/desktop/gnome/interface', gconf.CLIENT_PRELOAD_NONE)
+        self.gconf_client.notify_add(
+            '/desktop/gnome/interface/toolbar_style', 
+            self.on_default_toolbar_style_changed)
         
         self.log = logging.getLogger(self.__class__.__name__)
         self.log.debug('Created.')
@@ -188,6 +197,10 @@ class PreferencesController(Controller):
         preferences_view = self.application.get_preferences_view()
         
         write_combobox(preferences_view['toolbar_style_combobox'], new_value)
+        
+        # If user sets to system default, need to force update from GConf
+        if new_value == 'System Default':
+            self.on_default_toolbar_style_changed(self.gconf_client)
     
     def property_blacklisted_scanners_value_change(self, model, old_value, new_value):
         """Update blacklisted scanners liststore."""
@@ -240,6 +253,38 @@ class PreferencesController(Controller):
         Disable device management controls while devices are being updated.
         """
         self._toggle_device_controls()
+        
+    # GConf callbacks
+    
+    def on_default_toolbar_style_changed(self, client, *args, **kwargs):
+        """
+        Update the toolbar style, if the user has not selected a style
+        specifically for NoStaples.
+        
+        Note: This method circumvents proper MVC separations in order to avoid
+        recursion and should probably be revisited at some point.
+        """
+        preferences_model = self.application.get_preferences_model()
+        preferences_view = self.application.get_preferences_view()
+        
+        if preferences_model.toolbar_style != 'System Default':
+            return
+
+        style = client.get_string('/desktop/gnome/interface/toolbar_style')
+        
+        try:
+            preferences_model.toolbar_style = \
+                constants.SYSTEM_TOOLBAR_STYLES[style]
+        except KeyError:
+            preferences_model.toolbar_style = 'Icons Only'
+        
+        # Reset so that future system-wide changes will be handled.
+        # This must be back-ended to prevent an infinite recusion
+        if preferences_model.toolbar_style != 'System Default':
+            preferences_model._prop_toolbar_style = 'System Default'
+            write_combobox(
+                preferences_view['toolbar_style_combobox'], 
+                'System Default')
     
     # PUBLIC METHODS
     

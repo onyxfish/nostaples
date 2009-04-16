@@ -192,6 +192,14 @@ THUMBNAIL_SIZE_LIST = \
     128,
     256
 ]
+        
+SYSTEM_TOOLBAR_STYLES = \
+{
+    'both': 'Icons and Text (Stacked)',
+    'both-horiz': 'Icons and Text (Side by side)',
+    'icons': 'Icons Only',
+    'text': 'Text Only'
+}
 
 TOOLBAR_STYLES = \
 {
